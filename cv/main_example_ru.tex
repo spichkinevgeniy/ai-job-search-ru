@@ -1,0 +1,187 @@
+%% Пример резюме на русском - [YOUR_NAME]
+%% Полный обзор компетенций, опыта и достижений.
+%% Мастер-резюме, из которого /apply делает версии под конкретные вакансии.
+%%
+%% SETUP: запусти /setup, чтобы заполнить его своими данными.
+%% Сборка: lualatex main_example_ru.tex
+%% Кириллица: шрифт moderncv по умолчанию (Latin Modern) русских букв не содержит,
+%% поэтому ниже подключён CMU (Computer Modern Unicode) — тот же рисунок с кириллицей
+%% и знаком ₽. pdflatex для русского резюме не поддерживается.
+
+\documentclass[11pt,a4paper,sans]{moderncv}
+\moderncvstyle{banking}
+\moderncvcolor{blue}
+
+% Имя и заголовки разделов — цветом moderncv (color1); см. комментарий в main_example.tex.
+\renewcommand*{\namefont}{\fontsize{34}{36}\bfseries\upshape}
+\colorlet{firstnamecolor}{color1}
+\colorlet{lastnamecolor}{color1}
+\colorlet{namecolor}{color1}
+\renewcommand*{\sectionstyle}[1]{{\sectionfont\color{color1}#1}}
+
+\usepackage[utf8]{inputenc}
+% Шрифты с кириллицей (lualatex + fontspec). Файлы cmun*.otf — пакет cm-unicode:
+% есть в полном TeX Live и MiKTeX; в TinyTeX/BasicTeX: tlmgr install cm-unicode.
+\usepackage{fontspec}
+\setmainfont{cmunrm.otf}[BoldFont=cmunbx.otf, ItalicFont=cmunti.otf, BoldItalicFont=cmunbi.otf]
+\setsansfont{cmunss.otf}[BoldFont=cmunsx.otf, ItalicFont=cmunsi.otf, BoldItalicFont=cmunso.otf]
+% В CMU нет знака ₽ — берём его из Raleway, который лежит в репозитории
+% (путь от cv/: резюме всегда собирается командой `cd cv && lualatex ...`).
+\usepackage{newunicodechar}
+\newfontfamily\rublefont{Raleway-Medium.otf}[Path=../cover_letters/OpenFonts/fonts/raleway/]
+\newunicodechar{₽}{{\rublefont ₽}}
+% Русские переносы; english — для фрагментов латиницей (названия технологий, ссылки).
+\usepackage[english,russian]{babel}
+\AtEndPreamble{\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=blue,
+    pdftitle={[YOUR_NAME] - резюме},
+    pdfpagemode=UseNone,
+}}
+\usepackage[scale=0.80]{geometry}
+\usepackage{import}
+
+% личные данные
+\name{[Имя]}{[Фамилия]}
+% Если адрес указывать не нужно, УДАЛИ эту строку целиком: \address{}{}{}
+% падает с «There's no line here to end» во всех версиях moderncv.
+\address{[Город, Россия]}{}{}
+\phone[mobile]{[+7 XXX XXX-XX-XX]}
+\email{[your.email@example.com]}
+\extrainfo{\href{[https://t.me/your-username]}{Telegram}, \href{[https://github.com/your-username]}{GitHub}, \href{[https://career.habr.com/your-username]}{Хабр Карьера}}
+
+\begin{document}
+
+\makecvtitle
+
+% ============================================================
+%     О СЕБЕ
+% ============================================================
+
+\vspace{6pt}
+\small{\textbf{Желаемая должность:} [Python-разработчик (Middle+)]. \textbf{Ожидания:} [от 250\,000~₽ на руки], [удалённо или гибрид, Москва].\\[3pt]
+[3--5 строк о себе под конкретную роль: чем вы сильны именно для неё. Пример: «Backend-разработчик с 5 годами опыта в финтехе. Проектирую и поддерживаю высоконагруженные сервисы на Python и Go, довожу задачи от постановки до продакшена, выстраиваю мониторинг и CI/CD».]}
+
+% ============================================================
+%     КЛЮЧЕВЫЕ НАВЫКИ
+% ============================================================
+
+\section{Ключевые навыки}
+\vspace{1pt}
+\begin{itemize}
+
+\item \textbf{[Категория навыков 1]}: [конкретные технологии, фреймворки, инструменты]
+
+\item \textbf{[Категория навыков 2]}: [конкретные технологии, фреймворки, инструменты]
+
+\item \textbf{[Категория навыков 3]}: [конкретные технологии, фреймворки, инструменты]
+
+\item \textbf{[Категория навыков 4]}: [предметная экспертиза, методы, подходы]
+
+\item \textbf{[Категория навыков 5]}: [платформы, сервисы, ПО]
+
+\end{itemize}
+
+% ============================================================
+%     ОПЫТ РАБОТЫ
+% ============================================================
+
+% Даты — один ASCII-дефис ("2022-н.в."), не "--": двойной дефис становится
+% коротким тире, и многие ATS перестают видеть диапазон (см. 05-cv-templates.md).
+\section{Опыт работы}
+\vspace{3pt}
+\begin{itemize}
+
+% --- Текущее место ---
+\item{\cventry{[2022-н.в.]}{[Должность]}{[Компания]}{[Город]}{}{\vspace{1pt}
+\begin{itemize}
+    \item {[Достижение или зона ответственности 1 — конкретно, с цифрами, где возможно]}
+    \item {[Достижение или зона ответственности 2]}
+    \item {[Достижение или зона ответственности 3]}
+    \item {[Достижение или зона ответственности 4]}
+\end{itemize}}}
+
+\vspace{3pt}
+
+% --- Предыдущее место ---
+\item{\cventry{[2019-2022]}{[Должность]}{[Компания]}{[Город]}{}{\vspace{1pt}
+\begin{itemize}
+    \item {[Достижение или зона ответственности 1]}
+    \item {[Достижение или зона ответственности 2]}
+    \item {[Достижение или зона ответственности 3]}
+\end{itemize}}}
+
+\vspace{3pt}
+
+% --- Более раннее место ---
+\item{\cventry{[2017-2019]}{[Должность]}{[Компания]}{[Город]}{}{\vspace{1pt}
+\begin{itemize}
+    \item {[Достижение или зона ответственности 1]}
+    \item {[Достижение или зона ответственности 2]}
+\end{itemize}}}
+
+\end{itemize}
+
+% ============================================================
+%     ОБРАЗОВАНИЕ
+% ============================================================
+
+\section{Образование}
+\vspace{1pt}
+\begin{itemize}
+
+\item{\cventry{[2015-2017]}{[Магистратура], [направление]}{[Вуз]}{[Город]}{}{\vspace{1pt}
+Диссертация: «[Тема].» [Коротко о фокусе исследования.]
+}}
+
+\vspace{3pt}
+
+\item{\cventry{[2011-2015]}{[Бакалавриат], [направление]}{[Вуз]}{[Город]}{}{\vspace{1pt}
+[Коротко: ключевые дисциплины или проекты.]
+}}
+
+\end{itemize}
+
+% ============================================================
+%     ЯЗЫКИ
+% ============================================================
+
+\section{Языки}
+\vspace{1pt}
+\begin{itemize}
+\item {Русский — родной, английский — [B2 (Upper-Intermediate)], [третий язык] — [уровень].}
+\end{itemize}
+
+% ============================================================
+%     ПУБЛИКАЦИИ (необязательно)
+% ============================================================
+
+\section{Публикации}
+\vspace{1pt}
+\begin{itemize}
+\item {[Автор(ы)] ([Год]). [Название]. [Журнал/конференция]. \href{[DOI_URL]}{DOI}}
+\end{itemize}
+
+% ============================================================
+%     НАГРАДЫ (необязательно)
+% ============================================================
+
+\section{Награды и достижения}
+\vspace{1pt}
+\begin{itemize}
+\item{\textbf{[Название награды]} -- [Мероприятие/организация] ([Год]).}
+\end{itemize}
+
+% ============================================================
+%     РЕКОМЕНДАЦИИ
+% ============================================================
+
+\section{Рекомендации}
+\vspace{1pt}
+\begin{itemize}
+\item{Рекомендации предоставлю по запросу.}
+\end{itemize}
+
+\end{document}

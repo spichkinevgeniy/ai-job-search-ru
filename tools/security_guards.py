@@ -200,6 +200,8 @@ ALLOWED_IGNORE_NEGATIONS = {
     "!cover_letters/OpenFonts/fonts/**",
     "!cv/main_example.tex",
     "!cover_letters/cover_example.tex",
+    "!cv/main_example_ru.tex",
+    "!cover_letters/cover_example_ru.tex",
     "!documents/**/.gitkeep",
 }
 

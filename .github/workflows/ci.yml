@@ -135,11 +135,14 @@ jobs:
         # ships in texlive-fonts-extra (lualatex dies fatally without it), and
         # hyperref's xetex driver probes the pzdr metrics from
         # texlive-fonts-recommended (the cover letter fails without it).
+        # Russian examples: texlive-lang-cyrillic carries babel/polyglossia
+        # Russian hyphenation, fonts-cmu the CMU (cm-unicode) fonts the CV uses.
         run: |
           apt-get update
           apt-get install -y --no-install-recommends \
             texlive-luatex texlive-latex-extra texlive-xetex \
             texlive-fonts-extra texlive-fonts-recommended \
+            texlive-lang-cyrillic fonts-cmu \
             poppler-utils python3
       - name: Install PDF inspection tools
         run: |
@@ -167,10 +170,30 @@ jobs:
             grep -A3 '^!' cover_example.log
             exit 1
           fi
+      - name: Compile Russian examples (lualatex / xelatex)
+        # The fork's default CV language is Russian: Cyrillic and the ₽ sign must
+        # survive into the PDF. A font without a glyph does not fail the build -
+        # it only logs "Missing character" and drops the letter - so that line is
+        # treated as an error here.
+        run: |
+          (cd cv && lualatex -interaction=nonstopmode -halt-on-error main_example_ru.tex)
+          (cd cover_letters && xelatex -interaction=nonstopmode -halt-on-error cover_example_ru.tex)
+          for log in cv/main_example_ru.log cover_letters/cover_example_ru.log; do
+            if grep -qE '^!|Missing character' "$log"; then
+              echo "::error::$log reports errors or missing glyphs"
+              grep -E -A3 '^!|Missing character' "$log"
+              exit 1
+            fi
+          done
       - name: Verify extractable PDF text
         run: |
           python3 tools/verify_pdf.py cv/main_example.pdf --min-chars 100
           python3 tools/verify_pdf.py cover_letters/cover_example.pdf --min-chars 100
+          python3 tools/verify_pdf.py cv/main_example_ru.pdf --pages 2 --ascii-dates \
+            --contains 'Опыт работы' --contains 'Рекомендации предоставлю по запросу' \
+            --contains '250 000 ₽'
+          python3 tools/verify_pdf.py cover_letters/cover_example_ru.pdf --pages 1 \
+            --contains 'Добрый день, [Имя]!' --contains 'С уважением,' --contains '₽'
       - name: Assert stock PDF structure (upstream template only)
         if: github.repository == 'MadsLorentzen/ai-job-search'
         run: |

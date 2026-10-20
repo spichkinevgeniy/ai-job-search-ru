@@ -52,7 +52,7 @@ powershell -ExecutionPolicy Bypass -c "irm https://bun.sh/install.ps1 | iex"
 
 Резюме собирается через `lualatex` (pdflatex на свежих MiKTeX часто падает с ошибками расширения шрифтов `fontawesome5`). Сопроводительное письмо — через `xelatex`, потому что `cover.cls` требует `fontspec` для своих шрифтов Lato/Raleway.
 
-**Кириллица.** Для резюме и писем на русском нужны шрифты с кириллицей. Полные дистрибутивы (TeX Live full, MacTeX, полный MiKTeX) их уже содержат; на минимальной установке проверьте, что кириллица в собранном PDF отображается, а не пропадает или превращается в квадратики, и при необходимости доустановите шрифты (например, семейство `cm-super` или `lm` для lualatex) либо укажите в шаблоне системный шрифт с кириллицей.
+**Кириллица.** Шаблоны уже настроены на русский: письмо использует Lato 2 и Raleway 4 с кириллицей (лежат в `cover_letters/OpenFonts/fonts/`), резюме — CMU (Computer Modern Unicode) из пакета `cm-unicode`, а ₽ берёт из того же Raleway. Образцы — `cv/main_example_ru.tex` и `cover_letters/cover_example_ru.tex`. Полные дистрибутивы (TeX Live full, MacTeX, полный MiKTeX) содержат всё нужное; MiKTeX докачивает недостающие пакеты при первой сборке. На минимальной установке поставьте пакеты из раздела ниже. Проверка: соберите `main_example_ru.tex` и убедитесь, что в логе нет строк `Missing character` — такая строка означает, что буква молча пропала из PDF.
 
 <a id="minimal-tex-install-tinytexbasictex"></a>
 #### Минимальная установка TeX: TinyTeX/BasicTeX
@@ -82,8 +82,11 @@ lualatex --version   # should print a version, not "command not found"
 ```bash
 tlmgr install \
   moderncv fontawesome5 fontawesome6 academicons import luatexbase pgf \
-  titlesec textpos xltxtra xunicode cite realscripts needspace
+  titlesec textpos xltxtra xunicode cite realscripts needspace \
+  cm-unicode newunicodechar babel-russian hyphen-russian polyglossia
 ```
+
+Последняя строка — для русских резюме и писем: шрифты CMU, подстановка ₽, русские переносы (babel для lualatex, polyglossia для xelatex).
 
 Для BasicTeX/MacTeX сначала убедитесь, что каталог бинарников TeX есть в `PATH` (например, `/Library/TeX/texbin`), затем выполните ту же команду `tlmgr install ...`.
 
@@ -355,7 +358,8 @@ Set-Location cover_letters; xelatex cover_<company>_<role>.tex; Set-Location ..
 - Резюме: используется `lualatex` (pdflatex на свежих MiKTeX часто падает с ошибками расширения шрифтов `fontawesome5`; lualatex собирает те же исходники без проблем)
 - Сопроводительное письмо: используется `xelatex` (для своих шрифтов в `OpenFonts/fonts/`)
 - Убедитесь, что в вашем дистрибутиве LaTeX есть пакет `moderncv`
-- Кириллица пропадает или выводится квадратиками — в выбранном шрифте нет кириллических глифов; используйте шрифт с кириллицей (см. раздел про LaTeX выше)
+- Кириллица пропадает или выводится квадратиками (в логе `Missing character`) — в шрифте нет кириллических глифов. Чаще всего из преамбулы резюме удалили блок `\setmainfont`/`\setsansfont` с CMU, в письме подменили файлы в `OpenFonts/fonts/` старыми версиями без кириллицы, либо не установлен пакет `cm-unicode` (см. раздел про LaTeX выше)
+- `₽` пропал из резюме — резюме собрали не из папки `cv/`: путь к Raleway с ₽ относительный (`cd cv && lualatex ...`)
 
 ### В сопроводительном письме не находятся шрифты
 Шаблон письма ожидает шрифты в `cover_letters/OpenFonts/fonts/`. Убедитесь, что эта папка существует и в ней есть файлы шрифтов Lato и Raleway.

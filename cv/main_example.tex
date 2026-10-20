@@ -30,6 +30,21 @@
 % right. moderncv 2.5 loads T1 itself under pdflatex; 2.3.1 (Debian/Ubuntu apt)
 % does not. \ifpdftex comes from iftex, which every moderncv version loads.
 \ifpdftex\usepackage[T1]{fontenc}\fi
+% Cyrillic under lualatex: moderncv's default Latin Modern has no Cyrillic glyphs,
+% so a Russian name, city or employer would silently vanish from the PDF. CMU
+% (Computer Modern Unicode) is the same design with Cyrillic and the ₽ sign.
+% cmun*.otf ship in the cm-unicode package (full TeX Live, MiKTeX; TinyTeX/BasicTeX:
+% tlmgr install cm-unicode). A Russian CV also needs babel - see main_example_ru.tex.
+\ifluatex
+  \usepackage{fontspec}
+  \setmainfont{cmunrm.otf}[BoldFont=cmunbx.otf, ItalicFont=cmunti.otf, BoldItalicFont=cmunbi.otf]
+  \setsansfont{cmunss.otf}[BoldFont=cmunsx.otf, ItalicFont=cmunsi.otf, BoldItalicFont=cmunso.otf]
+  % CMU lacks the ₽ sign: borrow it from the Raleway shipped in this repo
+  % (path relative to cv/, where /apply always compiles: `cd cv && lualatex ...`).
+  \usepackage{newunicodechar}
+  \newfontfamily\rublefont{Raleway-Medium.otf}[Path=../cover_letters/OpenFonts/fonts/raleway/]
+  \newunicodechar{₽}{{\rublefont ₽}}
+\fi
 % moderncv loads hyperref itself in an \AtEndPreamble hook, so \hypersetup
 % must go in an \AtEndPreamble of our own: on moderncv < 2.4 a top-level
 % \usepackage{hyperref} clashes with the class's own
