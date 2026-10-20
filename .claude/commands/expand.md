@@ -1,230 +1,230 @@
-# /expand - Competency Expansion from Documents and Online Presence
+# /expand — Расширение компетенций по документам и публичному присутствию в сети
 
-You are enriching the candidate profile by discovering competencies hidden in documents and public online presence. This command is additive only — it never modifies existing profile content, only extends it.
+Ты обогащаешь профиль кандидата, находя компетенции, скрытые в документах и в его публичном присутствии в сети. Эта команда только добавляет — она никогда не меняет существующее содержимое профиля, а лишь дополняет его. С пользователем общайся по-русски.
 
-Follow these steps **exactly in order**. Do not skip steps.
+Выполняй шаги **строго по порядку**. Не пропускай шаги.
 
 ---
 
-## Step 0: Read Existing Profile Files
+## Шаг 0: Прочитать существующие файлы профиля
 
-Read these two files in parallel before doing anything else. You must know what is already there so you do not propose duplicates.
+Прочитай эти два файла параллельно, прежде чем делать что-либо ещё. Ты должен знать, что там уже есть, чтобы не предлагать дубли.
 
 - `.claude/skills/job-application-assistant/01-candidate-profile.md`
 - `.claude/skills/job-application-assistant/02-behavioral-profile.md`
 
-Hold this content in context throughout the command. Do not re-read these files later.
+Держи это содержимое в контексте на протяжении всей команды. Не перечитывай эти файлы позже.
 
 ---
 
-## Step 1: Discovery — Scan All Sources
+## Шаг 1: Поиск — просмотреть все источники
 
-Scan every available source for "experience items" — anything that implies skill, knowledge, or competency. Process sources in this order.
+Просмотри каждый доступный источник на предмет «элементов опыта» — всего, что говорит о навыке, знании или компетенции. Обрабатывай источники в таком порядке.
 
 ### 1a. documents/cv/
-Read all files in `documents/cv/`. Extract:
-- Every course or module listed (including university coursework and online courses)
-- Every certification mentioned, with issuer and date
-- Every job responsibility bullet point (tools, methods, outcomes)
-- Every independent project or side project
-- Every volunteer or extracurricular role
+Прочитай все файлы в `documents/cv/`. Извлеки:
+- Каждый указанный курс или модуль (включая вузовские дисциплины и онлайн-курсы)
+- Каждый упомянутый сертификат — с организацией, которая его выдала, и датой
+- Каждый пункт об обязанностях на работе (инструменты, методы, результаты)
+- Каждый самостоятельный или пет-проект
+- Каждую волонтёрскую или внеучебную роль
 
 ### 1b. documents/linkedin/
-Read all files in `documents/linkedin/`. Extract:
-- Courses and certifications in the "Licenses & Certifications" section
-- Skills and endorsements list
-- Volunteer experiences
-- Projects section
-- Any platform-specific items not already found in the CV
+Прочитай все файлы в `documents/linkedin/` (необязательный источник: экспорт профиля LinkedIn, если он есть). Извлеки:
+- Курсы и сертификаты из раздела «Licenses & Certifications»
+- Список навыков и подтверждений
+- Волонтёрский опыт
+- Раздел проектов
+- Любые элементы, специфичные для платформы, которых ещё нет в резюме
 
 ### 1c. documents/diplomas/
-Read all files in `documents/diplomas/`. Extract:
-- All course/module names listed on transcripts
-- Thesis title and subject area
-- Any specialisation or track name
+Прочитай все файлы в `documents/diplomas/`. Извлеки:
+- Все названия дисциплин/модулей из приложения к диплому (выписки оценок)
+- Тему и предметную область дипломной работы или диссертации
+- Название специализации или профиля подготовки
 
 ### 1d. documents/references/
-Read all files in `documents/references/`. Extract:
-- Competency language used by the referee (what skills or qualities they mention)
-- Any specific projects, tools, or methods named
+Прочитай все файлы в `documents/references/`. Извлеки:
+- Формулировки о компетенциях, которые использует рекомендатель (какие навыки или качества он упоминает)
+- Любые конкретные проекты, инструменты или методы, названные по имени
 
-### 1e. GitHub Profile
-Look up the GitHub username from `01-candidate-profile.md`. If a GitHub URL or username is present:
+### 1e. Профиль на GitHub
+Найди имя пользователя на GitHub в `01-candidate-profile.md`. Если там есть URL или имя пользователя GitHub:
 
-1. Use WebFetch or WebSearch to retrieve the public profile and pinned repositories
-2. For each repository found:
-   - Fetch the repository README
-   - Note: name, description, primary language(s), topics/tags, any frameworks or libraries mentioned in the README
-   - If the repository represents an independent technical project (not an empty stub or uncustomized fork), extract a project summary (problem domain, tech stack, and demonstrable technical results) for consideration under Independent Projects
-3. Also retrieve the full repository list if available (to catch unpinned repos)
+1. Через WebFetch или WebSearch получи публичный профиль и закреплённые (pinned) репозитории
+2. Для каждого найденного репозитория:
+   - Получи README репозитория
+   - Запиши: название, описание, основной язык (языки), темы/теги, все фреймворки или библиотеки, упомянутые в README
+   - Если репозиторий — самостоятельный технический проект (а не пустая заготовка или ненастроенный форк), составь краткое описание проекта (предметная область, стек и показательные технические результаты) для раздела `## Собственные проекты`
+3. Также получи полный список репозиториев, если он доступен (чтобы не пропустить незакреплённые)
 
-If no GitHub username or URL is found in the profile, skip this source and note it was skipped.
+Если в профиле нет ни имени пользователя, ни URL GitHub, пропусти этот источник и отметь, что он пропущен.
 
-### 1f. Other URLs in Profile
-Check `01-candidate-profile.md` for any other URLs (portfolio site, personal website, Kaggle, Google Scholar, ResearchGate, publication links). For each:
-- Fetch the page
-- Extract any tools, methods, datasets, awards, or skills mentioned
+### 1f. Другие URL в профиле
+Проверь `01-candidate-profile.md` на другие URL (портфолио, личный сайт, Kaggle, Google Scholar, ResearchGate, eLibrary, Habr, ссылки на публикации). Для каждого:
+- Получи страницу
+- Извлеки упомянутые инструменты, методы, датасеты, награды или навыки
 
 ---
 
-## Step 2: Web Enrichment
+## Шаг 2: Обогащение из веба
 
-For each experience item discovered in Step 1, search the web to extract the competencies it implies. Apply both approaches below — do not choose one over the other.
+Для каждого элемента опыта, найденного на Шаге 1, поищи в вебе, какие компетенции он подразумевает. Применяй оба подхода ниже — не выбирай один вместо другого.
 
-### Approach A: Direct lookup (explicit tools and frameworks)
-If the item names a specific tool, framework, library, method, or platform, search for it directly:
-- `"[Course name] [Provider] syllabus learning outcomes"`
+### Подход A: Прямой поиск (явные инструменты и фреймворки)
+Если элемент называет конкретный инструмент, фреймворк, библиотеку, метод или платформу, ищи его напрямую:
+- `"[Course name] [Provider] syllabus learning outcomes"` (или по-русски: `"[Название курса] [Провайдер] программа курса чему научитесь"`)
 - `"[Certification name] skills covered exam guide"`
 - `"[Tool/framework name] skills what you learn"`
 
-Fetch the most relevant page and extract the competency list.
+Открой самую релевантную страницу и извлеки список компетенций.
 
-### Approach B: Inferred competencies (from description and context)
-For each item, regardless of whether Approach A found anything, also reason from the description:
-- What problem domain does this item address?
-- What methods, skills, or knowledge does someone need to do this work?
-- What is the standard toolchain for this kind of work?
+### Подход B: Выведенные компетенции (из описания и контекста)
+Для каждого элемента — независимо от того, нашёл ли что-то Подход A, — также рассуждай от описания:
+- Какую предметную область покрывает этот элемент?
+- Какие методы, навыки или знания нужны, чтобы делать эту работу?
+- Какой стандартный набор инструментов для такой работы?
 
-Combine both approaches into a single competency list for each item.
+Объедини оба подхода в единый список компетенций для каждого элемента.
 
-### Prioritise web lookup for:
-- Named online courses (Coursera, edX, Udemy, LinkedIn Learning, DataCamp, fast.ai, etc.)
-- Named certifications (AWS, GCP, Azure, Databricks, Tableau, etc.)
-- University courses with a standard syllabus
-- GitHub repositories with a README that names specific technologies
+### Веб-поиск в первую очередь для:
+- Именованных онлайн-курсов (Coursera, edX, Udemy, LinkedIn Learning, DataCamp, fast.ai, Stepik, Яндекс Практикум, Skillbox и т. п.)
+- Именованных сертификатов (AWS, GCP, Azure, Databricks, Tableau, Yandex Cloud и т. п.)
+- Вузовских курсов со стандартной программой
+- Репозиториев GitHub, в README которых названы конкретные технологии
 
-### Infer (without web lookup) for:
-- Generic job responsibility bullets with no named tool
-- Vague project descriptions
-- Reference letter language (already phrased as competency — just record it)
-
----
-
-## Step 3: Build Competency Map
-
-After enriching all items, build a deduplicated competency map. Group findings into these categories:
-
-**Technical Skills — Primary** (core languages, frameworks, methods you use regularly)  
-**Technical Skills — Secondary** (tools you have used but are not primary)  
-**Domain Knowledge** (subject matter expertise: geophysics, ML, NLP, etc.)  
-**Methods and Practices** (agile, version control, reproducibility, testing, etc.)  
-**Soft / Behavioral** (leadership, communication, collaboration signals from references and project descriptions)  
-**Independent Projects & Portfolio** (distinct technical projects from GitHub with problem domain, tech stack, and key technical milestone)
-
-For each competency, record:
-- The competency name
-- The source item it came from (e.g. "Coursera — Deep Learning Specialisation", "GitHub — repo-name", "Reference letter — Jens Jensen")
-- Whether it came from direct lookup (A), inference (B), or both
-
-For each project, record:
-- Project name
-- One-line summary: problem tackled, tech stack used, and verifiable outcome/impact
-- Source (e.g. "GitHub — repo-name")
-
-Remove anything already present in `01-candidate-profile.md` or `02-behavioral-profile.md`.
+### Без веб-поиска (выводом) для:
+- Общих пунктов об обязанностях, где не назван инструмент
+- Расплывчатых описаний проектов
+- Формулировок из рекомендательных писем (они уже сформулированы как компетенции — просто запиши их)
 
 ---
 
-## Step 4: Present Grouped Summary
+## Шаг 3: Собрать карту компетенций
 
-Present all new competencies and project additions for the user's review before writing anything. Format:
+Обогатив все элементы, собери карту компетенций без дублей. Сгруппируй находки по категориям:
+
+**Технические навыки — основные** (ключевые языки, фреймворки, методы, которыми пользуешься регулярно)  
+**Технические навыки — второстепенные** (инструменты, с которыми работал, но не основные)  
+**Предметные знания** (экспертиза в предметной области: геофизика, ML, NLP и т. п.)  
+**Методы и практики** (agile, контроль версий, воспроизводимость, тестирование и т. п.)  
+**Soft skills / поведенческие** (сигналы лидерства, коммуникации, командной работы из рекомендаций и описаний проектов)  
+**Собственные проекты и портфолио** (отдельные технические проекты с GitHub — с предметной областью, стеком и ключевой технической вехой)
+
+Для каждой компетенции запиши:
+- Название компетенции
+- Элемент-источник, из которого она взялась (например, «Coursera — Deep Learning Specialization», «GitHub — repo-name», «Рекомендательное письмо — Иван Петров»)
+- Получена ли она прямым поиском (A), выводом (B) или обоими
+
+Для каждого проекта запиши:
+- Название проекта
+- Однострочное описание: какая задача решалась, какой стек использован и какой проверяемый результат/эффект
+- Источник (например, «GitHub — repo-name»)
+
+Убери всё, что уже есть в `01-candidate-profile.md` или `02-behavioral-profile.md`.
+
+---
+
+## Шаг 4: Показать сгруппированную сводку
+
+Покажи все новые компетенции и добавления проектов на проверку пользователю до того, как что-либо записывать. Формат:
 
 ```
-## /expand found [N] new competency signals across [M] sources
+## /expand нашёл [N] новых сигналов о компетенциях в [M] источниках
 
-**COURSES & CERTIFICATIONS**
-Source: [Course/cert name — Provider]
-  + [Competency 1]
-  + [Competency 2]
+**КУРСЫ И СЕРТИФИКАТЫ**
+Источник: [Название курса/сертификата — Провайдер]
+  + [Компетенция 1]
+  + [Компетенция 2]
   ...
 
-**PROJECTS & PORTFOLIO**
-Source: [GitHub — repo-name]
-  + [Project Name]: [Problem, stack, and outcome]
+**ПРОЕКТЫ И ПОРТФОЛИО**
+Источник: [GitHub — repo-name]
+  + [Название проекта]: [Задача, стек и результат]
   ...
 
 **GITHUB — [repo-name]**
-Source: README + inferred from tech stack
-  + [Competency 1]
-  + [Competency 2]
+Источник: README + выводы из стека
+  + [Компетенция 1]
+  + [Компетенция 2]
   ...
 
-**JOB RESPONSIBILITIES — [Company, Role]**
-Source: CV bullets + direct tool lookup
-  + [Competency 1]
+**ОБЯЗАННОСТИ НА РАБОТЕ — [Компания, роль]**
+Источник: пункты резюме + прямой поиск инструментов
+  + [Компетенция 1]
   ...
 
-**BEHAVIORAL SIGNALS**
-Source: [Reference letter — Name / LinkedIn About / Project leadership]
-  + [Signal 1]
+**ПОВЕДЕНЧЕСКИЕ СИГНАЛЫ**
+Источник: [Рекомендательное письмо — Имя / раздел About в LinkedIn / Лидерство в проекте]
+  + [Сигнал 1]
   ...
 
-[more sections as needed]
+[другие разделы по необходимости]
 ```
 
-Then ask:
+Затем спроси:
 
-> **How would you like to proceed?**
+> **Как поступим?**
 >
-> - **`all`** — Add everything above to your profile
-> - **`review`** — I'll walk you through each source group one at a time
-> - **`skip`** — Cancel without writing anything
+> - **`all`** — добавить в профиль всё, что выше
+> - **`review`** — пройдёмся по каждой группе источников по очереди
+> - **`skip`** — отменить, ничего не записывая
 >
-> Or list specific groups to skip (e.g. "skip GitHub, add everything else").
+> Или перечисли конкретные группы, которые пропустить (например, «пропусти GitHub, остальное добавь»).
 
-Wait for the user's response before writing anything.
-
----
-
-## Step 5: Write Confirmed Additions
-
-Apply only the confirmed items. Use the Edit tool to add to the relevant sections of each file — do not rewrite entire files.
-
-### Additions to `01-candidate-profile.md`
-- Independent projects → append to the `## Independent Projects` section formatted as `- **[Project Name]**: [Description with stack and outcome] *(GitHub — repo-name)*`
-- Technical skills (primary and secondary) → append to the Technical Skills section
-- Domain knowledge → append to the Domain Knowledge or Technical Skills section (match the existing structure)
-- Methods and practices → append appropriately
-
-For each addition, add a brief source annotation in a comment or parenthetical: *(Coursera — Deep Learning Specialisation)*, *(GitHub — project-name)*, etc. This makes future `/expand` runs idempotent.
-
-### Additions to `02-behavioral-profile.md`
-- Soft/behavioral signals → append to the "Strongest Behaviors" or "How You Work Best" section (the shipped file's `##` headings - match existing structure)
-- Always label inferred behavioral additions: *[Inferred from reference letter — Name / review before relying on this]*
+Дождись ответа пользователя, прежде чем что-либо записывать.
 
 ---
 
-## Step 6: Summary Report
+## Шаг 5: Записать подтверждённые добавления
 
-After writing, present:
+Применяй только подтверждённые пункты. Добавляй в нужные разделы каждого файла инструментом Edit — не переписывай файлы целиком.
+
+### Добавления в `01-candidate-profile.md`
+- Самостоятельные проекты → допиши в раздел `## Собственные проекты` в формате `- **[Название проекта]**: [Описание со стеком и результатом] *(GitHub — repo-name)*`
+- Технические навыки (основные и второстепенные) → допиши в раздел Technical Skills
+- Предметные знания → допиши в раздел Domain Knowledge или Technical Skills (по существующей структуре)
+- Методы и практики → допиши в подходящее место
+
+К каждому добавлению припиши короткую пометку об источнике в комментарии или в скобках: *(Coursera — Deep Learning Specialization)*, *(GitHub — project-name)* и т. п. Так будущие запуски `/expand` останутся идемпотентными.
+
+### Добавления в `02-behavioral-profile.md`
+- Soft skills / поведенческие сигналы → допиши в раздел «Самые сильные стороны поведения» или «В каких условиях вы работаете лучше всего» (заголовки `##` поставляемого файла — следуй существующей структуре)
+- Всегда помечай выведенные поведенческие добавления: *[Выведено из рекомендательного письма — Имя / проверь, прежде чем на это опираться]*
+
+---
+
+## Шаг 6: Итоговый отчёт
+
+После записи покажи:
 
 ```
-## /expand Complete
+## /expand завершён
 
-### Added to 01-candidate-profile.md
-[List each competency and independent project added, with source]
+### Добавлено в 01-candidate-profile.md
+[Перечисли каждую добавленную компетенцию и самостоятельный проект с источником]
 
-### Added to 02-behavioral-profile.md
-[List each behavioral signal added, with source]
+### Добавлено в 02-behavioral-profile.md
+[Перечисли каждый добавленный поведенческий сигнал с источником]
 
-### Sources processed
-[List each source scanned and how many competencies it yielded]
+### Обработанные источники
+[Перечисли каждый просмотренный источник и сколько компетенций он дал]
 
-### Sources skipped
-[List any sources that were missing, empty, or yielded nothing new — with brief reason]
+### Пропущенные источники
+[Перечисли источники, которых не было, которые были пусты или не дали ничего нового — с короткой причиной]
 
-### Needs manual review
-[Any items that were ambiguous, partially readable, or where web lookup returned no clear syllabus]
+### Нужна ручная проверка
+[Всё неоднозначное, частично читаемое или где веб-поиск не нашёл внятной программы курса]
 ```
 
 ---
 
-## Design Principles
+## Принципы
 
-- **Additive only.** This command never modifies existing profile content. It only appends.
-- **Source-traceable.** Every addition records where it came from, so future runs are idempotent and the user can verify or remove individual items later.
-- **Both approaches, always.** Web lookup and inference are applied together — not as alternatives. A named course gets its official syllabus AND a reasoned competency list.
-- **User confirms before writing.** The full competency map is shown and confirmed before a single file is touched.
-- **Behavioral signals are labeled.** Anything inferred from tone, language, or indirect signals is marked as inferred so it is reviewed critically.
-- **GitHub is fully scanned.** All public repositories are checked, not just pinned ones — unpinned repos often contain significant competency signals.
-- **Portfolio & projects grounded in code.** Independent projects added to the profile must reflect real projects found in public GitHub repositories — never fabricated project claims.
+- **Только добавление.** Эта команда никогда не меняет существующее содержимое профиля. Она только дописывает.
+- **Отслеживаемость источников.** Каждое добавление фиксирует, откуда оно взялось, — так будущие запуски идемпотентны, а пользователь может позже проверить или удалить отдельные пункты.
+- **Оба подхода, всегда.** Веб-поиск и вывод применяются вместе, а не как альтернативы. Для именованного курса берётся официальная программа И составляется список компетенций рассуждением.
+- **Пользователь подтверждает до записи.** Полная карта компетенций показывается и подтверждается до того, как будет тронут хоть один файл.
+- **Поведенческие сигналы помечаются.** Всё, что выведено из тона, формулировок или косвенных сигналов, помечается как вывод, чтобы его проверяли критически.
+- **GitHub просматривается целиком.** Проверяются все публичные репозитории, а не только закреплённые — в незакреплённых часто есть важные сигналы о компетенциях.
+- **Портфолио и проекты опираются на код.** Самостоятельные проекты, добавляемые в профиль, должны соответствовать реальным проектам из публичных репозиториев GitHub — никаких выдуманных проектов.

@@ -2,18 +2,20 @@
 framework_version: 1.0.0
 ---
 
-# Agent Guidelines: AI Job Search
+# Правила для агентов: AI Job Search
 
-This workspace is structured to manage job search activities, scraper tools, CVs, cover letters, and interview preparation.
+Это рабочее пространство устроено для ведения поиска работы: инструменты поиска вакансий, резюме, сопроводительные письма и подготовка к собеседованиям.
 
-## Thin-Pointer Design (Single Source of Truth)
+**Язык общения:** общайся с пользователем по-русски. Резюме по умолчанию пишется на русском; для англоязычной вакансии — на английском.
 
-To prevent duplication and configuration drift across different AI agent frameworks (Claude Code, Google Antigravity, Codex, Cursor, Gemini CLI, etc.), this workspace uses a unified thin-pointer design. All agent runtimes should load the canonical specifications and candidate profiles from the files and directories below:
+## Тонкие указатели (единый источник истины)
 
-1. **Personal Candidate Profile:**
-   - The candidate profile, contact details, education, and target preferences are defined in [CLAUDE.md](CLAUDE.md) and the individual profile methodology files under [.claude/skills/job-application-assistant/](.claude/skills/job-application-assistant/) (specifically `01-*.md` etc.).
-2. **Canonical Workflow Specifications:**
-   - The step-by-step instructions and triggers for tasks (setup, scrape, rank, apply, upskill, interview) are defined in the [.claude/](.claude/) directory (specifically under `.claude/skills/` and `.claude/commands/`).
-   - Do not duplicate these rules or specifications. Treat `.claude/` files as the single source of truth.
-3. **Portal Search Skills:**
-   - Job-portal search CLIs live under [.agents/skills/](.agents/skills/) in the portable Agent Skills format (with a `SKILL.md` per portal). Codex and Antigravity discover these automatically; the `/scrape` workflow in [.claude/skills/job-scraper/](.claude/skills/job-scraper/) orchestrates them.
+Чтобы не плодить дубли и не допускать расхождения настроек между разными фреймворками AI-агентов (Claude Code, Google Antigravity, Codex, Cursor, Gemini CLI и т. д.), здесь используется единая схема «тонких указателей». Все среды выполнения агентов должны загружать канонические спецификации и профили кандидата из файлов и папок ниже:
+
+1. **Личный профиль кандидата:**
+   - Профиль кандидата, контакты, образование и целевые предпочтения описаны в [CLAUDE.md](CLAUDE.md) и в отдельных файлах методики профиля в [.claude/skills/job-application-assistant/](.claude/skills/job-application-assistant/) (в частности, `01-*.md` и т. д.).
+2. **Канонические спецификации процессов:**
+   - Пошаговые инструкции и триггеры задач (setup, scrape, rank, apply, upskill, interview) описаны в папке [.claude/](.claude/) (в частности, в `.claude/skills/` и `.claude/commands/`).
+   - Не дублируй эти правила и спецификации. Считай файлы `.claude/` единственным источником истины.
+3. **Навыки поиска по порталам:**
+   - CLI поиска по порталам вакансий лежат в [.agents/skills/](.agents/skills/) в переносимом формате Agent Skills (по `SKILL.md` на портал; сейчас это `habr-search` — Хабр Карьера и `freehire-search` — агрегатор freehire.me). Codex и Antigravity находят их автоматически; процесс `/scrape` в [.claude/skills/job-scraper/](.claude/skills/job-scraper/) управляет ими.

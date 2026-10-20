@@ -31,7 +31,11 @@ PORTAL_CLIS = sorted((REPO_ROOT / ".agents" / "skills").glob("*-search"))
 # Derived, never copied: a hardcoded field list drifts in lockstep with
 # nothing - if Step 2's prose drops or adds a field, the known-good portals
 # and this pin would keep agreeing forever while the contract changed.
-_CONTRACT_SENTENCE = re.compile(r"Search output already includes ([a-zA-Z0-9\s,]+)\.", re.MULTILINE)
+# Русская версия: «Вывод поиска уже содержит поля `title`, `company`, ... и `url`» —
+# имена полей стоят в инлайн-коде, их и извлекаем.
+_CONTRACT_SENTENCE = re.compile(
+    r"Вывод поиска уже содержит поля\s+((?:`[a-zA-Z0-9_]+`(?:,\s*|\s+и\s+)?)+)", re.MULTILINE
+)
 
 
 def derive_contract_fields() -> frozenset[str]:
@@ -39,8 +43,7 @@ def derive_contract_fields() -> frozenset[str]:
     match = _CONTRACT_SENTENCE.search(text)
     if match is None:
         raise AssertionError("Step 2 contract sentence not found in job-scraper/SKILL.md")
-    fields_text = re.sub(r"\s+and\s+", ",", match.group(1))
-    fields = {f.strip().lower() for f in fields_text.split(",") if f.strip()}
+    fields = {f.lower() for f in re.findall(r"`([a-zA-Z0-9_]+)`", match.group(1))}
     return frozenset(fields)
 
 
@@ -78,7 +81,7 @@ class ScrapeSearchOutputContractTests(unittest.TestCase):
 # Step 4's storage schema, derived the same way as the Step 2 contract above:
 # the field list lives in the spec, never duplicated here, so a schema change
 # fails this test instead of silently agreeing with a stale copy.
-_STEP4_SCHEMA_BLOCK = re.compile(r"Add ALL fetched jobs.*?```json(.*?)```", re.DOTALL)
+_STEP4_SCHEMA_BLOCK = re.compile(r"Добавь ВСЕ загруженные вакансии.*?```json(.*?)```", re.DOTALL)
 
 
 def derive_stored_fields() -> frozenset[str]:
@@ -131,7 +134,7 @@ class SeenJobsPostingDateTests(unittest.TestCase):
         self.assertIn("`posted_date`", text, "posted_date is in the schema but never documented")
         self.assertRegex(
             text,
-            r"never infer a posting date",
+            r"никогда не выводи дату публикации",
             "posted_date must carry the same never-backfill rule as `deadline`",
         )
 
@@ -143,13 +146,13 @@ class SeenJobsDedupContinuityTests(unittest.TestCase):
         text = SCRAPER_SKILL.read_text(encoding="utf-8")
         self.assertRegex(
             text,
-            r"URL matches any existing `(?:job_scraper/)?seen_jobs\.json` entry, regardless of\s+that entry's key",
+            r"URL совпадает с любой существующей записью в `(?:job_scraper/)?seen_jobs\.json`, независимо\s+от ключа этой записи",
             "legacy seen_jobs entries must be matched by URL during the key-rule transition",
         )
 
     def test_step4_presentation_mentions_url_deduplication(self):
         text = SCRAPER_SKILL.read_text(encoding="utf-8")
-        self.assertRegex(text, r"matched by URL or\s+company\+title")
+        self.assertRegex(text, r"совпадение по URL или по\s+компании\+названию")
 
 
 if __name__ == "__main__":

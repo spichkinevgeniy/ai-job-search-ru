@@ -475,6 +475,17 @@ class UtilityTests(unittest.TestCase):
         )
         self.assertEqual(normalize("Arla Foods A.M.B.A."), "arlafoods")
 
+    def test_normalize_strips_russian_legal_forms(self):
+        # ООО «Яндекс», ПАО Сбербанк и «Касперский, АО» должны совпадать с голым названием.
+        self.assertEqual(normalize("ООО «Яндекс»"), "яндекс")
+        self.assertEqual(normalize("ПАО Сбербанк"), "сбербанк")
+        self.assertEqual(normalize("АО «Т-Банк»"), "тбанк")
+        self.assertEqual(normalize("Касперский, АО"), "касперский")
+        self.assertEqual(normalize("ГК Астра"), "астра")
+        self.assertEqual(normalize("Ozon LLC"), "ozon")
+        # Форма отрезается только целым словом, а не внутри названия.
+        self.assertEqual(normalize("Аорта"), "аорта")
+
     def test_anglicize_replaces_danish_chars(self):
         self.assertEqual(anglicize("ørsted"), "orsted")
         self.assertEqual(anglicize("mærsk"), "maersk")

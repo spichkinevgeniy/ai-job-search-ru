@@ -2,72 +2,73 @@
 framework_version: 1.1.1
 ---
 
-# Candidate Profile
+# Профиль кандидата
 
-<!-- SETUP: This file is populated by running /setup -->
-<!-- After running /setup, all sections will be filled with your actual information -->
+<!-- SETUP: Этот файл заполняется командой /setup -->
+<!-- После /setup все разделы будут заполнены вашими реальными данными -->
 
-## Identity
-- **Name:** [YOUR_NAME]
-- **Location:** [YOUR_ADDRESS]
-- **Phone:** [YOUR_PHONE]
+## Личные данные
+- **Имя:** [YOUR_NAME]
+- **Город / адрес:** [YOUR_ADDRESS]
+- **Телефон:** [YOUR_PHONE]
 - **Email:** [YOUR_EMAIL]
-- **LinkedIn:** [YOUR_LINKEDIN_URL]
+- **LinkedIn (необязательно):** [YOUR_LINKEDIN_URL]
 - **GitHub:** [YOUR_GITHUB_URL]
-- **Status:** [YOUR_EMPLOYMENT_STATUS]
-- **Constraints:** [YOUR_COMMUTE_OR_LOCATION_CONSTRAINTS]
+- **Статус:** [YOUR_EMPLOYMENT_STATUS]
+- **Ограничения:** [YOUR_COMMUTE_OR_LOCATION_CONSTRAINTS]
 
-### Languages
-<!-- Every language you can work in professionally, with your honest level. Used by the
-Language Gate in 04-job-evaluation.md and by job-scraper/search-queries.md's query-language
-generation. Omit any language you don't actually work in - an undeclared language is treated as
-a hard no, not a gap to smooth over. -->
+### Языки
+<!-- Каждый язык, на котором вы можете профессионально работать, с честным уровнем. Используется
+Языковым фильтром (Language Gate) в 04-job-evaluation.md и генерацией языков поисковых запросов
+в job-scraper/search-queries.md. Русский обычно указывают как «Родной» или «Свободный», английский и
+другие — по шкале CEFR (A1–C2). Не указывайте язык, на котором на самом деле не работаете:
+незаявленный язык считается жёстким «нет», а не пробелом, который можно сгладить. -->
 
-| Language | Level | Notes |
+| Язык | Уровень | Примечание |
 |----------|-------|-------|
-| [LANGUAGE] | [LEVEL, e.g. "Native" / "C2" / "B1/B2 (conversational)"] | [optional] |
+| [LANGUAGE] | [LEVEL, например «Родной» / «C1» / «B1/B2 (разговорный)»] | [необязательно] |
 
-## Education
+## Образование
 
-| Degree | Period | Institution | Key Topics |
+| Степень / квалификация | Годы | Учебное заведение | Ключевые темы |
 |--------|--------|-------------|------------|
 | [DEGREE] | [YEARS] | [INSTITUTION] | [TOPICS] |
 
-## Professional Experience
+## Опыт работы
 
-### [JOB_TITLE] - [COMPANY] ([START] - [END])
+### [JOB_TITLE] — [COMPANY] ([START] - [END])
 [LOCATION]
 - [RESPONSIBILITY_OR_ACHIEVEMENT_1]
 - [RESPONSIBILITY_OR_ACHIEVEMENT_2]
 - [RESPONSIBILITY_OR_ACHIEVEMENT_3]
 
-<!-- Add more roles as needed -->
+<!-- Добавьте другие места работы по необходимости -->
 
-## Independent Projects
-<!-- Projects outside of employment: freelance, open source, personal -->
+## Собственные проекты
+<!-- Проекты вне основной работы: фриланс, open source, личные -->
 - **[PROJECT_NAME]**: [DESCRIPTION]
 
-## Technical Skills
+## Технические навыки
 
-### Programming & ML
+### Программирование и ML
 - **[LANGUAGE]** ([PROFICIENCY]): [FRAMEWORKS_AND_LIBRARIES]
 - [OTHER_SKILLS]
 
-### Domain Expertise
+### Предметная экспертиза
 - [DOMAIN_1]
 - [DOMAIN_2]
 
-### Software & Tools
+### Программы и инструменты
 - [TOOL_LIST]
 
-## Publications
-<!-- List peer-reviewed publications, if any -->
+## Публикации
+<!-- Рецензируемые публикации, если есть -->
 1. [AUTHOR_LIST] ([YEAR]). [TITLE]. [JOURNAL]. [DOI_LINK]
 
-## Awards
-- [AWARD] - [EVENT] ([YEAR])
+## Награды
+- [AWARD] — [EVENT] ([YEAR])
 
-## References
+## Рекомендации
 - [NAME], [TITLE], [COMPANY] ([EMAIL], [PHONE])
 
-More references available upon request.
+Другие рекомендации предоставлю по запросу.

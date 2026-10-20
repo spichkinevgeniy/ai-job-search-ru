@@ -86,7 +86,7 @@ class TestResetCoversEveryDocumentsSubfolder(unittest.TestCase):
         # Exercise the deletion contract, rather than requiring one particular
         # spelling of rm. Keep deriving the folder set from git so a newly
         # tracked document root still has to be handled by the real command.
-        section = self.text.split("### Documents reset", 1)[1]
+        section = self.text.split("### Сброс документов", 1)[1]
         script = re.search(r"```bash\n(.*?)```", section, re.S).group(1)
         with TemporaryDirectory() as directory:
             root = Path(directory)
@@ -117,7 +117,7 @@ def setup_step3_skill_files():
     repo-relative path. Non-skill targets (CLAUDE.md, cv/main_example.tex)
     are dropped: /reset profile's scope is skill files only.
     """
-    step3 = section(SETUP.read_text(encoding="utf-8"), "## Step 3:", "## Step 4:")
+    step3 = section(SETUP.read_text(encoding="utf-8"), "## Шаг 3:", "## Шаг 4:")
     files = set()
     for target in re.findall(r"^###\s+\d+\.\s+\w+\s+`([^`]+)`", step3, re.MULTILINE):
         if (REPO / target).exists():
@@ -142,7 +142,7 @@ class TestResetCoversEveryPersonalizedSkillFile(unittest.TestCase):
 
     def test_preview_lists_every_personalized_skill_file(self):
         preview = section(
-            self.text, "### If scope includes `profile`:", "### If scope includes `documents`:"
+            self.text, "### Если область включает `profile`:", "### Если область включает `documents`:"
         )
         missing = sorted(f for f in self.files if f not in preview)
         self.assertEqual(
@@ -154,7 +154,7 @@ class TestResetCoversEveryPersonalizedSkillFile(unittest.TestCase):
         )
 
     def test_execution_clears_every_personalized_skill_file(self):
-        execution = section(self.text, "### Profile reset", "### Documents reset")
+        execution = section(self.text, "### Сброс профиля", "### Сброс документов")
         missing = sorted(f for f in self.files if f not in execution)
         self.assertEqual(
             missing,
@@ -171,7 +171,7 @@ class TestResetCoversEveryPersonalizedSkillFile(unittest.TestCase):
         "NOT touched (they contain framework rules, not candidate data)" list,
         so merely searching reset.md for the filename would have found it.
         """
-        preserved = section(self.text, "The following files are NOT touched", "```")
+        preserved = section(self.text, "Эти файлы НЕ трогаются", "```")
         mislabeled = sorted(f for f in self.files if f in preserved)
         self.assertEqual(
             mislabeled,
@@ -186,7 +186,7 @@ SKILL_DIR = REPO / ".claude" / "skills" / "job-application-assistant"
 
 def skeleton_step(reset_text, filename):
     """(instruction sentence, fenced markdown) /reset uses to rewrite `filename` in Step 3."""
-    marker = f"**For `{filename}`**"
+    marker = f"**Для `{filename}`**"
     start = reset_text.index(marker)
     fence_open = reset_text.index("```markdown", start)
     fence_close = reset_text.index("```", fence_open + len("```markdown"))
@@ -302,15 +302,15 @@ class TestResetTargetsTheHeadingsTheShippedFilesHave(unittest.TestCase):
         # the `### Languages` heading and the table header row are derived from
         # the shipped file; the placeholder data row is deliberately not kept.
         shipped = (SKILL_DIR / "01-candidate-profile.md").read_text(encoding="utf-8")
-        start = shipped.index("### Languages")
+        start = shipped.index("### Языки")
         header_rows = [
             line for line in shipped[start:].splitlines()[1:]
             if line.startswith("|")
         ][:2]
         self.assertEqual(len(header_rows), 2, "the shipped Languages table must have a header and a separator row")
         block = skeleton_block(self.reset, "01-candidate-profile.md")
-        identity = block[block.index("## Identity"): block.index("## Education")]
-        self.assertIn("### Languages", identity, "the Languages table must sit under Identity, as shipped")
+        identity = block[block.index("## Личные данные"): block.index("## Образование")]
+        self.assertIn("### Языки", identity, "the Languages table must sit under Identity, as shipped")
         for row in header_rows:
             with self.subTest(row=row):
                 self.assertIn(row, identity)
@@ -320,11 +320,11 @@ class TestResetTargetsTheHeadingsTheShippedFilesHave(unittest.TestCase):
         # (reset.md anchor phrase, file, heading the replacement must re-emit)
         cases = (
             (
-                r"locate the section that begins with the line `([^`]+)`",
+                r"найди раздел, который начинается строкой `([^`]+)`",
                 "05-cv-templates.md",
             ),
             (
-                r"The entire `([^`]+)` section",
+                r"Весь раздел `([^`]+)`",
                 "07-interview-prep.md",
             ),
         )

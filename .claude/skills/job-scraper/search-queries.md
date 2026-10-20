@@ -1,90 +1,93 @@
-# Search Queries for Job Scraper
+# Поисковые запросы для поиска вакансий
 
-<!-- SETUP: Customize these queries based on your skills, target roles, and location -->
+<!-- SETUP: настрой эти запросы под свои навыки, целевые роли и город -->
 
-## Installed portal CLIs (primary for `/scrape`)
+## Установленные CLI порталов (основной путь для `/scrape`)
 
-`/scrape` discovers every portal skill under `.agents/skills/*/SKILL.md` and runs its CLI first. Shipped country-agnostic CLIs include `linkedin-search` and `freehire-search`; Danish demos and any skill you add with `/add-portal` are included the same way. You do **not** need a matching `site:` line below for those CLIs to run.
+`/scrape` находит каждый модуль портала в `.agents/skills/*/SKILL.md` и сначала запускает его CLI. В комплекте идут `habr-search` (Хабр Карьера, IT-вакансии РФ/СНГ) и `freehire-search` (агрегатор freehire.me, есть регион `cis`); любой модуль, добавленный через `/add-portal`, подключается так же. Чтобы эти CLI работали, строка `site:` ниже для них **не нужна**.
 
-The `site:` query templates in this file are the **WebSearch fallback** — for portals without a CLI, company career pages, or when a CLI fails.
+Шаблоны запросов `site:` в этом файле — это **запасной путь через WebSearch**: для порталов без CLI, карьерных страниц компаний или когда CLI упал. Модуля поиска по hh.ru нет (публичный API поиска вакансий закрыт), поэтому hh.ru покрывается только этим путём; SuperJob и Getmatch — кандидаты на следующие модули, пока тоже через `site:`.
 
-**Language scope:** write every query category in every language listed in your CLAUDE.md Languages table (typically 1-2, sometimes more). A posting requiring a language you have *not* declared, as a job condition, is excluded before scoring; a posting requiring a *higher level* than you declared in a language you *do* work in is flagged for your own judgment, not excluded — see `04-job-evaluation.md`'s Language Gate, the single source of truth for this rule. Translate each category's keywords rather than machine-translating word-for-word (e.g. "Frontend Developer" -> "Desarrollador Frontend", not a literal word-for-word translation) if you work in more than one language.
+**Языковой охват:** пиши каждую категорию запросов на каждом языке из таблицы Languages в CLAUDE.md (обычно 1–2, иногда больше). Вакансия, которая требует язык, *не* указанный в профиле, как условие работы, исключается до оценки; вакансия, которая требует *более высокий уровень*, чем ты указал для языка, на котором ты *работаешь*, помечается для твоего собственного решения, а не исключается — см. Языковой фильтр (Language Gate) в `04-job-evaluation.md`, единственный источник истины для этого правила. Если работаешь на нескольких языках, переводи ключевые слова каждой категории по смыслу, а не дословно машинным переводом (например, "Frontend Developer" -> «Frontend-разработчик», а не буквальный пословный перевод).
 
-## Search Sites
+## Сайты для поиска
 
-Primary (your market's job boards - scaffold one with `/add-portal`):
-- **[YOUR_JOB_BOARD]** - your market's largest general job board
-- **linkedin.com/jobs** - LinkedIn job listings (filter: [YOUR_COUNTRY] / [YOUR_CITY]); also covered by `linkedin-search` CLI
-- **[YOUR_INDUSTRY_JOB_BOARD]** - a niche/industry board for your field (optional)
-- **[YOUR_ADDITIONAL_JOB_BOARD]** - another major board for your market (optional)
+Основные (сайты вакансий твоего рынка — каркас модуля делается через `/add-portal`):
+- **[YOUR_JOB_BOARD]** — крупнейший общий сайт вакансий твоего рынка (в РФ обычно hh.ru)
+- **career.habr.com** — Хабр Карьера, IT-вакансии (фильтр: [YOUR_COUNTRY] / [YOUR_CITY]); также покрывается CLI `habr-search`
+- **[YOUR_INDUSTRY_JOB_BOARD]** — нишевый/отраслевой сайт вакансий в твоей сфере (необязательно)
+- **[YOUR_ADDITIONAL_JOB_BOARD]** — ещё один крупный сайт вакансий твоего рынка, например superjob.ru или getmatch.ru (необязательно)
 
-Secondary (company career pages via Google):
-- Direct Google searches with `site:` filters for known target companies
+Дополнительные (карьерные страницы компаний через поиск):
+- Прямые поисковые запросы с фильтрами `site:` по известным целевым компаниям (Яндекс, Сбер, Т-Банк, VK, Ozon, Авито, Касперский и т. п.)
 
-## Query Categories
+## Категории запросов
 
-Queries are grouped by priority. Write **each category in every language from your Languages table** (see Language scope above). Combine each query with your location terms (e.g. your city, region, or metro area) where the site supports it.
+Запросы сгруппированы по приоритету. Пиши **каждую категорию на каждом языке из таблицы Languages** (см. «Языковой охват» выше). Дополняй каждый запрос терминами локации (город, регион, агломерация), если сайт это поддерживает.
 
-**Organize by function, not job title.** The same underlying work carries different titles across companies and markets (a "Data Scientist" role at one employer may be posted as "Insights Analyst" or "Data Consultant" at another). Name each priority category after the function it covers, and list several plausible job titles as query variants within that category rather than betting an entire priority tier on one exact title string.
+**Группируй по функции, а не по названию должности.** Одна и та же работа называется по-разному в разных компаниях и на разных рынках (роль «Data Scientist» у одного работодателя у другого может называться «Аналитик данных» или «Консультант по данным»). Называй каждую приоритетную категорию по функции, которую она покрывает, и указывай внутри категории несколько правдоподобных названий должностей как варианты запросов, а не ставь целый уровень приоритета на одно точное название.
 
-### Priority 1: [YOUR_PRIMARY_ROLE_TYPE]
+### Приоритет 1: [YOUR_PRIMARY_ROLE_TYPE]
 
-These match your strongest and most desired career direction.
+Совпадают с самым сильным и желанным направлением карьеры.
 
 ```
 site:[YOUR_JOB_BOARD] "[YOUR_PRIMARY_JOB_TITLE_1]" [YOUR_CITY]
 site:[YOUR_JOB_BOARD] "[YOUR_PRIMARY_JOB_TITLE_2]" [YOUR_CITY]
 site:[YOUR_JOB_BOARD] "[YOUR_KEY_SKILL]" [YOUR_CITY]
-site:linkedin.com/jobs "[YOUR_PRIMARY_JOB_TITLE_1]" [YOUR_COUNTRY]
+site:hh.ru/vacancy "[YOUR_PRIMARY_JOB_TITLE_1]" [YOUR_CITY]
+site:career.habr.com "[YOUR_PRIMARY_JOB_TITLE_1]" [YOUR_COUNTRY]
 ```
 
-### Priority 2: [YOUR_DOMAIN_EXPERTISE]
+### Приоритет 2: [YOUR_DOMAIN_EXPERTISE]
 
-These match your domain expertise.
+Совпадают с предметной экспертизой.
 
 ```
 site:[YOUR_JOB_BOARD] [YOUR_DOMAIN_KEYWORD_1] [YOUR_CITY] OR [YOUR_REGION]
 site:[YOUR_JOB_BOARD] [YOUR_DOMAIN_KEYWORD_2] [YOUR_COUNTRY]
-site:linkedin.com/jobs [YOUR_DOMAIN_KEYWORD_1] [YOUR_CITY] [YOUR_COUNTRY]
+site:superjob.ru [YOUR_DOMAIN_KEYWORD_1] [YOUR_CITY] [YOUR_COUNTRY]
 ```
 
-### Priority 3: [YOUR_ADJACENT_ROLE_TYPE]
+### Приоритет 3: [YOUR_ADJACENT_ROLE_TYPE]
 
-Adjacent roles you could pivot into.
+Смежные роли, в которые можно перейти.
 
 ```
 site:[YOUR_JOB_BOARD] "[YOUR_ADJACENT_TITLE_1]" [YOUR_KEY_SKILL] [YOUR_CITY]
 site:[YOUR_JOB_BOARD] "[YOUR_ADJACENT_TITLE_2]" [YOUR_KEY_SKILL] [YOUR_CITY]
 ```
 
-### Priority 4: Broader Technical / Consulting
+### Приоритет 4: Шире — технические роли / консалтинг
 
-Wider net for general technical roles.
+Широкая сеть для общих технических ролей.
 
 ```
-site:[YOUR_JOB_BOARD] [YOUR_KEY_SKILL] developer [YOUR_CITY]
-site:linkedin.com/jobs "[YOUR_KEY_SKILL] developer" [YOUR_CITY]
-site:[YOUR_JOB_BOARD] "technical consultant" [YOUR_DOMAIN] [YOUR_CITY]
+site:[YOUR_JOB_BOARD] [YOUR_KEY_SKILL] разработчик [YOUR_CITY]
+site:getmatch.ru "[YOUR_KEY_SKILL] developer" [YOUR_CITY]
+site:[YOUR_JOB_BOARD] "технический консультант" [YOUR_DOMAIN] [YOUR_CITY]
 ```
 
-## Location Filter
+Пример с реальными значениями: `site:career.habr.com "Python-разработчик" Москва`, `site:hh.ru/vacancy "аналитик данных" Санкт-Петербург`.
 
-When evaluating results, verify the job location is within reasonable commute distance from your home. Define acceptable areas:
-- [YOUR_CITY] and surrounding areas
+## Фильтр по локации
+
+Оценивая результаты, проверяй, что место работы в разумной доступности от дома. Определи допустимые зоны:
+- [YOUR_CITY] и окрестности (например, Москва и ближнее Подмосковье)
 - [ACCEPTABLE_AREA_1]
 - [ACCEPTABLE_AREA_2]
-- [BORDERLINE_AREA] (borderline - ~X min by transit)
-- [TOO_FAR_AREA] (too far)
+- [BORDERLINE_AREA] (на грани — ~X мин на транспорте)
+- [TOO_FAR_AREA] (слишком далеко)
 
-## Language Filter
+## Языковой фильтр
 
-Your working languages and levels are in CLAUDE.md's Languages table. When filtering scraped results, apply `04-job-evaluation.md`'s Language Gate: a posting requiring a language you haven't declared at all is excluded; a posting requiring a higher level than you declared in a language you do work in is not excluded, flag it clearly instead (see `job-scraper/SKILL.md`'s Step 3 "Quick Fit Assessment" for how the flag surfaces in `/scrape` output). Postings simply *written* in a language you don't work in, that don't require it on the job, are fine.
+Рабочие языки и уровни указаны в таблице Languages в CLAUDE.md. Фильтруя найденные результаты, применяй Языковой фильтр (Language Gate) из `04-job-evaluation.md`: вакансия, которая требует язык, вообще не указанный в профиле, исключается; вакансия, которая требует более высокий уровень, чем указан для языка, на котором ты работаешь, не исключается, а чётко помечается (как флаг выводится в `/scrape`, см. Шаг 3 «Быстрая оценка соответствия» в `job-scraper/SKILL.md`). Вакансии, которые просто *написаны* на языке, на котором ты не работаешь, но не требуют его в работе, — в порядке.
 
-## Date Filter
+## Фильтр по дате
 
-Only include jobs posted within the last 14 days, or with an application deadline that has not yet passed. If a posting date cannot be determined, include it but flag as "date unknown".
+Включай только вакансии, опубликованные за последние 14 дней или со сроком подачи отклика, который ещё не прошёл. Если дату публикации определить нельзя, включи вакансию, но пометь «дата неизвестна».
 
-## Adapting Queries
+## Адаптация запросов
 
-If the user specifies a focus area, select queries from the matching category and also generate 2-3 custom queries for that focus. For example:
-- "/scrape [focus_area]" -> relevant category queries + custom focus-specific queries
+Если пользователь указал направление, выбери запросы из соответствующей категории и дополнительно составь 2–3 собственных запроса под это направление. Например:
+- "/scrape [focus_area]" -> запросы подходящей категории + собственные запросы под направление

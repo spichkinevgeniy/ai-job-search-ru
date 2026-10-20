@@ -81,7 +81,7 @@ class TestSpecialCharacterGuidance(unittest.TestCase):
     """F31: both template guides must document the LaTeX escapes."""
 
     def assert_escapes_documented(self, path):
-        body = section(path.read_text(encoding="utf-8"), "LaTeX Special Characters")
+        body = section(path.read_text(encoding="utf-8"), "Спецсимволы LaTeX")
         self.assertIsNotNone(
             body, f"{path.name} has no 'LaTeX Special Characters' section"
         )
@@ -100,12 +100,13 @@ class TestSpecialCharacterGuidance(unittest.TestCase):
 
     def test_cv_guide_warns_that_percent_truncates_silently(self):
         body = section(
-            CV_TEMPLATES.read_text(encoding="utf-8"), "LaTeX Special Characters"
+            CV_TEMPLATES.read_text(encoding="utf-8"), "Спецсимволы LaTeX"
         )
         self.assertIsNotNone(body)
         self.assertRegex(
             body,
-            re.compile(r"silent", re.IGNORECASE),
+            # Перевод: «ломается молча» / «молча съедается»
+            re.compile(r"молча", re.IGNORECASE),
             "the % failure mode must be called out as silent - it is the "
             "reason this section exists (a clean compile with the rest of "
             "the bullet gone)",

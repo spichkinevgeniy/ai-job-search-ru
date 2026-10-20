@@ -47,7 +47,7 @@ def _substeps(step_body: str) -> dict[str, str]:
 
 class SetupStep3ContactBlocks(unittest.TestCase):
     def setUp(self):
-        self.step3 = _sections(COMMAND.read_text(encoding="utf-8"))["Step 3: Generate Profile Files"]
+        self.step3 = _sections(COMMAND.read_text(encoding="utf-8"))["Шаг 3: Сгенерировать файлы профиля"]
         self.substeps = _substeps(self.step3)
 
     def _substep_for(self, filename: str) -> str:
@@ -57,19 +57,19 @@ class SetupStep3ContactBlocks(unittest.TestCase):
 
     def test_cv_templates_substep_fills_the_contact_block(self):
         body = self._substep_for("05-cv-templates.md")
-        self.assertIn("contact", body.lower())
+        self.assertIn("контакт", body.lower())
         for token in ("[FIRST_NAME]", "[YOUR_EMAIL]", "[YOUR_PHONE]"):
             self.assertIn(token, body, f"the 05 substep must name {token} as something to replace")
 
     def test_cover_letter_templates_get_their_own_substep(self):
         body = self._substep_for("06-cover-letter-templates.md")
-        self.assertIn("signature", body.lower())
+        self.assertIn("подпись", body.lower())
         for token in ("[YOUR_NAME]", "[YOUR_EMAIL]", "[YOUR_PHONE]", "[YOUR_LINKEDIN_URL]"):
             self.assertIn(token, body, f"the 06 substep must name {token} as something to replace")
 
     def test_completion_summary_lists_the_cover_letter_templates(self):
-        step4 = _sections(COMMAND.read_text(encoding="utf-8"))["Step 4: Confirm & Next Steps"]
-        summary = step4.split("**Privacy note:**")[0]
+        step4 = _sections(COMMAND.read_text(encoding="utf-8"))["Шаг 4: Подтверждение и следующие шаги"]
+        summary = step4.split("**О приватности:**")[0]
         self.assertIn("06-cover-letter-templates.md", summary)
 
 
@@ -110,7 +110,8 @@ class SetupPathAWritesIntoSectionsTheShippedFilesHave(unittest.TestCase):
             line for line in text.splitlines()
             if line.startswith("- **`02-behavioral-profile.md`:**")
         )
-        quoted = re.findall(r'"([^"]+)"', bullet)
+        # В переводе названия разделов взяты в «ёлочки»
+        quoted = re.findall(r'«([^»]+)»', bullet)
         self.assertTrue(quoted, "the 02-behavioral-profile bullet must name its target sections")
         headings = {
             line[3:].strip()
@@ -130,19 +131,19 @@ class SetupPathAProjectsIngestion(unittest.TestCase):
         self.sections = _sections(self.text)
 
     def test_step0_scan_includes_projects(self):
-        step0 = self.sections["Step 0: Welcome & Choose Path"]
+        step0 = self.sections["Шаг 0: Приветствие и выбор пути"]
         self.assertIn("projects/", step0)
 
     def test_step_a1_inventory_includes_projects(self):
         self.assertIn("**projects/**:", self.text)
 
     def test_step_a3_parsing_includes_projects_spec(self):
-        self.assertIn("`projects/` documents:", self.text)
-        self.assertIn("measurable outcomes", self.text)
+        self.assertIn("**Документы из `projects/`:**", self.text)
+        self.assertIn("измеримые результаты", self.text)
 
     def test_step_a5_and_a6_map_to_independent_projects(self):
-        self.assertIn("## Independent Projects", self.text)
-        self.assertIn("New independent project:", self.text)
+        self.assertIn("## Собственные проекты", self.text)
+        self.assertIn("Новый собственный проект:", self.text)
 
 
 if __name__ == "__main__":

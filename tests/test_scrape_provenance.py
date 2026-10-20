@@ -35,7 +35,7 @@ class ScrapeProvenanceSpec(unittest.TestCase):
         cls.steps = _steps(cls.text)
 
     def test_schema_block_carries_source_field(self):
-        step4 = self.steps.get("Step 4: Deduplicate & Store", "")
+        step4 = self.steps.get("Шаг 4: Дедупликация и сохранение", "")
         self.assertIn(
             '"source": "cli/websearch"',
             step4,
@@ -43,36 +43,36 @@ class ScrapeProvenanceSpec(unittest.TestCase):
         )
 
     def test_source_field_is_additive_and_never_backfilled(self):
-        step4 = self.steps.get("Step 4: Deduplicate & Store", "")
+        step4 = self.steps.get("Шаг 4: Дедупликация и сохранение", "")
         self.assertIn(
-            "`cli` for Step 1b portal-CLI output, `websearch` for the Step 1c fallback",
+            "`cli` — вывод CLI портала из Шага 1b, `websearch` — запасной путь из Шага 1c",
             step4,
             "Step 4 must define which mechanism each source value names",
         )
         self.assertIn(
-            "the mechanism was not recorded",
+            "механизм не был записан",
             step4,
             "Step 4 must forbid back-filling source on entries that predate the field",
         )
 
     def test_fallback_results_are_tagged_at_the_source(self):
-        step1 = self.steps.get("Step 1: Search", "")
-        fallback = step1.partition("#### 1c. WebSearch fallback")[2]
+        step1 = self.steps.get("Шаг 1: Поиск", "")
+        fallback = step1.partition("#### 1c. Запасной поиск через WebSearch")[2]
         self.assertIn(
-            "Step 4 persists this as the entry's `source`",
+            "Шаг 4 сохраняет это в поле `source` записи",
             fallback,
             "Step 1c must tag fallback results so Step 4 has a provenance value to store",
         )
 
     def test_step5_summary_names_fallback_portals(self):
-        step5 = self.steps.get("Step 5: Present Results", "")
+        step5 = self.steps.get("Шаг 5: Показ результатов", "")
         self.assertIn(
             "fallback (websearch):",
             step5,
             "Step 5 must surface which portals ran on the WebSearch fallback this run",
         )
         self.assertIn(
-            "omit the line when every portal ran its CLI",
+            "опусти строку, если все порталы отработали через CLI",
             " ".join(step5.split()),
             "the fallback line must be omitted when every portal ran its CLI, not printed empty",
         )
@@ -90,17 +90,17 @@ class TestRecencyFallback(unittest.TestCase):
     def test_step1b_names_a_client_side_fallback_for_flagless_portals(self):
         text = SKILL.read_text(encoding="utf-8")
         self.assertIn(
-            "no recency flag",
+            "без серверного фильтра по давности",
             text,
             "Step 1b.3 must say what to do when a portal offers no recency flag",
         )
         self.assertIn(
-            "filter client-side",
+            "фильтруй на стороне клиента",
             text,
             "the fallback is filtering results by their `date` field after the call",
         )
         self.assertIn(
-            "a sort is not a filter",
+            "это сортировка, а не фильтр",
             text,
             "the instruction must stop presenting --order (a sort) as interchangeable with a filter",
         )

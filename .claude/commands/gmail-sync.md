@@ -1,194 +1,197 @@
-# /gmail-sync - Sync Application Status from Gmail
+# /gmail-sync - Синхронизация статусов откликов из Gmail
 
-You are scanning the user's Gmail for status signals on tracked job applications (interview invites, assessment links, offers, rejections) and, once approved, writing the detected changes into `job_search_tracker.csv` and `documents/applications/<company>_<role>/outcome.md` - the same two places `/outcome` writes to, in the same schema.
+Ты просматриваешь Gmail пользователя в поисках сигналов о статусе отслеживаемых откликов (приглашения на собеседование, ссылки на тестовые задания, офферы, отказы) и после одобрения записываешь найденные изменения в `job_search_tracker.csv` и `documents/applications/<company>_<role>/outcome.md` - в те же два места, куда пишет `/outcome`, в той же схеме.
 
-Unlike `/outcome` (which asks the user what happened), `/gmail-sync` classifies real emails on its own - but it never writes on its own. Every classified change is presented as a batch **before** anything touches the tracker or `outcome.md`, and only proceeds once the user approves it (approving the whole batch at once is fine; writing first and flagging it after is not). Because a wrong write silently corrupts application history that `/setup` later calibrates from, every proposed change must cite its source email and every uncertain case must be surfaced instead of guessed. Never treat this command's job as "notice something in an inbox" - it is "propose a correct, sourced line for a permanent record, and write it only once the user says yes."
+В отличие от `/outcome` (который спрашивает пользователя, что произошло), `/gmail-sync` сам классифицирует настоящие письма - но сам никогда ничего не записывает. Каждое классифицированное изменение показывается пачкой **до того**, как что-то коснётся трекера или `outcome.md`, и применяется только после одобрения пользователя (одобрить всю пачку разом - нормально; записать сначала, а сообщить потом - нет). Ошибочная запись молча портит историю откликов, по которой потом калибруется `/setup`, поэтому каждое предлагаемое изменение должно ссылаться на письмо-источник, а каждый неочевидный случай - выноситься на суд пользователя, а не угадываться. Никогда не считай задачей этой команды «заметить что-то в почте» - её задача «предложить правильную, подкреплённую источником строку для постоянной записи и записать её, только когда пользователь скажет да».
 
-Follow these steps **in order**.
-
----
-
-## Step 0: Prerequisites
-
-Confirm the Gmail MCP tools (`mcp__claude_ai_Gmail__*`) are available. If not, tell the user to connect the Gmail integration (claude.ai Settings → Connectors → Gmail) and stop - do not attempt this via Bash, IMAP, or any other channel.
+Общайся с пользователем по-русски. Выполняй шаги **строго по порядку**.
 
 ---
 
-## Step 1: Parse Input
+## Шаг 0: Предварительные условия
 
-`$ARGUMENTS` may contain:
-
-- Nothing → default lookback (see Step 3)
-- A company name, e.g. `/gmail-sync acme` → scope the search to that one tracked application
-- `since <YYYY-MM-DD>` → override the lookback start date for this run only (does not change the persisted state file)
+Убедись, что доступны инструменты Gmail MCP (`mcp__claude_ai_Gmail__*`). Если нет, скажи пользователю подключить интеграцию Gmail (claude.ai Settings → Connectors → Gmail) и остановись - не пытайся сделать это через Bash, IMAP или любой другой канал.
 
 ---
 
-## Step 2: Load State
+## Шаг 1: Разбор ввода
 
-1. Read `job_search_tracker.csv`. If it does not exist, tell the user there is nothing to sync against yet (suggest `/outcome` or `/apply` first) and stop. Do not create it here - `/gmail-sync` never originates new applications, only updates existing ones.
-2. Read `gmail_sync/state.json` (create if missing: `{"last_sync": null, "processed_message_ids": []}`).
-3. Build the set of **open applications**: tracker rows whose `status` is not **Final** (per the **Tracker status vocabulary** in `/outcome`). For each, derive its archive folder `documents/applications/<company>_<role>/` by the **Subfolder naming** rule in `documents/README.md` and check whether `outcome.md` exists there. Reuse this exact derived path for any write in Step 7a.
+`$ARGUMENTS` может содержать:
 
-   **`drafted` rows stay in this set, and are the reason it is worth searching.** `/apply` writes them but never submits; the user submits by hand and may not think to run `/outcome`. A reply arriving against a row still marked `drafted` is exactly that case, and the row holds the company name the search needs.
-4. If `$ARGUMENTS` named a company, filter this set to the matching row(s) (case-insensitive). No match → tell the user and stop, do not guess.
-
----
-
-## Step 3: Build the Search Query
-
-Lookback window: `since <date>` argument if given, else `state.last_sync` if set, else `newer_than:30d`.
-
-1. Call `list_labels` and look for a user label whose name suggests job-search email (e.g. contains "job", "application", "career" case-insensitively). Note its `id` if found.
-2. Normalize each open application's company name for matching later (lowercase; strip `inc`, `inc.`, `llc`, `ltd`, `a/s`, `corp`, `corporation`, `group`; strip punctuation; collapse whitespace).
-3. Build a Gmail query combining (with `OR` groups via `{}`):
-   - `label:<id>` if a job-search label was found
-   - A quoted-name OR-group of the open applications' company names, e.g. `{"Acme Corp" "BigCo"}`
-   - A sender-domain OR-group of common ATS platforms: `{from:greenhouse.io from:lever.co from:myworkday.com from:ashbyhq.com from:smartrecruiters.com from:icims.com from:bamboohr.com}`
-   - The lookback bound, e.g. `newer_than:30d` or `after:2026/06/15`
-   - `-in:sent -in:drafts` (status signals come from what employers send you, not what you sent them; the negative operators keep **archived** mail and label-filtered mail in scope - restricting to the Inbox instead would silently drop both, including exactly the mail matched by the job-search label from step 1, since the standard filter that applies such a label also archives it)
-
-Example: `newer_than:30d -in:sent -in:drafts ({"Acme Corp" "BigCo"} OR {from:greenhouse.io from:lever.co from:myworkday.com from:ashbyhq.com})`
-
-4. Call `search_threads` with `view: THREAD_VIEW_MINIMAL`, `pageSize: 50`, paginating via `pageToken` until exhausted or results are clearly outside the relevant window.
+- Ничего → окно поиска по умолчанию (см. Шаг 3)
+- Название компании, например `/gmail-sync acme` → ограничь поиск этим одним отслеживаемым откликом
+- `since <YYYY-MM-DD>` → переопредели начало окна поиска только для этого прогона (файл состояния не меняется)
 
 ---
 
-## Step 4: Filter to New Messages
+## Шаг 2: Загрузи состояние
 
-For each returned thread, inspect its messages' IDs against `state.processed_message_ids`. Skip a thread entirely if every message in it is already processed. For threads with unprocessed messages, call `get_thread` with `messageFormat: FULL_CONTENT` to get full bodies - **classification in Step 5 must never be based on the snippet/subject alone**, since snippets truncate the exact phrase that distinguishes "we'd like to schedule a call" from "thanks for applying."
+1. Прочитай `job_search_tracker.csv`. Если его нет, скажи пользователю, что синхронизировать пока не с чем (предложи сначала `/outcome` или `/apply`), и остановись. Не создавай его здесь - `/gmail-sync` никогда не заводит новые отклики, только обновляет существующие.
+2. Прочитай `gmail_sync/state.json` (если нет - создай: `{"last_sync": null, "processed_message_ids": []}`).
+3. Собери множество **открытых откликов**: строки трекера, чей `status` не **финальный** (по **Словарю статусов трекера** в `/outcome`). Для каждой выведи папку архива `documents/applications/<company>_<role>/` по правилу **Subfolder naming** в `documents/README.md` и проверь, есть ли там `outcome.md`. Используй ровно этот выведенный путь для любой записи в Шаге 7a.
+
+   **Строки `drafted` остаются в этом множестве, и именно ради них поиск имеет смысл.** `/apply` их записывает, но никогда не отправляет; пользователь отправляет руками и может не вспомнить про `/outcome`. Ответ, пришедший по строке, которая всё ещё `drafted`, - ровно этот случай, а в строке есть название компании, нужное для поиска.
+4. Если в `$ARGUMENTS` названа компания, отфильтруй множество до совпадающих строк (без учёта регистра). Нет совпадения → скажи пользователю и остановись, не угадывай.
 
 ---
 
-## Step 5: Classify Each Unprocessed Message
+## Шаг 3: Собери поисковый запрос
 
-For each new message, first try to match it to one open application: compare the normalized sender domain / display name / subject / body against the normalized company names from Step 3. No confident match (company genuinely absent, or ambiguous between two tracked companies) → do not propose a write; record it in the Step 6 summary as "unmatched" and move to the next message.
+Окно поиска: аргумент `since <date>`, если задан, иначе `state.last_sync`, если задан, иначе `newer_than:30d`.
 
-For a matched message, classify by content (require the signal phrase in the subject or the first few lines - a company name appearing only deep in a forwarded thread or newsletter footer is not a signal):
+1. Вызови `list_labels` и поищи пользовательский ярлык, чьё имя похоже на поиск работы (например, содержит без учёта регистра «job», «application», «career», «работа», «вакансии», «отклики»). Если нашёлся, запомни его `id`.
+2. Нормализуй название компании каждого открытого отклика для последующего сопоставления (нижний регистр; убери `inc`, `inc.`, `llc`, `ltd`, `a/s`, `corp`, `corporation`, `group`, а также российские юр. формы `ооо`, `ао`, `пао`, `зао`, `оао`, `ип`; убери пунктуацию и кавычки-ёлочки; схлопни пробелы).
+3. Собери запрос Gmail, объединив (OR-группы через `{}`):
+   - `label:<id>`, если ярлык поиска работы нашёлся
+   - OR-группу названий компаний открытых откликов в кавычках, например `{"Яндекс" "Ozon"}`
+   - OR-группу доменов отправителей - распространённых ATS (систем автоматического отбора резюме) и российских сайтов вакансий: `{from:greenhouse.io from:lever.co from:myworkday.com from:ashbyhq.com from:smartrecruiters.com from:icims.com from:bamboohr.com from:hh.ru from:career.habr.com from:superjob.ru}`
+   - Ограничение окна, например `newer_than:30d` или `after:2026/06/15`
+   - `-in:sent -in:drafts` (сигналы о статусе приходят в письмах от работодателя, а не в том, что отправил ты; отрицательные операторы оставляют в выдаче **архивные** письма и письма под ярлыками - если ограничиться «Входящими», обе группы молча выпадут, включая как раз письма с ярлыком поиска работы из пункта 1, потому что стандартный фильтр, ставящий такой ярлык, заодно и архивирует письмо)
 
-| Signal | Example phrasing | Tracker `status` | `outcome.md` action |
+Пример: `newer_than:30d -in:sent -in:drafts ({"Яндекс" "Ozon"} OR {from:hh.ru from:career.habr.com from:superjob.ru from:greenhouse.io from:lever.co})`
+
+4. Вызови `search_threads` с `view: THREAD_VIEW_MINIMAL`, `pageSize: 50`, листая через `pageToken`, пока результаты не кончатся или явно не выйдут за нужное окно.
+
+---
+
+## Шаг 4: Оставь только новые письма
+
+Для каждой найденной цепочки сверь ID её писем с `state.processed_message_ids`. Пропусти цепочку целиком, если все письма в ней уже обработаны. Для цепочек с необработанными письмами вызови `get_thread` с `messageFormat: FULL_CONTENT`, чтобы получить полные тексты - **классификация в Шаге 5 никогда не должна опираться только на сниппет/тему**: сниппет обрезает как раз ту фразу, которая отличает «давайте созвонимся» от «спасибо за отклик».
+
+---
+
+## Шаг 5: Классифицируй каждое необработанное письмо
+
+Для каждого нового письма сначала попробуй сопоставить его с одним открытым откликом: сравни нормализованные домен отправителя / отображаемое имя / тему / текст с нормализованными названиями компаний из Шага 3. Уверенного совпадения нет (компании действительно нет или письмо подходит к двум отслеживаемым компаниям) → не предлагай запись; занеси письмо в сводку Шага 6 как «несопоставленное» и переходи к следующему.
+
+Письма с агрегаторов (`hh.ru`, `career.habr.com`, `superjob.ru`) приходят от имени площадки, а не работодателя: компанию в них ищи в теме и первых строках текста («Компания … пригласила вас…», «Ответ на ваш отклик в …»). Если компанию так не определить уверенно - это «несопоставленное». Рассылки с подборками новых вакансий с этих площадок - не сигнал о статусе, а шум.
+
+Сопоставленное письмо классифицируй по содержанию (фраза-сигнал должна быть в теме или первых строках - название компании, которое встречается только глубоко в пересланной цепочке или в подвале рассылки, сигналом не является). Письма бывают на русском и на английском - ищи сигнальные фразы на обоих языках:
+
+| Сигнал | Примеры формулировок | `status` в трекере | Действие с `outcome.md` |
 |---|---|---|---|
-| Application ack | "we've received your application" | `drafted` -> `applied`, otherwise *(no change)* | On a `drafted` row this is the one email that proves the user submitted by hand, and it arrives within a day of them doing so - propose the move with `date` set to the email's date. On any other status it is noise. |
-| OA / assessment | "online assessment", "coding challenge", "complete your assessment", HackerRank/Codility links | `interview` | Tick nearest matching stage checkbox (or add a Notes line if no checkbox fits - assessments aren't always a listed stage) |
-| Interview invite/scheduled | "schedule a call", "phone screen", "technical interview", "next round", "onsite", "final round" | `interview` | Tick the matching stage checkbox with the email's date |
-| Offer extended | "pleased to offer", "extend an offer", "offer letter" | `offer` | Tick "Offer received" checkbox. **Never propose `hired` or `offer_declined` from an email** - accepting or declining is the user's decision, not something to infer. Flag prominently in the Step 6 summary as needing the user's decision, separate from the plain approve/skip table. |
-| Rejection | "moving forward with other candidates", "not selected", "unable to proceed", "decided not to continue" | `rejected` | Set `Status: rejected`, `Date resolved:` to the email's date |
+| Подтверждение отклика | "we've received your application", «ваш отклик получен», «спасибо за отклик», «резюме поступило» | `drafted` -> `applied`, иначе *(без изменений)* | Для строки `drafted` это единственное письмо, доказывающее, что пользователь отправил отклик руками, и приходит оно в течение суток после этого - предложи перевод с `date`, равной дате письма. Для любого другого статуса это шум. |
+| Тестовое задание / онлайн-тест | "online assessment", "coding challenge", "complete your assessment", «тестовое задание», «выполните задание», «онлайн-тест», ссылки HackerRank/Codility/Яндекс Контест | `interview` | Отметь ближайший подходящий чекбокс этапа (или добавь строку в Notes, если ни один не подходит - тестовое не всегда отдельный этап) |
+| Приглашение на собеседование / назначено | "schedule a call", "phone screen", "technical interview", "next round", "onsite", "final round", «приглашение на собеседование», «приглашаем на интервью», «созвонимся», «техническое собеседование», «следующий этап», «финальное интервью» | `interview` | Отметь подходящий чекбокс этапа с датой письма |
+| Оффер | "pleased to offer", "extend an offer", "offer letter", «оффер», «предложение о работе», «готовы сделать вам предложение» | `offer` | Отметь чекбокс "Offer received". **Никогда не предлагай `hired` или `offer_declined` по письму** - принять или отклонить оффер решает пользователь, это нельзя выводить. Вынеси заметно в сводке Шага 6 как требующее решения пользователя, отдельно от обычной таблицы «одобрить/пропустить». |
+| Отказ | "moving forward with other candidates", "not selected", "unable to proceed", "decided not to continue", «отказ», «к сожалению, мы не готовы», «выбрали другого кандидата», «не можем пригласить вас», «ваша кандидатура не подходит» | `rejected` | Поставь `Status: rejected`, `Date resolved:` - дата письма |
 
-**Conflict rule:** if the classified signal contradicts the application's current final-ness (e.g. a "moving forward" email arrives for a company whose tracker row briefly shows a `rejected`-adjacent recent write already, or a rejection arrives after an offer was already proposed this run) - do not propose overwriting it. Record it as a conflict in Step 6 for manual `/outcome` resolution instead.
+**Правило конфликта:** если классифицированный сигнал противоречит текущей финальности отклика (например, письмо «переходим к следующему этапу» приходит по компании, у которой в трекере уже стоит недавняя запись вроде `rejected`, или отказ приходит после того, как в этом же прогоне уже предложен оффер) - не предлагай перезапись. Занеси это как конфликт в Шаг 6 для ручного разбора через `/outcome`.
 
 ---
 
-## Step 6: Present Proposed Updates
+## Шаг 6: Покажи предлагаемые обновления
 
-**Nothing has been written yet.** Present every classified change from Step 5 as a single batch, so the user can review the full picture before anything touches the tracker or `outcome.md`:
+**Пока ничего не записано.** Покажи все классифицированные изменения из Шага 5 одной пачкой, чтобы пользователь увидел всю картину до того, как что-то коснётся трекера или `outcome.md`:
 
 ```
-## Gmail Sync - Proposed Updates - YYYY-MM-DD
+## Gmail Sync - Предлагаемые обновления - YYYY-MM-DD
 
-Scanned N threads (M new messages) since <lookback date>.
+Просмотрено N цепочек (M новых писем) с <дата начала окна>.
 
-### Proposed Changes (reply "approve all", or list which to skip, e.g. "skip 2")
-| # | Company | Role | Signal | Current -> Proposed Status | Source Email (date) |
+### Предлагаемые изменения (ответь «одобряю всё» или укажи, что пропустить, например «пропусти 2»)
+| # | Компания | Должность | Сигнал | Текущий -> предлагаемый статус | Письмо-источник (дата) |
 |---|---|---|---|---|---|
-| 1 | ... | ... | Interview invite | applied -> interview | "Subject line" (2026-07-10) |
-| 2 | ... | ... | Offer extended | interview -> offer | "Subject line" (2026-07-12) |
-| 3 | ... | ... | Application ack | drafted -> applied, date -> 2026-07-02 | "Subject line" (2026-07-02) |
+| 1 | ... | ... | Приглашение на собеседование | applied -> interview | "Тема письма" (2026-07-10) |
+| 2 | ... | ... | Оффер | interview -> offer | "Тема письма" (2026-07-12) |
+| 3 | ... | ... | Подтверждение отклика | drafted -> applied, date -> 2026-07-02 | "Тема письма" (2026-07-02) |
 
-A row leaving `drafted` shows its date change in the status cell, as row 3 does: that row was never recorded as submitted, so Step 7a is about to replace the drafting date. Say that the date is taken from the email and ask whether the user knows the real submission date - approving the status move should not silently approve a date they can correct.
+Строка, уходящая из `drafted`, показывает смену даты в ячейке статуса, как строка 3: этот отклик ни разу не был записан как отправленный, поэтому Шаг 7a заменит дату подготовки. Скажи, что дата взята из письма, и спроси, знает ли пользователь реальную дату отправки - одобрение смены статуса не должно молча одобрять дату, которую он может поправить.
 
-### Needs Manual Review (conflicting signal - not proposed, use /outcome)
-- **<Company>** - <what conflicted and why it wasn't proposed>
+### Нужен ручной разбор (противоречивый сигнал - не предложено, используй /outcome)
+- **<Компания>** - <что противоречит и почему не предложено>
 
-### Unmatched Emails (no change proposed)
-- "<subject>" from <sender> - looked job-related but couldn't be confidently linked to a tracked application.
+### Несопоставленные письма (изменений не предлагается)
+- "<тема>" от <отправитель> - похоже на письмо по поиску работы, но уверенно связать с отслеживаемым откликом не удалось.
 
-### Stale Applications (30+ days, no activity)
-- **<Company>** - last activity YYYY-MM-DD, still `<status>`.
+### Зависшие отклики (30+ дней без активности)
+- **<Компания>** - последняя активность YYYY-MM-DD, всё ещё `<status>`.
 ```
 
-If the Proposed Changes table would be empty, say so briefly and skip straight to Step 8 (Update State) - there is nothing to approve. Offers still land in the Proposed Changes table (the tracker moves to `offer`); it's only `hired`/`offer_declined` that are never proposed.
+Если таблица предлагаемых изменений вышла бы пустой, коротко скажи об этом и сразу переходи к Шагу 8 (Обнови состояние) - одобрять нечего. Офферы всё равно попадают в таблицу предлагаемых изменений (трекер переходит в `offer`); не предлагаются никогда только `hired`/`offer_declined`.
 
 ---
 
-## Step 7: Wait for Approval
+## Шаг 7: Дождись одобрения
 
-Stop here and wait for the user's reply. Do not write anything from this run's classification before an explicit response arrives.
+Остановись здесь и дождись ответа пользователя. Не записывай ничего из классификации этого прогона, пока не придёт явный ответ.
 
-- "approve all" / "yes" / equivalent → every row in the Proposed Changes table proceeds to Step 7a.
-- A partial response, e.g. "approve 1, skip 2" or "just the interview one" → only the specified rows proceed.
-- "no" / decline / no changes wanted → no rows proceed; go straight to Step 8 (Update State).
+- «одобряю всё» / «да» / аналог → все строки таблицы предлагаемых изменений идут в Шаг 7a.
+- Частичный ответ, например «одобряю 1, пропусти 2» или «только собеседование» → идут только указанные строки.
+- «нет» / отказ / изменения не нужны → ни одна строка не идёт; переходи сразу к Шагу 8 (Обнови состояние).
 
-Approving the whole batch in one reply is expected UX - the requirement is that the reply happens first, not that the user approves row by row.
+Одобрить всю пачку одним ответом - ожидаемый сценарий: требование в том, чтобы ответ был сначала, а не в том, чтобы пользователь одобрял построчно.
 
-### Step 7a: Write Approved Updates
+### Шаг 7a: Запиши одобренные обновления
 
-For every row the user approved:
+Для каждой одобренной пользователем строки:
 
-1. **Tracker (`job_search_tracker.csv`):** update the matched row's `status` column per the Step 5 table, and append to `notes`: `<date> gmail-sync: <signal> ("<email subject>")`, **with every comma, double quote and line break deleted from the subject first**. No writer here emits a quoted tracker field and no reader unquotes one, so an unescaped comma splits the row identically for a naive split and for the `csv.DictReader` the shipped reader actually uses (`tools/rank_state.py`): `cv_file`, `cover_letter_file` and `source` each shift a column left. A line break is worse - it ends the row and starts a second one. The double quote is stripped as cheap insurance for the day something does quote a field; on today's readers it is harmless. The subject is a human-readable breadcrumb here, not data anything reads back - item 2 below keeps it verbatim in `outcome.md`, which is Markdown and carries no such constraint. This matters more than it looks: `/gmail-sync` is the only tracker writer that copies *third-party* text, and the only one that runs unattended, so nobody is watching the row it edits.
+1. **Трекер (`job_search_tracker.csv`):** обнови колонку `status` найденной строки по таблице Шага 5 и допиши в `notes`: `<date> gmail-sync: <signal> ("<email subject>")`, **предварительно удалив из темы все запятые, двойные кавычки и переносы строк**. Никто из пишущих сюда не выводит поля в кавычках и никто из читающих их не раскавычивает, поэтому неэкранированная запятая одинаково разбивает строку и для наивного split, и для `csv.DictReader`, которым на деле пользуется поставляемый читатель (`tools/rank_state.py`): `cv_file`, `cover_letter_file` и `source` сдвигаются на колонку влево. Перенос строки ещё хуже - он обрывает строку и начинает вторую. Двойная кавычка вырезается как дешёвая страховка на день, когда кто-то всё же начнёт брать поля в кавычки; для нынешних читателей она безвредна. Тема здесь - понятная человеку «хлебная крошка», а не данные, которые что-то читает обратно: пункт 2 ниже сохраняет её дословно в `outcome.md`, который в Markdown и таких ограничений не имеет. Это важнее, чем кажется: `/gmail-sync` - единственный писатель трекера, который копирует *чужой* текст, и единственный, который работает без присмотра, так что за строкой, которую он правит, никто не следит.
 
-   Never restructure the CSV, reorder rows, or touch unrelated rows - same rule `/outcome` follows. The rewrite touches only `status`, `notes` (and `date` when the drafted-rule below fires): preserve every other field of the row, parsed or not, so the `deadline` column written by `/apply` Step 6b - or any column added in the future - is never blanked by a status sync.
+   Никогда не перестраивай CSV, не меняй порядок строк и не трогай несвязанные строки - то же правило, что у `/outcome`. Перезапись касается только `status`, `notes` (и `date`, когда срабатывает правило для `drafted` ниже): сохраняй все остальные поля строки, разобранные или нет, чтобы колонка `deadline`, записанная `/apply` Шагом 6b, - или любая колонка, добавленная в будущем, - никогда не обнулялась синхронизацией статуса.
 
-   **If the matched row was still `drafted`,** also set `date` to the email's date. The employer replying proves the user submitted by hand without running `/outcome`, so the drafting date now in that column is wrong. The email's date is an upper bound on the real submission date, tight for an ack and loose for a rejection weeks later, which is why Step 6 shows it and lets the user supply the actual date instead.
-2. **`outcome.md`:** tick the relevant stage checkbox (adding the date in parentheses) or update `Status`/`Date resolved` per the table. Append a dated entry to `## Notes`, never overwrite existing Notes history:
+   **Если найденная строка всё ещё была `drafted`,** поставь также `date` равной дате письма. Ответ работодателя доказывает, что пользователь отправил отклик руками, не запуская `/outcome`, так что дата подготовки в этой колонке теперь неверна. Дата письма - верхняя граница реальной даты отправки: точная для подтверждения отклика и грубая для отказа через несколько недель, поэтому Шаг 6 её показывает и даёт пользователю указать настоящую.
+2. **`outcome.md`:** отметь нужный чекбокс этапа (с датой в скобках) или обнови `Status`/`Date resolved` по таблице. Допиши датированную запись в `## Notes`, никогда не перезаписывая существующую историю Notes:
    ```
    YYYY-MM-DD (via /gmail-sync): <one-line summary of what the email said>. Source: "<subject>" from <sender>, <email date>.
    ```
-3. If no archive folder/`outcome.md` exists yet for a matched application, create the folder and a minimal `outcome.md` following the exact format in `documents/README.md`, same as `/outcome` would. This is the normal case for a row that was still `drafted`: `/apply` Step 6b writes the tracker row and only `/outcome` Step 3 ever creates the archive, so the folder legitimately does not exist yet. It is also the case for a row added by hand.
+   Краткое содержание письма пиши на языке пользователя (по-русски).
+3. Если для сопоставленного отклика ещё нет папки архива/`outcome.md`, создай папку и минимальный `outcome.md` строго в формате `documents/README.md`, как сделал бы `/outcome`. Это обычный случай для строки, которая была `drafted`: `/apply` Шаг 6b пишет строку трекера, а архив создаёт только `/outcome` Шаг 3, так что папки законно ещё нет. То же касается строки, добавленной руками.
 
-Rows the user skipped are left untouched - no tracker write, no `outcome.md` write - but their message IDs are still marked processed in Step 8, so the same email isn't re-proposed every run.
-
----
-
-## Step 8: Update State
-
-Add every message ID processed this run - approved, skipped, unmatched, or filtered as noise - to `gmail_sync/state.json`'s `processed_message_ids`, and set `last_sync` to today's date. This makes re-running idempotent - the same email never produces a duplicate proposal, tracker note, or Notes entry.
+Пропущенные пользователем строки остаются нетронутыми - ни записи в трекер, ни записи в `outcome.md`, - но их ID писем всё равно помечаются обработанными в Шаге 8, чтобы одно и то же письмо не предлагалось в каждом прогоне.
 
 ---
 
-## Step 9: Staleness Check
+## Шаг 8: Обнови состояние
 
-For open applications with **no** matching activity found this run, check the tracker's `date` column and the most recent dated Notes entry in their `outcome.md`. If the most recent of those is 30+ days old, flag the application as "needs follow-up" in the closing summary below. This is surfaced only - never write anything for staleness.
-
-**Skip `drafted` rows here** - nothing was sent, so no one is late replying.
+Добавь ID каждого письма, обработанного в этом прогоне, - одобренного, пропущенного, несопоставленного или отсеянного как шум - в `processed_message_ids` файла `gmail_sync/state.json` и поставь `last_sync` равным сегодняшней дате. Так повторный запуск идемпотентен - одно и то же письмо никогда не породит повторного предложения, заметки в трекере или записи в Notes.
 
 ---
 
-## Step 10: Present Closing Summary
+## Шаг 9: Проверка на застой
 
-Confirm what actually happened, distinct from the Step 6 proposal:
+Для открытых откликов, по которым в этом прогоне **не** нашлось никакой активности, проверь колонку `date` трекера и самую свежую датированную запись Notes в их `outcome.md`. Если самая свежая из них старше 30 дней, пометь отклик как «нужно напоминание» в итоговой сводке ниже. Это только показывается - по застою никогда ничего не записывай.
+
+**Строки `drafted` здесь пропускай** - ничего не отправлено, значит, никто не опаздывает с ответом.
+
+---
+
+## Шаг 10: Итоговая сводка
+
+Подтверди, что реально произошло, отдельно от предложения Шага 6:
 
 ```
-## Gmail Sync - Done - YYYY-MM-DD
+## Gmail Sync - Готово - YYYY-MM-DD
 
-### Written
-| Company | Role | Signal | Tracker Status | Source Email |
+### Записано
+| Компания | Должность | Сигнал | Статус в трекере | Письмо-источник |
 |---|---|---|---|---|
-| ... | ... | Interview invite | applied -> interview | "Subject line", 2026-07-10 |
+| ... | ... | Приглашение на собеседование | applied -> interview | "Тема письма", 2026-07-10 |
 
-### Skipped (not written)
-- **<Company>** - <signal> declined by user.
+### Пропущено (не записано)
+- **<Компания>** - <сигнал> отклонён пользователем.
 
-### Offers Requiring Your Decision
-- **<Company>** - offer written 2026-07-12 ("<subject>"). Tracker set to `offer`; run `/outcome <company>` to record accept/decline once you decide.
+### Офферы, по которым нужно твоё решение
+- **<Компания>** - оффер записан 2026-07-12 ("<тема>"). В трекере `offer`; когда решишь, запусти `/outcome <company>`, чтобы записать согласие или отказ.
 
-### Stale Applications (30+ days, no activity)
-- **<Company>** - last activity YYYY-MM-DD, still `<status>`.
+### Зависшие отклики (30+ дней без активности)
+- **<Компания>** - последняя активность YYYY-MM-DD, всё ещё `<status>`.
 ```
 
-If nothing was proposed this run, a brief note is enough instead of an empty summary.
+Если в этом прогоне ничего не предлагалось, вместо пустой сводки хватит короткой заметки.
 
-If this run pushed the count of applications with a **final** `outcome.md` status to 3+ (or resolved a second application sharing a pattern), suggest the same `/setup` Path A calibration handoff `/outcome` suggests - do not duplicate that logic, just point the user there.
+Если этот прогон довёл число откликов с **финальным** статусом в `outcome.md` до 3+ (или закрыл второй отклик с общей закономерностью), предложи ту же калибровку через `/setup` (Путь A), что предлагает `/outcome`, - не дублируй её логику, просто отправь пользователя туда.
 
 ---
 
-## Important Rules
+## Важные правила
 
-1. **Classify from full email bodies, never snippets.** A status-changing proposal requires having actually fetched and read the message via `get_thread`/`get_message`.
-2. **Nothing is written before the user approves the Step 6 batch.** Approving everything in one reply is fine UX; writing first and flagging it after is not.
-3. **Never propose `hired` or `offer_declined`.** Those require the user's real-world decision; `/gmail-sync` stops at proposing `offer` and flags it.
-4. **A conflicting signal against an already-final or already-written status is a manual-review flag, not a proposed overwrite.** When in doubt, don't propose it - surface it.
-5. **Append-only to `outcome.md` Notes**, same as `/outcome`. Never rewrite or delete existing history.
-6. **Idempotent by message ID.** Re-running must never re-propose, or duplicate a tracker note or Notes entry for, the same email.
-7. **Never fabricate a match.** If the company can't be confidently identified from the email, it goes in "Unmatched," not a guess.
-8. **Read-only against Gmail itself.** This command reads and classifies; it does not label, archive, or delete anything in the user's mailbox.
-9. **All state is personal data.** `gmail_sync/state.json`, `job_search_tracker.csv`, and `documents/applications/**` are gitignored - never suggest committing them.
+1. **Классифицируй по полному тексту письма, никогда по сниппету.** Предложение смены статуса требует, чтобы письмо было реально загружено и прочитано через `get_thread`/`get_message`.
+2. **Ничего не записывается до одобрения пачки из Шага 6.** Одобрить всё одним ответом - нормально; записать сначала, а сообщить потом - нет.
+3. **Никогда не предлагай `hired` или `offer_declined`.** Для них нужно реальное решение пользователя; `/gmail-sync` останавливается на предложении `offer` и помечает его.
+4. **Противоречивый сигнал против уже финального или уже записанного статуса - повод для ручного разбора, а не предложение перезаписи.** Сомневаешься - не предлагай, а вынеси на обзор.
+5. **В Notes файла `outcome.md` - только дописывание**, как у `/outcome`. Никогда не переписывай и не удаляй существующую историю.
+6. **Идемпотентность по ID письма.** Повторный запуск никогда не должен повторно предлагать то же письмо или дублировать по нему заметку в трекере или запись в Notes.
+7. **Никогда не выдумывай совпадение.** Если компанию по письму уверенно не определить, письмо идёт в «Несопоставленные», а не в догадку.
+8. **Сам Gmail - только для чтения.** Эта команда читает и классифицирует; она не ставит ярлыки, не архивирует и ничего не удаляет в почте пользователя.
+9. **Всё состояние - личные данные.** `gmail_sync/state.json`, `job_search_tracker.csv` и `documents/applications/**` в gitignore - никогда не предлагай их коммитить.

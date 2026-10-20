@@ -1,32 +1,32 @@
-# Setup Guide
+# Руководство по настройке
 
-Step-by-step instructions for getting the AI Job Search framework running.
+Пошаговая инструкция, как запустить фреймворк AI Job Search RU.
 
-## 1. Prerequisites
+## 1. Требования
 
 ### Claude Code
 
-Install Claude Code (Anthropic's CLI for Claude):
+Установите Claude Code (CLI от Anthropic для работы с Claude):
 
 ```bash
 npm install -g @anthropic-ai/claude-code
 ```
 
-You'll need an Anthropic API key or a Claude Pro/Team subscription. See the [Claude Code docs](https://docs.anthropic.com/en/docs/claude-code) for details.
+Понадобится API-ключ Anthropic или подписка Claude Pro/Max/Team. Официально Anthropic не обслуживает пользователей из России — нужен действующий доступ к Claude Code. Подробности — в [документации Claude Code](https://docs.anthropic.com/en/docs/claude-code).
 
 ### Python
 
-Python 3.10+ is required for the salary lookup tool. Check with:
+Для инструмента сравнения зарплат нужен Python 3.10+. Проверка:
 
 ```bash
 python3 --version
 ```
 
-On Windows, `py --version` is often the most reliable check. If your system exposes Python as `python` instead of `python3`, use `python` in the commands below.
+На Windows надёжнее всего проверять через `py --version`. Если Python в вашей системе вызывается как `python`, а не `python3`, используйте `python` в командах ниже.
 
-### Bun (for job search tools)
+### Bun (для инструментов поиска вакансий)
 
-The job portal CLIs (four Danish portals plus the country-agnostic `linkedin-search` and `freehire-search` tools) are written in TypeScript and run with Bun.
+CLI порталов (`habr-search` для Хабр Карьеры и `freehire-search`) написаны на TypeScript и запускаются через Bun.
 
 - macOS/Linux:
 
@@ -40,23 +40,26 @@ curl -fsSL https://bun.sh/install | bash
 powershell -ExecutionPolicy Bypass -c "irm https://bun.sh/install.ps1 | iex"
 ```
 
-If you prefer a package manager, `winget install Oven-sh.Bun` also works on Windows.
+Если предпочитаете менеджер пакетов, на Windows подойдёт и `winget install Oven-sh.Bun`.
 
-### LaTeX (for compiling CVs and cover letters)
+### LaTeX (для сборки резюме и сопроводительных писем)
 
-Install a LaTeX distribution to compile the generated `.tex` files to PDF:
+Установите дистрибутив LaTeX, чтобы собирать сгенерированные `.tex` в PDF:
 
 - **Windows:** [MiKTeX](https://miktex.org/download)
 - **macOS:** [MacTeX](https://tug.org/mactex/)
-- **Linux:** `sudo apt install texlive-full` or `sudo dnf install texlive-scheme-full`
+- **Linux:** `sudo apt install texlive-full` или `sudo dnf install texlive-scheme-full`
 
-The CV compiles with `lualatex` (pdflatex often fails on modern MiKTeX installs with `fontawesome5` font-expansion errors). The cover letter compiles with `xelatex` because `cover.cls` requires `fontspec` for its custom Lato/Raleway fonts.
+Резюме собирается через `lualatex` (pdflatex на свежих MiKTeX часто падает с ошибками расширения шрифтов `fontawesome5`). Сопроводительное письмо — через `xelatex`, потому что `cover.cls` требует `fontspec` для своих шрифтов Lato/Raleway.
 
-#### Minimal TeX install: TinyTeX/BasicTeX
+**Кириллица.** Для резюме и писем на русском нужны шрифты с кириллицей. Полные дистрибутивы (TeX Live full, MacTeX, полный MiKTeX) их уже содержат; на минимальной установке проверьте, что кириллица в собранном PDF отображается, а не пропадает или превращается в квадратики, и при необходимости доустановите шрифты (например, семейство `cm-super` или `lm` для lualatex) либо укажите в шаблоне системный шрифт с кириллицей.
 
-Full TeX distributions work out of the box, but minimal distributions need a few extra packages before the stock templates compile.
+<a id="minimal-tex-install-tinytexbasictex"></a>
+#### Минимальная установка TeX: TinyTeX/BasicTeX
 
-On macOS, a user-level TinyTeX install avoids a system-wide installer and does not require `sudo`:
+Полные дистрибутивы TeX работают сразу, а минимальным нужно несколько дополнительных пакетов, прежде чем стандартные шаблоны соберутся.
+
+На macOS установка TinyTeX на уровне пользователя обходится без системного установщика и не требует `sudo`:
 
 ```bash
 curl -fsSL https://yihui.org/tinytex/install-bin-unix.sh -o /tmp/tinytex-install-bin-unix.sh
@@ -64,7 +67,7 @@ sh /tmp/tinytex-install-bin-unix.sh /tmp --no-path
 export PATH="$HOME/Library/TinyTeX/bin/universal-darwin:$PATH"
 ```
 
-The `export` above only lasts for the current terminal window. Persist it, or every new window reports `zsh: command not found: lualatex` (or `xelatex`) even though TinyTeX installed fine:
+`export` выше действует только в текущем окне терминала. Сохраните его, иначе в каждом новом окне будет `zsh: command not found: lualatex` (или `xelatex`), хотя TinyTeX установился нормально:
 
 ```bash
 echo 'export PATH="$HOME/Library/TinyTeX/bin/universal-darwin:$PATH"' >> ~/.zshrc
@@ -72,9 +75,9 @@ source ~/.zshrc
 lualatex --version   # should print a version, not "command not found"
 ```
 
-(Bash users: append to `~/.bash_profile` instead.)
+(Если у вас Bash — допишите в `~/.bash_profile`.)
 
-Then install the template dependencies:
+Затем установите зависимости шаблонов:
 
 ```bash
 tlmgr install \
@@ -82,9 +85,9 @@ tlmgr install \
   titlesec textpos xltxtra xunicode cite realscripts needspace
 ```
 
-For BasicTeX/MacTeX, make sure the TeX binary directory is on `PATH` first (for example via `/Library/TeX/texbin`), then run the same `tlmgr install ...` command.
+Для BasicTeX/MacTeX сначала убедитесь, что каталог бинарников TeX есть в `PATH` (например, `/Library/TeX/texbin`), затем выполните ту же команду `tlmgr install ...`.
 
-Quick smoke tests after setup:
+Быстрые smoke-тесты после настройки:
 
 ```bash
 cd cv && lualatex -interaction=nonstopmode -halt-on-error main_example.tex && cd ..
@@ -109,26 +112,26 @@ EOF
 
 #### Windows: Basic MiKTeX
 
-The full MiKTeX installer bundles every CTAN package and works out of the box, but the smaller [Basic MiKTeX](https://miktex.org/download) installer (`basic-miktex-*.exe`) only ships a minimal package set and needs a couple of one-time settings before the stock templates compile.
+Полный установщик MiKTeX включает все пакеты CTAN и работает сразу, а более компактный [Basic MiKTeX](https://miktex.org/download) (`basic-miktex-*.exe`) ставит минимальный набор пакетов, и перед сборкой стандартных шаблонов нужно один раз поменять пару настроек.
 
-By default, MiKTeX installs missing packages on demand but pops up a GUI prompt for each one — which blocks non-interactive terminals (including Claude Code's Bash tool). Turn that into a silent auto-install instead:
+По умолчанию MiKTeX доустанавливает недостающие пакеты на лету, но для каждого показывает окно с вопросом — а это блокирует неинтерактивные терминалы (включая инструмент Bash в Claude Code). Включите вместо этого тихую автоустановку:
 
 ```powershell
 initexmf --admin --set-config-value=[MPM]AutoInstall=1
 initexmf --set-config-value=[MPM]AutoInstall=1
 ```
 
-(Run the first line from an elevated/Admin PowerShell if you installed MiKTeX for all users; the second line covers a per-user install. Only one will apply depending on how you installed it — running both is harmless.)
+(Первую строку запускайте из PowerShell с правами администратора, если ставили MiKTeX для всех пользователей; вторая — для установки на одного пользователя. Сработает только одна, в зависимости от способа установки, — запуск обеих безвреден.)
 
-If you'd rather not rely on on-the-fly installs at all (for example, for a fully offline compile later), pre-install the same package set the macOS TinyTeX section above lists, using MiKTeX's package manager:
+Если не хотите полагаться на установку на лету (например, чтобы потом собирать полностью офлайн), заранее поставьте тот же набор пакетов, что указан выше в разделе про TinyTeX для macOS, через менеджер пакетов MiKTeX:
 
 ```powershell
 mpm --admin --install=moderncv --install=fontawesome5 --install=fontawesome6 --install=academicons --install=import --install=luatexbase --install=pgf --install=titlesec --install=textpos --install=xltxtra --install=xunicode --install=cite --install=realscripts --install=needspace
 ```
 
-Drop `--admin` if MiKTeX is installed for the current user only. If a package name doesn't resolve, `mpm --find=<name>` searches the repository for the correct name.
+Уберите `--admin`, если MiKTeX установлен только для текущего пользователя. Если имя пакета не находится, `mpm --find=<name>` поищет правильное имя в репозитории.
 
-Quick smoke tests after setup (PowerShell):
+Быстрые smoke-тесты после настройки (PowerShell):
 
 ```powershell
 Set-Location cv; lualatex -interaction=nonstopmode -halt-on-error main_example.tex; Set-Location ..
@@ -151,95 +154,102 @@ Copy-Item cover_letters\cover.cls, cover_letters\OpenFonts -Destination $SmokeDi
 Push-Location $SmokeDir; xelatex -interaction=nonstopmode -halt-on-error cover_smoke.tex; Pop-Location
 ```
 
-### Optional: ATS text extraction (pypdf, then pdftotext)
+### Необязательно: извлечение текста для ATS (pypdf, затем pdftotext)
 
-`/apply` runs an ATS parseability check on the compiled CV: it extracts the PDF's text layer and verifies contact details, reading order, and keyword coverage the way an applicant-tracking system sees them.
+`/apply` проверяет собранное резюме на читаемость ATS (система автоматического отбора резюме): извлекает текстовый слой PDF и проверяет контакты, порядок чтения и покрытие ключевых слов так, как их видит такая система.
 
-The default extractor is **pypdf** (BSD, `pip install pypdf`). Poppler `pdftotext` remains an optional fallback:
+Извлекатель по умолчанию — **pypdf** (BSD, `pip install pypdf`). `pdftotext` из Poppler остаётся необязательным запасным вариантом:
 
 - **macOS:** `brew install poppler`
 - **Debian/Ubuntu:** `sudo apt install poppler-utils`
 - **Windows:** `choco install poppler`
 
-If a command still uses `pdftotext -layout`, it must pass `-enc UTF-8` as well. If **neither** extractor is available, `/apply` skips the mechanical check with a warning and falls back to a visual keyword review — everything else works normally.
+Если команда всё же использует `pdftotext -layout`, ей обязательно нужно передавать и `-enc UTF-8` (для кириллицы это критично). Если **нет ни одного** извлекателя, `/apply` пропускает механическую проверку с предупреждением и переходит к визуальному просмотру ключевых слов — всё остальное работает как обычно.
 
-## 2. Fork and clone
+<a id="2-fork-and-clone"></a>
+## 2. Форк и клонирование
 
 ```bash
-gh repo fork MadsLorentzen/ai-job-search --clone
-cd ai-job-search
-gh repo set-default <your-github-username>/ai-job-search
+gh repo fork spichkinevgeniy/ai-job-search-ru --clone
+cd ai-job-search-ru
+gh repo set-default <your-github-username>/ai-job-search-ru
 ```
 
-Or manually: fork on GitHub, then clone your fork.
+Или вручную: сделайте форк на GitHub и клонируйте его.
 
-> **The `set-default` line is not optional.** `gh repo fork --clone` sets the
-> **upstream** repo as gh's default repository ("The `upstream` remote will be set as
-> the default remote repository" — `gh repo fork --help`), and gh uses the default for
-> **creating issues and PRs**. Without it, any later `gh issue create` run from this
-> clone — by you or by an agent you have asked to track your applications — silently
-> files on the upstream **public** tracker, publishing whatever the issue contains
-> under your GitHub identity, on a repo where you cannot delete it (#389).
+> **Строка `set-default` обязательна.** `gh repo fork --clone` делает репозиторий
+> **upstream** репозиторием по умолчанию для gh («The `upstream` remote will be set as
+> the default remote repository» — `gh repo fork --help`), а gh использует его для
+> **создания issue и PR**. Без этой строки любой последующий `gh issue create` из этого
+> клона — вашими руками или руками агента, которому вы поручили следить за откликами, —
+> молча создаст issue в **публичном** трекере upstream, опубликовав его содержимое
+> от вашего имени на GitHub, в репозитории, где вы не можете его удалить (#389 в оригинале).
 
-> **Before you go further: forks are public.** GitHub cannot make a fork of a public
-> repository private, and `/setup` (section 6) writes your personal data into **tracked**
-> files — pushing those commits to a fork publishes them. If this copy is for your own
-> job search rather than for contributing, prefer a **private repository** with this repo
-> as `upstream`: see section 8, step 1 for the exact commands and why committing your
-> personalization there is still the right move. Everything else in this guide works
-> identically either way.
+> **Прежде чем идти дальше: форки публичны.** GitHub не позволяет сделать форк публичного
+> репозитория приватным, а `/setup` (раздел 6) записывает ваши личные данные в файлы,
+> **отслеживаемые git**, — пуш этих коммитов в форк публикует их. Если копия нужна для
+> вашего собственного поиска работы, а не для контрибьюта, лучше сделайте **приватный
+> репозиторий** с этим репозиторием в роли `upstream`: точные команды и объяснение, почему
+> коммитить персонализацию там всё равно правильно, — в разделе 8, шаг 1. Всё остальное
+> в руководстве работает одинаково в обоих случаях.
 
-## 3. Install job search CLI dependencies
-Run these from the repository root.
+## 3. Установка зависимостей CLI поиска вакансий
+Запускайте из корня репозитория.
 
 ```bash
 python3 tools/install_portal_clis.py   # Windows: python tools\install_portal_clis.py
 ```
 
-It runs `bun install` in every portal CLI under `.agents/skills/*/cli/` - discovered, not listed, so a portal you add with `/add-portal` or copy from another fork is included on a fresh clone. A CLI whose `package.json` declares an install-time lifecycle script is skipped and reported rather than run. `--dry-run` shows what it would install.
+Скрипт запускает `bun install` в каждом CLI порталов в `.agents/skills/*/cli/`. Список не зашит, а обнаруживается автоматически, так что портал, добавленный через `/add-portal` или скопированный из другого форка, тоже установится на свежем клоне. CLI, чей `package.json` объявляет скрипт жизненного цикла при установке, пропускается с сообщением, а не запускается. `--dry-run` показывает, что будет установлено.
 
-For `linkedin-search` and `freehire-search` the install is optional: both have zero runtime dependencies and run with plain `bun`; `bun install` only pulls TypeScript dev types.
+Для `habr-search` и `freehire-search` установка необязательна: у них нет зависимостей времени выполнения, они запускаются обычным `bun`; `bun install` только подтягивает типы TypeScript для разработки.
 
-If you're outside Denmark, you can generate an equivalent search skill for your local job board with `/add-portal` — it scaffolds the same CLI structure for any public portal and test-runs a live query before registering. See the "Job search tools" section in the README.
+Проверка поиска по Хабр Карьере:
 
-## 4. Run the setup interview
+```bash
+bun run .agents/skills/habr-search/cli/src/cli.ts search -q "python" --city moscow --grade middle --remote --jobage 14 --format table
+```
 
-Start Claude Code in the repository:
+Нужного сайта вакансий нет среди встроенных? Сгенерируйте для него навык поиска командой `/add-portal` — она создаёт ту же структуру CLI для любого публичного портала и перед регистрацией делает живой тестовый запрос. См. раздел «Инструменты поиска вакансий» в README.
+
+## 4. Интервью для настройки
+
+Запустите Claude Code в репозитории:
 
 ```bash
 claude
 ```
 
-Then run the onboarding:
+Затем запустите онбординг:
 
 ```
 /setup
 ```
 
-Claude will offer three paths:
+Claude предложит три пути:
 
-- **Path A (documents folder):** Add your CV, LinkedIn export, diplomas, references, or past applications under `documents/`. Claude reads and cross-references them before proposing profile updates. This is best when you have several source files.
-- **Path B (single CV import):** Share one CV/resume by mentioning the file with `@` or pasting the text. Claude extracts it and asks follow-up questions for anything missing.
-- **Path C (interview mode):** Answer structured interview questions section by section.
+- **Путь A (папка документов):** положите в `documents/` резюме, экспорт LinkedIn, дипломы, рекомендации или прошлые отклики. Claude прочитает и сопоставит их, прежде чем предложить изменения профиля. Лучший вариант, если исходных файлов несколько.
+- **Путь B (импорт одного резюме):** передайте одно резюме, упомянув файл через `@` или вставив текст. Claude извлечёт данные и задаст уточняющие вопросы о недостающем.
+- **Путь C (режим интервью):** отвечайте на структурированные вопросы раздел за разделом.
 
-All three paths produce the same result: fully populated profile files.
+Все три пути дают одинаковый результат: полностью заполненные файлы профиля.
 
-### What gets populated
+### Что заполняется
 
-| File | Content |
+| Файл | Содержимое |
 |------|---------|
-| `CLAUDE.md` | Your full candidate profile |
-| `01-candidate-profile.md` | Structured education, experience, skills |
-| `02-behavioral-profile.md` | Behavioral assessment |
-| `04-job-evaluation.md` | Personalized skill match areas and career goals |
-| `05-cv-templates.md` | Profile statement templates for your background |
-| `07-interview-prep.md` | STAR examples from your experience |
-| `cv/main_example.tex` | Your LaTeX CV with actual details |
-| `search-queries.md` | Job search queries for `/scrape` |
+| `CLAUDE.md` | Полный профиль кандидата |
+| `01-candidate-profile.md` | Структурированные образование, опыт, навыки |
+| `02-behavioral-profile.md` | Поведенческая оценка |
+| `04-job-evaluation.md` | Персональные области совпадения навыков и карьерные цели |
+| `05-cv-templates.md` | Шаблоны раздела «О себе» под ваш бэкграунд |
+| `07-interview-prep.md` | Примеры STAR (Ситуация–Задача–Действие–Результат) из вашего опыта |
+| `cv/main_example.tex` | Ваше резюме в LaTeX с реальными данными |
+| `search-queries.md` | Поисковые запросы для `/scrape` |
 
-### Re-running setup
+### Повторная настройка
 
-You can update specific sections later:
+Отдельные разделы можно обновить позже:
 
 ```
 /setup --section skills
@@ -247,45 +257,45 @@ You can update specific sections later:
 /setup --section search
 ```
 
-The `--section search` option is especially useful as your priorities evolve. It re-runs the search configuration interview and suggests role types you may not have considered based on your full profile.
+Вариант `--section search` особенно полезен, когда меняются приоритеты. Он заново проводит интервью по настройке поиска и предлагает типы ролей, о которых вы могли не подумать, исходя из полного профиля.
 
-## 5. Optional: Set up salary benchmarking
+## 5. Необязательно: сравнение зарплат
 
-If you have salary data (from a union, salary survey, Glassdoor, or personal research):
+Если у вас есть данные о зарплатах (зарплатные отчёты Хабр Карьеры, исследования hh.ru, опросы или собственные данные):
 
-1. **Option A:** Create `salary_data.json` manually in the repo root (see `tools/README_SALARY_TOOL.md` for the format)
-2. **Option B:** Convert from Excel:
+1. **Вариант A:** создайте `salary_data.json` вручную в корне репозитория (формат — в `tools/README_SALARY_TOOL.md`)
+2. **Вариант B:** сконвертируйте из Excel:
    ```bash
    pip install openpyxl
    python3 tools/convert_salary_excel.py path/to/salary-data.xlsx --source "My Salary Data 2025"
    ```
 
-This creates `salary_data.json` which the `/apply` workflow uses for salary benchmarking. If you skip this step, salary lookup is simply omitted.
+Так появится `salary_data.json`, который процесс `/apply` использует для сравнения зарплат. Если пропустить этот шаг, сравнение зарплат просто не выполняется.
 
-## 6. Test the workflow
+## 6. Проверка процесса
 
-Find a job posting you're interested in, then:
-
-```
-/apply https://jobindex.dk/job/1234567
-```
-
-Or paste the job description directly:
+Найдите интересную вакансию, затем:
 
 ```
-/apply [paste job posting text here]
+/apply https://career.habr.com/vacancies/<id>
 ```
 
-Claude will:
-1. Evaluate the fit against your profile
-2. Ask if you want to proceed
-3. Draft a tailored CV and cover letter
-4. Have a reviewer agent critique the drafts
-5. Revise and present the final output
+Или вставьте текст вакансии напрямую:
 
-## 7. Compile your documents
+```
+/apply [вставьте сюда текст вакансии]
+```
 
-After `/apply` creates the LaTeX files:
+Claude:
+1. Оценит соответствие вашему профилю
+2. Спросит, продолжать ли
+3. Подготовит черновики резюме и сопроводительного письма под вакансию
+4. Передаст черновики на критику агенту-ревьюеру
+5. Внесёт правки и покажет итог
+
+## 7. Сборка документов
+
+После того как `/apply` создал LaTeX-файлы:
 
 ```bash
 # Bash / zsh / Git Bash
@@ -299,52 +309,59 @@ Set-Location cv; lualatex main_<company>_<role>.tex; Set-Location ..
 Set-Location cover_letters; xelatex cover_<company>_<role>.tex; Set-Location ..
 ```
 
-These commands apply to the stock templates (moderncv CV, `cover.cls` cover letter). If you'd rather use your own LaTeX template, run `/add-template` — it captures the template's compile engine, fonts, style rules, and page limit, test-compiles it, and wires it into `/apply`. See the "LaTeX templates" section in the README.
+Эти команды — для стандартных шаблонов (резюме на moderncv, письмо на `cover.cls`). Если хотите свой LaTeX-шаблон, запустите `/add-template`: команда запишет движок сборки, шрифты, правила оформления и лимит страниц, сделает тестовую сборку и подключит шаблон к `/apply`. См. раздел «Свои шаблоны» в README.
 
-## 8. Pulling upstream updates into your fork
+<a id="8-pulling-upstream-updates-into-your-fork"></a>
+## 8. Получение обновлений из upstream в вашу копию
 
-Upstream keeps improving the methodology files your fork has personalized, so plan for updates from day one:
+Для вашей копии основной репозиторий (upstream) — этот, `spichkinevgeniy/ai-job-search-ru`; сам он, в свою очередь, получает изменения из оригинала [MadsLorentzen/ai-job-search](https://github.com/MadsLorentzen/ai-job-search). Upstream продолжает улучшать файлы методологии, которые вы персонализировали, поэтому закладывайте обновления с первого дня:
 
-**Prefer releases over raw `master`.** Tagged [releases](../../releases) are vetted checkpoints, each described in [CHANGELOG.md](CHANGELOG.md). Updating to a tag pulls a stable, documented state instead of whatever `master` happens to be mid-review. Fetch tags with `git fetch upstream --tags` and merge a release (for example `git merge v1.0.0`) when you want stability; pull `master` directly only when you specifically want the latest unreleased changes. The steps below apply either way - substitute the release tag for `upstream/master` where you see it.
+**Предпочитайте релизы сырому `master`.** Размеченные [релизы](../../releases) — проверенные точки, каждая описана в [CHANGELOG.md](CHANGELOG.md). Обновление до тега даёт стабильное, задокументированное состояние, а не то, что оказалось в `master` посреди ревью. Получите теги через `git fetch upstream --tags` и смёрджите релиз (например, `git merge v1.0.0`), когда нужна стабильность; тяните `master` напрямую, только если вам нужны именно свежие невыпущенные изменения. Шаги ниже работают в обоих случаях — подставьте тег релиза вместо `upstream/master`.
 
-1. **Commit your personalization - but know where those commits land.** `/setup` edits CLAUDE.md and the profile skill files in place; those edits are *yours*, and committing them is what lets updates merge cleanly. But a GitHub **fork of this repo is public** - forks of public repositories cannot be made private - so anything you commit *and push to a fork* is visible to anyone. If you want your profile in a remote at all, don't push it to a fork: create a **private** repository, push there, and add this repo as the `upstream` remote (`git remote add upstream https://github.com/MadsLorentzen/ai-job-search.git`) to keep receiving updates. Committing locally without pushing is also fine. The genuinely sensitive files (tracker, salary data, `documents/`, application archives) are gitignored and never enter git either way. An uncommitted working tree is the most common reason `git pull` refuses to merge at all (`Your local changes ... would be overwritten`).
-2. **Preview what changed before pulling:**
+1. **Закоммитьте персонализацию — но знайте, куда попадут коммиты.** `/setup` правит CLAUDE.md и файлы профиля на месте; эти правки — *ваши*, и именно коммит позволяет обновлениям сливаться чисто. Но **форк на GitHub публичен** — форки публичных репозиториев нельзя сделать приватными, — так что всё, что вы закоммитите *и запушите в форк*, видно всем. Если хотите хранить профиль на удалённом сервере, не пушьте его в форк: создайте **приватный** репозиторий, пушьте туда и добавьте этот репозиторий как remote `upstream` (`git remote add upstream https://github.com/spichkinevgeniy/ai-job-search-ru.git`), чтобы получать обновления. Коммитить локально без пуша — тоже нормально. Действительно чувствительные файлы (трекер, данные о зарплатах, `documents/`, архивы откликов) в `.gitignore` и в git не попадают ни в каком случае. Незакоммиченное рабочее дерево — самая частая причина, по которой `git pull` вообще отказывается сливать (`Your local changes ... would be overwritten`).
+2. **Посмотрите, что изменилось, до слияния:**
    ```bash
-   git remote add upstream https://github.com/MadsLorentzen/ai-job-search.git   # first time only, if you cloned your own fork
+   git remote add upstream https://github.com/spichkinevgeniy/ai-job-search-ru.git   # first time only, if you cloned your own fork
    git fetch upstream    # or origin, if you cloned the template directly
    python3 tools/check_upstream_updates.py
    ```
-   It compares the `framework_version` markers in your framework files against upstream and lists exactly which methodology files changed, with the diff command for each.
+   Скрипт сравнивает маркеры `framework_version` в ваших файлах фреймворка с upstream и перечисляет, какие именно файлы методологии изменились, с командой diff для каждого.
 
-   Two tools answer two different questions, and it's worth running both:
-   - **`check_upstream_updates.py`** — *which of my personalized files changed?* It reads the `framework_version` stamp on each methodology file, so it flags exactly the customized files a release touched.
-   - **`upstream_triage.py`** — *which upstream commits deserve my attention?* It walks the commits you're behind and sorts them into "worth reviewing" vs "probably skip", dropping anything you've already cherry-picked (matched by `git patch-id`, so ported work falls off with no bookkeeping), commits that only touch files your fork removed, and SHAs you've listed in `.github/upstream-wontport.txt`. It's report-only — it prints ready-to-run `git cherry-pick` lines but never merges, pushes, or opens a PR, because on a fork "applies cleanly" isn't "correct".
+   Два инструмента отвечают на два разных вопроса, и стоит запускать оба:
+   - **`check_upstream_updates.py`** — *какие из моих персонализированных файлов изменились?* Он читает метку `framework_version` в каждом файле методологии и поэтому точно помечает настроенные файлы, которые затронул релиз.
+   - **`upstream_triage.py`** — *какие коммиты upstream заслуживают внимания?* Он проходит по коммитам, от которых вы отстали, и сортирует их на «стоит посмотреть» и «можно пропустить», выкидывая уже перенесённые через cherry-pick (сопоставление по `git patch-id`, так что перенесённое отпадает без учёта вручную), коммиты, которые трогают только удалённые в вашем форке файлы, и SHA из `.github/upstream-wontport.txt`. Он только отчитывается — печатает готовые строки `git cherry-pick`, но никогда не сливает, не пушит и не открывает PR, потому что в форке «применяется чисто» не значит «правильно».
 
      ```bash
      python3 tools/upstream_triage.py --remote upstream
      ```
 
-     Forks also inherit a `.github/workflows/upstream-watch.yml` that runs this weekly and writes the result into a single rolling issue (it no-ops on the upstream template itself, and stays disabled on a fork until you enable Actions).
-3. **Merge normally.** `git merge upstream/master` (or `git pull`) three-way-merges upstream's edits around your personalization; because methodology edits rarely touch the lines `/setup` filled in, most updates land cleanly. A conflict in a personalized file is a *feature*, not a failure — it means upstream changed methodology in a section you customized, and the version marker plus its changelog commit tell you why. Resolve by keeping your data and adopting the methodology change around it.
+     Форки также наследуют `.github/workflows/upstream-watch.yml`, который запускает это еженедельно и пишет результат в одно обновляемое issue (на самом шаблоне upstream он ничего не делает, а в форке выключен, пока вы не включите Actions).
+3. **Сливайте как обычно.** `git merge upstream/master` (или `git pull`) делает трёхстороннее слияние правок upstream вокруг вашей персонализации; поскольку правки методологии редко трогают строки, заполненные `/setup`, большинство обновлений проходит чисто. Конфликт в персонализированном файле — это *функция*, а не сбой: значит, upstream поменял методологию в разделе, который вы настроили, а маркер версии и его коммит в changelog объяснят почему. Разрешайте так: сохраните свои данные и примите изменение методологии вокруг них.
 
-## Troubleshooting
+> **Примечание для этого форка.** Если вы хотите получать изменения напрямую из оригинала,
+> а не из русской адаптации, укажите в качестве `upstream` `https://github.com/MadsLorentzen/ai-job-search.git`.
+> Учтите: оригинал на английском и с датскими порталами, поэтому его коммиты в переведённые файлы
+> почти всегда будут конфликтовать — `upstream_triage.py` поможет отобрать нужное.
 
-### "salary_data.json not found"
-This is expected if you haven't set up salary benchmarking. The `/apply` workflow skips this step automatically.
+## Решение проблем
 
-### Job search CLI tools not working
-Make sure Bun is installed and you ran `bun install` in each CLI directory. The tools require network access to fetch job listings.
+### «salary_data.json not found»
+Это нормально, если вы не настраивали сравнение зарплат. Процесс `/apply` пропускает этот шаг автоматически.
 
-### LaTeX compilation errors
-- CV: uses `lualatex` (pdflatex often fails on modern MiKTeX with `fontawesome5` font-expansion errors; lualatex handles the same sources cleanly)
-- Cover letter: uses `xelatex` (for custom fonts in `OpenFonts/fonts/`)
-- Make sure your LaTeX distribution includes the `moderncv` package
+### Не работают CLI поиска вакансий
+Убедитесь, что Bun установлен и вы запустили `bun install` в каждой папке CLI. Инструментам нужен доступ к сети, чтобы получать вакансии.
 
-### Fonts not found in cover letter
-The cover letter template expects fonts in `cover_letters/OpenFonts/fonts/`. Make sure this directory exists and contains the Lato and Raleway font files.
+### Ошибки сборки LaTeX
+- Резюме: используется `lualatex` (pdflatex на свежих MiKTeX часто падает с ошибками расширения шрифтов `fontawesome5`; lualatex собирает те же исходники без проблем)
+- Сопроводительное письмо: используется `xelatex` (для своих шрифтов в `OpenFonts/fonts/`)
+- Убедитесь, что в вашем дистрибутиве LaTeX есть пакет `moderncv`
+- Кириллица пропадает или выводится квадратиками — в выбранном шрифте нет кириллических глифов; используйте шрифт с кириллицей (см. раздел про LaTeX выше)
 
-### Stale `.claude/settings.local.json` from an older clone
-Shared Claude Code permissions now live in `.claude/settings.json`: an `allow` list scoped to the exact commands the workflow runs (each portal CLI by path, the `tools/` scripts, `salary_lookup.py`, `pdftotext`), an `ask` list that always prompts before the permission-defining files are edited or `git push` runs, and a `deny` list that blocks upload-shaped shell and reads of credential files in every mode. `SECURITY.md` has the full table. Earlier versions of this repo committed a broader `.claude/settings.local.json` that pre-approved `Bash(curl:*)`, `Bash(python:*)` and `Bash(bun:*)`. If you cloned before that change, git leaves the old file behind in your working copy, and its permissions still apply on top of `settings.json`. Delete it (or trim it to your own personal overrides):
+### В сопроводительном письме не находятся шрифты
+Шаблон письма ожидает шрифты в `cover_letters/OpenFonts/fonts/`. Убедитесь, что эта папка существует и в ней есть файлы шрифтов Lato и Raleway.
+
+### Устаревший `.claude/settings.local.json` от старого клона
+Общие разрешения Claude Code теперь лежат в `.claude/settings.json`: список `allow`, ограниченный точными командами, которые запускает процесс (каждый CLI портала по пути, скрипты `tools/`, `salary_lookup.py`, `pdftotext`), список `ask`, который всегда спрашивает перед правкой файлов с разрешениями или запуском `git push`, и список `deny`, который во всех режимах блокирует команды, похожие на выгрузку данных, и чтение файлов с учётными данными. Полная таблица — в `SECURITY.md`. Ранние версии репозитория коммитили более широкий `.claude/settings.local.json`, который заранее разрешал `Bash(curl:*)`, `Bash(python:*)` и `Bash(bun:*)`. Если вы клонировали до этого изменения, git оставляет старый файл в рабочей копии, и его разрешения по-прежнему действуют поверх `settings.json`. Удалите его (или сократите до своих личных настроек):
 
 ```bash
 rm .claude/settings.local.json

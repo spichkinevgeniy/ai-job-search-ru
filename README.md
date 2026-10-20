@@ -1,380 +1,376 @@
 <p align="center">
-  <img src="assets/mascot/pip_flight_loop.gif" alt="Pip, the courier bird" width="200">
+  <img src="assets/mascot/pip_flight_loop.gif" alt="Пип, птица-курьер" width="200">
 </p>
 
-# AI Job Search
+# AI Job Search RU
 
-*The job search that runs on your machine.*
+*Поиск работы, который работает на вашем компьютере — под российский рынок.*
 
-<p align="center">
-  <a href="https://trendshift.io/repositories/43622?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-43622" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/43622/daily" alt="MadsLorentzen%2Fai-job-search | Trendshift" width="250" height="55"/></a>
-</p>
-
-[![CI](https://github.com/MadsLorentzen/ai-job-search/actions/workflows/ci.yml/badge.svg)](https://github.com/MadsLorentzen/ai-job-search/actions/workflows/ci.yml)
-
-An AI-powered job application framework built on [Claude Code](https://claude.com/claude-code). Fork it, fill in your profile, and let Claude evaluate job postings, tailor your CV, write cover letters, and prepare you for interviews.
-
-> Note: This is an independent open-source project and is not affiliated with, endorsed by, sponsored by, or maintained by Anthropic. Anthropic and Claude Code are referenced only to describe the toolchain this workflow uses.
+> **Это русская адаптация проекта [MadsLorentzen/ai-job-search](https://github.com/MadsLorentzen/ai-job-search)** (лицензия MIT). Спасибо автору, Мадсу Лоренцену, за фреймворк — вся методология отсюда.
 >
-> This project has **no affiliated cryptocurrency, token, or paid sponsorship program**. Anything claiming otherwise is unauthorized and should be treated as a scam. The only ways to support the project are the Ko-fi link below and contributing on GitHub.
+> Примечание: это независимый проект с открытым кодом. Он не аффилирован с Anthropic, не одобрен, не спонсируется и не поддерживается ею. Anthropic и Claude Code упоминаются только для описания инструментов, на которых построен процесс.
+>
+> У проекта (ни у оригинала, ни у этого форка) **нет своей криптовалюты, токена или платной спонсорской программы**. Всё, что утверждает обратное, — не авторизовано, считайте это мошенничеством. Поддержать проект можно только вкладом на GitHub.
 
-## Does it actually work?
+[![CI](https://github.com/spichkinevgeniy/ai-job-search-ru/actions/workflows/ci.yml/badge.svg)](https://github.com/spichkinevgeniy/ai-job-search-ru/actions/workflows/ci.yml)
 
-I'm a geophysicist by training. When my position was cut in late 2025, I built this framework to run my own job search - the same `/scrape`, `/apply`, and `/interview` workflow in this repo, used weekly, on my own career. I was upfront about it with every employer I spoke to, and instead of counting against me, it usually sparked a genuine technical conversation.
+Фреймворк для откликов на вакансии на базе [Claude Code](https://claude.com/claude-code). Скопируйте репозиторий, заполните профиль — и Claude будет оценивать вакансии, подгонять резюме, писать сопроводительные письма и готовить вас к собеседованиям.
 
-Sixty-nine tailored applications, twenty first interviews, and one signed contract later, I started as an AI engineer in June 2026. People kept asking whether this actually works. It got me hired. Now it's yours.
+Автор оригинала собрал его для собственного поиска работы и получил оффер; история целиком — в [README оригинала](https://github.com/MadsLorentzen/ai-job-search) (англ.).
 
-*The longer version, including the full application funnel, is on [LinkedIn](https://www.linkedin.com/in/mads-lorentzen/).*
+## Что изменено относительно оригинала
 
-<p align="center">
-  <i>Did this save you a Sunday of cover-letter writing? Consider a coffee.<br>
-  Did it land you the job? Maybe two.</i> ☕
-</p>
+- **Порталы.** Добавлен `habr-search` — [Хабр Карьера](https://career.habr.com) (IT-вакансии РФ/СНГ, публичный JSON без ключа, включён по умолчанию). Остался `freehire-search` — агрегатор [freehire.me](https://freehire.me) (для СНГ есть регион `cis`).
+- **Удалено:** датские порталы (Jobindex, Jobnet, Akademikernes Jobbank, Jobdanmark), `linkedin-search` (LinkedIn заблокирован в РФ), команда `/notion-sync` и интеграция с Notion, Ko-fi.
+- **Перевод.** Переведено всё: команды, навыки, шаблоны, документация. Агент общается с вами по-русски.
+- **Адаптация под РФ.** Резюме по умолчанию на русском (если вакансия на английском — резюме и письмо на английском), зарплаты в ₽ в месяц с учётом «на руки» / «до вычета НДФЛ», российские правила откликов и короткие сопроводительные для hh.ru и Хабра, языки по CEFR (A1–C2). Экспорт профиля LinkedIn остаётся необязательным источником для `/setup`.
+- **Почему нет поиска по hh.ru.** С апреля 2026 публичный API поиска вакансий hh.ru закрыт (без ключа работодателя отвечает 403), а `robots.txt` запрещает поиск с параметрами. Поэтому модуля поиска нет. Но `/apply` по ссылке на вакансию (`hh.ru/vacancy/<id>`, региональные поддомены `*.hh.ru`) работает: страница вакансии открывается, а если нет — вставьте текст вакансии вручную.
+- **В планах:** модули для SuperJob (нужен ключ API) и Getmatch.
 
-<p align="center">
-  <a href="https://ko-fi.com/madslorentzen">
-    <img src="https://storage.ko-fi.com/cdn/kofi3.png?v=6" alt="Buy me a coffee at ko-fi.com" height="40">
-  </a>
-</p>
+## Что это
 
-## What this is
-
-A structured workflow that turns Claude Code into a full-stack job application assistant. The core workflow (self-profiling, fit evaluation, and the drafter-reviewer application pipeline) is **language- and country-agnostic**. The job portal search skills are built for the Danish market (Jobindex, Jobnet, Akademikernes Jobbank, etc.), but the pattern is designed to be swapped for your local job boards.
+Структурированный процесс, который превращает Claude Code в полноценного помощника по откликам. Ядро (самопрофилирование, оценка соответствия и конвейер «автор черновика → агент-ревьюер») **не зависит от языка и страны**. Навыки поиска по порталам в этом форке настроены на российский рынок (Хабр Карьера, freehire), а сам шаблон легко дополнить другими сайтами вакансий.
 
 ```
 /setup          /scrape              /apply <url>
   |                |                     |
   v                v                     v
-Fill in        Search job           Evaluate fit
-your profile   portals              Score & recommend
+Заполнить      Поиск по             Оценка соответствия
+профиль        порталам             Баллы и рекомендация
   |                |                     |
   v                v                     v
-Profile        Present matches      Draft CV + Cover Letter
-files ready    with fit ratings     (LaTeX, tailored)
-                   |                     |
+Файлы          Подходящие           Черновик резюме + письма
+профиля        вакансии с оценкой   (LaTeX, под вакансию)
+готовы             |                     |
                    v                     v
-               Pick a match         Reviewer agent critiques
-               -> /apply            -> Revise -> Final output
+               Выбрать вакансию     Агент-ревьюер критикует
+               -> /apply            -> Правки -> Итог
 ```
 
-The framework encodes career guidance best practices, including structured evaluation criteria, forward-looking cover letter framing, and optional salary benchmarking.
+Во фреймворк заложены лучшие практики карьерного консультирования: структурированные критерии оценки, сопроводительные письма с прицелом на будущее и необязательное сравнение зарплат с рынком.
 
-## Prerequisites
+## Требования
 
-- [Claude Code](https://claude.com/claude-code) (CLI). Claude Code has no free tier: you need a Claude Pro/Max/Team subscription or Anthropic API credits (pay-per-token, usually cheaper for occasional use). Using a different agent tool (Codex, Antigravity, Gemini CLI)? Start at [`AGENTS.md`](AGENTS.md) - the portal search skills work there out of the box, and [community forks](https://github.com/MadsLorentzen/ai-job-search/discussions/78) adapt the full workflow.
+- [Claude Code](https://claude.com/claude-code) (CLI). Бесплатного тарифа у Claude Code нет: нужна подписка Claude Pro/Max/Team или API-кредиты Anthropic (оплата за токены, при нечастом использовании обычно дешевле). Официально Anthropic не обслуживает пользователей из России — для работы нужен действующий доступ к Claude Code. Используете другой агент (Codex, Antigravity, Gemini CLI)? Начните с [`AGENTS.md`](AGENTS.md): навыки поиска по порталам работают там сразу, а [форки сообщества](https://github.com/MadsLorentzen/ai-job-search/discussions/78) адаптируют весь процесс.
 - Python 3.10+
-- [Bun](https://bun.sh) (for job search CLI tools)
-- LaTeX distribution with `lualatex` and `xelatex`: [TeX Live](https://tug.org/texlive/), [MacTeX](https://tug.org/mactex/), [TinyTeX](https://yihui.org/tinytex/), or [MiKTeX](https://miktex.org/). The CV compiles with `lualatex` (pdflatex often fails on modern MiKTeX installs with `fontawesome5` font-expansion errors); the cover letter compiles with `xelatex` because `cover.cls` requires `fontspec`. If using a minimal TeX install such as TinyTeX or BasicTeX, install the extra packages listed in [SETUP.md](SETUP.md#minimal-tex-install-tinytexbasictex).
-- Optional: `pip install pypdf` for `/apply`'s ATS parseability check (BSD; no Poppler required). Poppler `pdftotext` remains a fallback (macOS: `brew install poppler`, Debian/Ubuntu: `apt install poppler-utils`, Windows: `choco install poppler`). If both are missing, the check degrades to a visual keyword review.
+- [Bun](https://bun.sh) (для CLI поиска вакансий)
+- Дистрибутив LaTeX с `lualatex` и `xelatex`: [TeX Live](https://tug.org/texlive/), [MacTeX](https://tug.org/mactex/), [TinyTeX](https://yihui.org/tinytex/) или [MiKTeX](https://miktex.org/). Резюме собирается через `lualatex` (pdflatex на свежих MiKTeX часто падает с ошибками расширения шрифтов `fontawesome5`); сопроводительное письмо — через `xelatex`, потому что `cover.cls` требует `fontspec`. Для текста на русском нужны шрифты с кириллицей. Если у вас минимальная установка TeX (TinyTeX или BasicTeX), поставьте дополнительные пакеты из [SETUP.md](SETUP.md#minimal-tex-install-tinytexbasictex).
+- Необязательно: `pip install pypdf` для проверки резюме на читаемость ATS (система автоматического отбора резюме) в `/apply` (лицензия BSD, Poppler не нужен). Запасной вариант — `pdftotext` из Poppler (macOS: `brew install poppler`, Debian/Ubuntu: `apt install poppler-utils`, Windows: `choco install poppler`). Если нет ни того, ни другого, проверка сводится к визуальному просмотру ключевых слов.
 
-## Quick start
+## Быстрый старт
 
-> 🎥 **Prefer to see it in action first?** [The Next New Thing did a hands-on walkthrough](https://www.youtube.com/watch?v=HoVxjMNFYv4) of how the workflow is actually used, from setup to a finished application (recorded August 2026 - commands may have evolved since).
+> 🎥 **Хотите сначала посмотреть, как это выглядит?** [Обзор оригинального проекта (англ.)](https://www.youtube.com/watch?v=HoVxjMNFYv4) от The Next New Thing: как процесс используется на практике, от настройки до готового отклика (запись августа 2026 — команды с тех пор могли измениться).
 
-### 1. Fork and clone
+### 1. Форк и клонирование
 
 ```bash
-gh repo fork MadsLorentzen/ai-job-search --clone
-cd ai-job-search
+gh repo fork spichkinevgeniy/ai-job-search-ru --clone
+cd ai-job-search-ru
 ```
 
 > [!IMPORTANT]
-> **A fork of this repo is always public** — GitHub does not allow private forks of
-> public repositories — and `/setup` (step 3 below) writes your personal data (name,
-> contact details, employment history, salary expectations) into **tracked** files.
-> If this copy is for your own job search rather than for contributing changes back,
-> use a **private repository** with this repo as `upstream` instead — the two-minute
-> recipe is in [SETUP.md section 8](SETUP.md#8-pulling-upstream-updates-into-your-fork),
-> and every update workflow works identically. Fork only to contribute.
+> **Форк этого репозитория всегда публичный** — GitHub не позволяет делать приватные
+> форки публичных репозиториев, — а `/setup` (шаг 3 ниже) записывает ваши личные данные
+> (имя, контакты, историю работы, зарплатные ожидания) в файлы, которые **отслеживаются git**.
+> Если копия нужна для вашего собственного поиска работы, а не для отправки изменений обратно,
+> сделайте **приватный репозиторий**, а этот подключите как `upstream` — рецепт на две минуты
+> в [разделе 8 SETUP.md](SETUP.md#8-pulling-upstream-updates-into-your-fork), все обновления
+> работают так же. Форк делайте, только чтобы контрибьютить.
 
-### 2. Install job search tools
+### 2. Установка инструментов поиска
 
 ```bash
 python3 tools/install_portal_clis.py   # Windows: python tools\install_portal_clis.py
 ```
 
-It runs `bun install` in every portal CLI under `.agents/skills/*/cli/` - discovered, not listed, so a portal you add with `/add-portal` or copy from another fork is included on a fresh clone. A CLI whose `package.json` declares an install-time lifecycle script is skipped and reported rather than run. `--dry-run` shows what it would install.
+Скрипт запускает `bun install` в каждом CLI порталов в `.agents/skills/*/cli/`. Список не зашит, а обнаруживается автоматически, так что портал, добавленный через `/add-portal` или скопированный из другого форка, тоже установится на свежем клоне. CLI, чей `package.json` объявляет скрипт жизненного цикла при установке, пропускается с сообщением, а не запускается. `--dry-run` показывает, что будет установлено.
 
-For `linkedin-search` and `freehire-search` the install is optional: both have zero runtime dependencies and run with plain `bun`; `bun install` only pulls TypeScript dev types.
+Для `habr-search` и `freehire-search` установка необязательна: у них нет зависимостей времени выполнения, они запускаются обычным `bun`; `bun install` только подтягивает типы TypeScript для разработки.
 
-### 3. Set up your profile
+Проверить поиск по Хабр Карьере можно сразу:
+
+```bash
+bun run .agents/skills/habr-search/cli/src/cli.ts search -q "python" --city moscow --grade middle --remote --jobage 14 --format table
+```
+
+Основные флаги: `--city` (moscow, spb, ekaterinburg, novosibirsk, kazan, nizhny-novgorod… или числовой city_id), `--grade intern|junior|middle|senior|lead`, `--remote`, `--salary <₽ от>`, `--with-salary`, `--sort relevance|date`, `--jobage <дней>`. Полное описание вакансии — `detail <id|url>`.
+
+### 3. Настройка профиля
 
 ```bash
 claude
-# Then inside Claude Code:
+# Затем внутри Claude Code:
 /setup
 ```
 
-`/setup` offers three paths: read your `documents/` folder if you have one populated (CV PDF, LinkedIn export, diplomas, reference letters, past applications), import a single CV pasted in chat, or walk through an interview. It auto-detects what you have and asks. Documents-folder mode is idempotent and safe to re-run as you add more material; see `documents/README.md` for the layout.
+`/setup` предлагает три пути: прочитать папку `documents/`, если вы её заполнили (резюме в PDF, экспорт LinkedIn, дипломы, рекомендательные письма, прошлые отклики), импортировать одно резюме, вставленное в чат, или пройти интервью. Команда сама определяет, что у вас есть, и спрашивает. Режим папки документов идемпотентен — его можно спокойно перезапускать по мере добавления материалов; структура папки описана в `documents/README.md`.
 
-### 4. Search for jobs
+### 4. Поиск вакансий
 
 ```bash
 /scrape
 ```
 
-This searches multiple job portals for positions matching your profile, deduplicates results, and presents them sorted by fit. Pick a match to run `/apply` on it directly — or, when a scrape returns more jobs than you want to eyeball, run `/rank` to batch-score them all against the fit framework and get a ranked shortlist first.
+Команда ищет на нескольких порталах вакансии под ваш профиль, убирает дубликаты и показывает их, отсортировав по соответствию. Выберите вакансию — и сразу запустите для неё `/apply`. А если вакансий больше, чем хочется просматривать глазами, запустите `/rank`: он оценит все пачкой по фреймворку соответствия и выдаст ранжированный шорт-лист.
 
-### 5. Apply to a job
-
-```bash
-/apply https://jobindex.dk/job/1234567
-```
-
-If the URL can't be fetched (some job portals block automated access), you can paste the job description directly instead:
+### 5. Отклик на вакансию
 
 ```bash
-/apply <paste the full job description here>
+/apply https://career.habr.com/vacancies/<id>
 ```
 
-This runs the full workflow: evaluate fit, draft CV + cover letter, review with a second agent, revise, and present the final output. The posting passes a deterministic integrity gate first (hidden text, invisible characters, instruction-shaped lines, hidden links), and its one-line verdict opens the evaluation; the agents that fetch and review read-only.
+Ссылки на вакансии hh.ru (`https://hh.ru/vacancy/<id>`) тоже работают. Если страницу не удаётся загрузить (некоторые порталы блокируют автоматический доступ), вставьте текст вакансии напрямую:
 
-Postings are treated as untrusted input (the workflow follows no instructions embedded in them and fetches no links from their body), but agentic defenses are instruction-level, not a sandbox - on an unfamiliar job board, skim what was fetched and written before you hit send. Details in [SECURITY.md](SECURITY.md).
+```bash
+/apply <вставьте сюда полный текст вакансии>
+```
 
-## Other commands
+Запускается весь процесс: оценка соответствия, черновик резюме и сопроводительного письма, ревью вторым агентом, правки и итоговый результат. Сначала вакансия проходит детерминированный фильтр целостности (скрытый текст, невидимые символы, строки, похожие на инструкции, скрытые ссылки), и его однострочный вердикт открывает оценку; агенты, которые загружают вакансию и делают ревью, работают только на чтение.
 
-`/setup`, `/scrape`, and `/apply` form the core workflow. Ten more commands extend it once your profile is in place:
+Вакансии считаются недоверенными входными данными (процесс не выполняет встроенных в них инструкций и не переходит по ссылкам из их текста), но защита у агентов — на уровне инструкций, это не песочница. На незнакомом сайте вакансий просмотрите, что было загружено и написано, прежде чем отправлять. Подробности — в [SECURITY.md](SECURITY.md).
 
-- **`/interview`** preps you for a scheduled interview on a tracked application. It builds a stage-specific prep pack from the application's archive (the exact posting, the CV and cover letter the interviewer actually read, feedback recorded from earlier rounds), researches the company and interviewers with a verify-before-use rule, maps likely questions to your STAR examples, and offers a mock interview following the roleplay protocol in `07-interview-prep.md`. Gaps get honest bridge answers, never invented experience.
-- **`/outcome`** records what happened to an application - interview stages, offers, rejections, silence. It archives the submitted CV, cover letter, and posting text into `documents/applications/<company>_<role>/`, keeps `outcome.md` in the format `/setup` Path A parses, and updates the tracker. It also owns the stretch before there is an outcome to record: `/outcome followup` surfaces open applications that have gone quiet (default 10 days), drafts a short channel-appropriate follow-up in your writing style using only claims from the materials you already submitted (drafts only, never sends; at most twice per application), and offers a thank-you note in the same turn an interview stage is recorded. Once a few applications resolve, it points you back to `/setup` to calibrate the fit framework from what actually got interviews.
-- **`/notion-sync`** publishes a one-way, read-only view of the pipeline into a Notion database via the official Notion MCP server (OAuth, no API keys) - one row per ranked job plus every tracked application, with a write-once briefing page per row. The repo files stay the system of record: nothing syncs back, and documents sync as filenames only. Complements `/html-report`: that is the deep offline dashboard you regenerate at your desk; this is the glanceable live view from anywhere Notion runs (desktop, web, phone).
-- **`/gmail-sync`** reads your Gmail (via the Gmail connector) for status signals on your open applications - interview invites, assessment links, offers, rejections - and proposes them as a batch for you to approve before anything is written to the tracker or `outcome.md`, citing the source email on every proposed change. Offers stop short of proposing `hired`/`offer_declined` since that's your call; conflicting or unmatched signals get flagged for a manual `/outcome` pass instead of guessed.
-- **`/rank`** bridges `/scrape` and `/apply`: it batch-scores all newly scraped postings against the fit framework (parallel agents fetch each posting and score the five evaluation dimensions) and returns a ranked shortlist with honest per-job strengths and gaps. Deal-breakers veto, deadlines get urgency flags, dead postings get marked expired. Pick a number and it hands off to the full `/apply` workflow.
-- **`/expand`** enriches your profile by scanning public sources you've already linked in it (GitHub repos, portfolio site, Kaggle, Google Scholar) and looking up syllabi for named courses and certifications. Discovered competencies are added to your profile with a source tag. Useful right after `/setup` to surface skills that documents alone don't make explicit.
-- **`/upskill`** analyzes the gap between your profile, your tracked job postings, and your ranked-but-untracked postings (`/rank`'s recorded gaps in `job_scraper/seen_jobs.json`) — or a single posting via `/upskill <URL>`. Produces a prioritized heatmap of skill gaps and a learning plan with web-searched study resources and time estimates. Useful for career planning between applications.
-- **`/html-report`** generates a self-contained HTML dashboard from `job_search_tracker.csv` and the application archives — stat cards, status/sector/channel/funnel charts (inline SVG, no external dependencies), and a filterable applications table. Opens directly in a browser, fully offline. Re-run it any time after `/apply` or `/outcome` adds new entries.
-- **`/add-template`** registers your own CV or cover letter template (LaTeX, Typst, or another toolchain) in place of the stock ones. It captures the template's instructions (source extension, compile command, fonts, style rules, page limit), runs a mandatory test compile, and wires the template into `/apply`. See [Custom templates](#custom-templates) below.
-- **`/add-portal`** generates a job-portal search skill for a job board in your market. It investigates the portal (search URL pattern, result structure, access rules), scaffolds the CLI skill from the same structure as the shipped ones, and test-runs a live query before registering. See [Job search tools](#job-search-tools) below.
+## Другие команды
 
-`/reset` is also available, see [Starting over](#starting-over) below.
+`/setup`, `/scrape` и `/apply` — ядро процесса. Ещё девять команд расширяют его, когда профиль заполнен:
 
-## File structure
+- **`/interview`** готовит к назначенному собеседованию по отклику из трекера. Собирает пакет подготовки под конкретный этап из архива отклика (точный текст вакансии, резюме и письмо, которые читал интервьюер, обратная связь с прошлых этапов), изучает компанию и интервьюеров по правилу «сначала проверь, потом используй», сопоставляет вероятные вопросы с вашими примерами STAR (Ситуация–Задача–Действие–Результат) и предлагает пробное собеседование по ролевому протоколу из `07-interview-prep.md`. На пробелы — честные ответы-мостики, никогда не выдуманный опыт.
+- **`/outcome`** записывает результат отклика: этапы собеседований, офферы, отказы, молчание. Архивирует отправленные резюме, письмо и текст вакансии в `documents/applications/<company>_<role>/`, ведёт `outcome.md` в формате, который разбирает Путь A в `/setup`, и обновляет трекер. Он же отвечает за период, когда результата ещё нет: `/outcome followup` показывает открытые отклики, по которым тишина (по умолчанию 10 дней), пишет короткое напоминание работодателю (follow-up) в вашем стиле и под нужный канал, используя только утверждения из уже отправленных материалов (только черновики, никогда не отправляет; не больше двух на отклик), и предлагает благодарственное письмо в том же ходе, где записан этап собеседования. Когда несколько откликов завершатся, он направит вас обратно в `/setup`, чтобы откалибровать фреймворк соответствия по тому, что реально привело к собеседованиям.
+- **`/gmail-sync`** читает ваш Gmail (через коннектор Gmail) и ищет сигналы о статусе открытых откликов — приглашения на собеседования, ссылки на тестовые задания, офферы, отказы — и предлагает их пачкой на утверждение, прежде чем что-то запишется в трекер или `outcome.md`; у каждого предложенного изменения указано письмо-источник. Для офферов команда не предлагает `hired`/`offer_declined` — это ваше решение; противоречивые или несопоставленные сигналы помечаются для ручного `/outcome`, а не угадываются.
+- **`/rank`** связывает `/scrape` и `/apply`: оценивает пачкой все новые найденные вакансии по фреймворку соответствия (параллельные агенты загружают каждую вакансию и оценивают пять критериев оценки) и возвращает ранжированный шорт-лист с честными сильными сторонами и пробелами по каждой. Стоп-факторы отсекают вакансию, у дедлайнов появляется пометка срочности, мёртвые вакансии помечаются как expired. Выберите номер — и он передаст вакансию в полный процесс `/apply`.
+- **`/expand`** обогащает профиль: просматривает публичные источники, на которые вы уже сослались в нём (репозитории GitHub, сайт-портфолио, Kaggle, Google Scholar), и находит программы указанных курсов и сертификаций. Найденные компетенции добавляются в профиль с пометкой источника. Полезно сразу после `/setup`, чтобы вытащить навыки, которые из одних документов не видны.
+- **`/upskill`** анализирует разрыв между вашим профилем, вакансиями в трекере и ранжированными, но не взятыми в работу вакансиями (пробелы, записанные `/rank` в `job_scraper/seen_jobs.json`) — или одной вакансией через `/upskill <URL>`. Выдаёт тепловую карту пробелов в навыках по приоритету и план обучения с найденными в сети материалами и оценкой времени. Полезно для планирования карьеры между откликами.
+- **`/html-report`** генерирует автономный HTML-дашборд из `job_search_tracker.csv` и архивов откликов: карточки со статистикой, графики по статусам/отраслям/каналам/воронке (встроенный SVG, без внешних зависимостей) и таблица откликов с фильтрами. Открывается прямо в браузере, полностью офлайн. Перезапускайте после того, как `/apply` или `/outcome` добавили записи.
+- **`/add-template`** регистрирует ваш собственный шаблон резюме или сопроводительного письма (LaTeX, Typst или другой инструмент) вместо стандартных. Записывает инструкции шаблона (расширение исходника, команду сборки, шрифты, правила оформления, лимит страниц), запускает обязательную тестовую сборку и подключает шаблон к `/apply`. См. [Свои шаблоны](#custom-templates) ниже.
+- **`/add-portal`** генерирует навык поиска для сайта вакансий вашего рынка. Изучает портал (шаблон URL поиска, структуру результатов, правила доступа), создаёт CLI-навык по той же структуре, что и встроенные, и перед регистрацией делает живой тестовый запрос. См. [Инструменты поиска вакансий](#job-search-tools) ниже.
+
+Есть ещё `/reset`, см. [Начать заново](#starting-over) ниже.
+
+## Структура файлов
 
 ```
-ai-job-search/
-├── CLAUDE.md                          # Main candidate profile + workflow rules
+ai-job-search-ru/
+├── CLAUDE.md                          # Основной профиль кандидата + правила процесса
 ├── .claude/
 │   ├── commands/
-│   │   ├── apply.md                   # /apply workflow (drafter-reviewer)
-│   │   ├── setup.md                   # /setup onboarding (documents folder, CV import, or interview)
-│   │   ├── expand.md                  # /expand competency enrichment from documents and online presence
-│   │   ├── add-template.md            # /add-template register custom templates (LaTeX, Typst, ...)
-│   │   ├── add-portal.md              # /add-portal generate a job-portal search skill for your market
-│   │   ├── rank.md                    # /rank triage scraped jobs into a ranked shortlist
-│   │   ├── outcome.md                 # /outcome record application results, archive materials
-│   │   ├── gmail-sync.md              # /gmail-sync auto-detect application status from Gmail
-│   │   ├── interview.md               # /interview stage-specific prep pack + mock interview
-│   │   ├── html-report.md             # /html-report generate application tracker dashboard
-│   │   ├── notion-sync.md             # /notion-sync one-way pipeline view in a Notion database
-│   │   └── reset.md                   # /reset wipe profile data or documents folder
+│   │   ├── apply.md                   # /apply процесс (автор черновика → ревьюер)
+│   │   ├── setup.md                   # /setup онбординг (папка документов, импорт резюме или интервью)
+│   │   ├── expand.md                  # /expand обогащение компетенций из документов и присутствия в сети
+│   │   ├── add-template.md            # /add-template регистрация своих шаблонов (LaTeX, Typst, ...)
+│   │   ├── add-portal.md              # /add-portal генерация навыка поиска для портала вашего рынка
+│   │   ├── rank.md                    # /rank сортировка найденных вакансий в шорт-лист
+│   │   ├── outcome.md                 # /outcome запись результатов откликов, архив материалов
+│   │   ├── gmail-sync.md              # /gmail-sync автоопределение статуса откликов по Gmail
+│   │   ├── interview.md               # /interview пакет подготовки к этапу + пробное собеседование
+│   │   ├── html-report.md             # /html-report дашборд по трекеру откликов
+│   │   └── reset.md                   # /reset очистка профиля или папки документов
 │   ├── skills/
-│   │   ├── job-application-assistant/  # Core application skill
-│   │   │   ├── SKILL.md               # Skill definition
-│   │   │   ├── 01-candidate-profile.md # Your education, experience, skills
-│   │   │   ├── 02-behavioral-profile.md# PI/DISC/personality assessment
-│   │   │   ├── 03-writing-style.md    # Tone, structure, do's and don'ts
-│   │   │   ├── 04-job-evaluation.md   # Scoring framework for job fit
-│   │   │   ├── 05-cv-templates.md     # LaTeX CV structure + tailoring rules
-│   │   │   ├── 06-cover-letter-templates.md # LaTeX cover letter templates
-│   │   │   └── 07-interview-prep.md   # STAR examples + interview framework
-│   │   ├── job-scraper/               # Job search orchestration
-│   │   └── upskill/                   # /upskill skill gap analysis and learning plan
-│   └── settings.json                  # Claude Code permissions (shared, scoped)
-├── .agents/skills/                    # Job portal CLI tools
-│   ├── jobbank-search/                # Akademikernes Jobbank (Denmark)
-│   ├── jobdanmark-search/             # Jobdanmark.dk (Denmark)
-│   ├── jobindex-search/               # Jobindex.dk (Denmark)
-│   ├── jobnet-search/                 # Jobnet.dk (Denmark, government portal)
-│   ├── linkedin-search/               # LinkedIn public job listings (country-agnostic)
-│   └── freehire-search/               # freehire.me tech job aggregator (multi-market, REST API)
+│   │   ├── job-application-assistant/  # Основной навык откликов
+│   │   │   ├── SKILL.md               # Определение навыка
+│   │   │   ├── 01-candidate-profile.md # Ваше образование, опыт, навыки
+│   │   │   ├── 02-behavioral-profile.md# PI/DISC/личностная оценка
+│   │   │   ├── 03-writing-style.md    # Тон, структура, что делать и чего избегать
+│   │   │   ├── 04-job-evaluation.md   # Система баллов для оценки соответствия
+│   │   │   ├── 05-cv-templates.md     # Структура резюме в LaTeX + правила подгонки
+│   │   │   ├── 06-cover-letter-templates.md # Шаблоны сопроводительных писем в LaTeX
+│   │   │   └── 07-interview-prep.md   # Примеры STAR + фреймворк собеседования
+│   │   ├── job-scraper/               # Оркестрация поиска вакансий
+│   │   └── upskill/                   # /upskill анализ пробелов в навыках и план обучения
+│   └── settings.json                  # Разрешения Claude Code (общие, ограниченные)
+├── .agents/skills/                    # CLI-инструменты порталов
+│   ├── habr-search/                   # Хабр Карьера (career.habr.com)
+│   └── freehire-search/               # freehire.me, агрегатор IT-вакансий (много рынков, REST API)
 ├── cv/
-│   └── main_example.tex               # moderncv LaTeX template
+│   └── main_example.tex               # Шаблон резюме moderncv
 ├── cover_letters/
-│   ├── cover.cls                      # Custom cover letter LaTeX class
-│   ├── cover_example.tex              # Example cover letter (structural reference + CI smoke test)
-│   └── OpenFonts/                     # Lato + Raleway fonts
-├── templates/                         # Custom templates registered via /add-template
-│   └── README.md                      # Folder layout instructions
-├── documents/                         # Career source materials for /setup Path A and /expand
-│   ├── README.md                      # Folder layout instructions
-│   ├── cv/                            # Master CV (PDF or .tex)
-│   ├── linkedin/                      # LinkedIn profile export (PDF)
-│   ├── diplomas/                      # Degree certificates and transcripts
-│   ├── references/                    # Reference letters
-│   └── applications/                  # Past application records (<company>_<role>/)
-├── .github/workflows/ci.yml           # CI: LaTeX smoke compiles, skill lint, CLI typechecks
-├── salary_lookup.py                   # Salary benchmarking tool (BYO data)
+│   ├── cover.cls                      # Свой LaTeX-класс сопроводительного письма
+│   ├── cover_example.tex              # Пример письма (структурный образец + smoke-тест CI)
+│   └── OpenFonts/                     # Шрифты Lato + Raleway
+├── templates/                         # Свои шаблоны, зарегистрированные через /add-template
+│   └── README.md                      # Описание структуры папки
+├── documents/                         # Исходные карьерные материалы для Пути A в /setup и /expand
+│   ├── README.md                      # Описание структуры папки
+│   ├── cv/                            # Основное резюме (PDF или .tex)
+│   ├── linkedin/                      # Экспорт профиля LinkedIn (PDF, необязательно)
+│   ├── diplomas/                      # Дипломы и выписки оценок
+│   ├── references/                    # Рекомендательные письма
+│   └── applications/                  # Записи прошлых откликов (<company>_<role>/)
+├── .github/workflows/ci.yml           # CI: smoke-сборки LaTeX, линт навыков, проверка типов CLI
+├── salary_lookup.py                   # Сравнение зарплат (ваши данные)
 ├── tools/
-│   ├── check_framework_version.py     # CI check: framework_version bumped when skill files change
-│   ├── check_upstream_updates.py      # Preview which personalized files an upstream update touches
-│   ├── convert_salary_excel.py        # Convert salary Excel to JSON
-│   ├── fetch_page.py                  # GET-only browser-header retry for 403s (robots.txt enforced)
-│   ├── install_portal_clis.py         # Install every discovered portal CLI (bun install)
-│   ├── lint_skills.py                 # CI lint for skills, commands, settings.json
-│   ├── posting_guard.py               # Integrity gate: strip hidden text, flag injection-shaped lines
-│   ├── robots_check.py                # Gate the browser-header retry against robots.txt
-│   ├── security_guards.py             # CI guards: permission allow/ask/deny, skill grants, gitignore, manifests
-│   ├── upstream_triage.py             # Sort upstream commits into worth-reviewing vs probably-skip
-│   ├── verify_layout.py               # Measure a compiled PDF's page layout (holes, orphans, footer collisions)
-│   ├── verify_pdf.py                  # Verify a compiled PDF's page count and extractable text
-│   └── README_SALARY_TOOL.md          # Salary tool setup instructions
-├── job_scraper/                       # Scraper state (seen jobs, results)
-├── gmail_sync/                        # /gmail-sync state (processed message IDs, last sync date)
-├── upskill/                           # /upskill report output (markdown reports per run)
-├── job_search_tracker.csv             # Application tracking spreadsheet
-└── SETUP.md                           # Detailed setup guide
+│   ├── check_framework_version.py     # Проверка CI: framework_version поднят при изменении файлов навыков
+│   ├── check_upstream_updates.py      # Какие персонализированные файлы затронет обновление из upstream
+│   ├── convert_salary_excel.py        # Конвертация зарплатного Excel в JSON
+│   ├── fetch_page.py                  # Повтор GET с браузерными заголовками при 403 (с учётом robots.txt)
+│   ├── install_portal_clis.py         # Установка всех найденных CLI порталов (bun install)
+│   ├── lint_skills.py                 # Линт CI для навыков, команд, settings.json
+│   ├── posting_guard.py               # Фильтр целостности: убирает скрытый текст, помечает строки-инъекции
+│   ├── robots_check.py                # Проверка robots.txt перед повтором с браузерными заголовками
+│   ├── security_guards.py             # Проверки CI: allow/ask/deny, права навыков, gitignore, манифесты
+│   ├── upstream_triage.py             # Сортировка коммитов upstream: стоит посмотреть / можно пропустить
+│   ├── verify_layout.py               # Замер вёрстки PDF (дыры, висячие строки, наезды на колонтитул)
+│   ├── verify_pdf.py                  # Проверка числа страниц PDF и извлекаемого текста
+│   └── README_SALARY_TOOL.md          # Настройка инструмента зарплат
+├── job_scraper/                       # Состояние поиска (просмотренные вакансии, результаты)
+├── gmail_sync/                        # Состояние /gmail-sync (обработанные ID писем, дата последней синхронизации)
+├── upskill/                           # Отчёты /upskill (markdown на каждый запуск)
+├── job_search_tracker.csv             # Таблица учёта откликов
+└── SETUP.md                           # Подробное руководство по настройке
 ```
 
-## How `/apply` works
+## Как работает `/apply`
 
-The `/apply` command runs a **drafter-reviewer workflow** with mandatory PDF compilation:
+Команда `/apply` запускает **процесс «автор черновика → агент-ревьюер»** с обязательной сборкой PDF:
 
-1. **Parse** the job posting (URL or text)
-2. **Evaluate fit** against your profile (skills, experience, culture, location, career alignment)
-3. **Draft** a tailored CV and cover letter in LaTeX
-4. **Spawn a reviewer agent** that researches the company and critiques the drafts
-5. **Revise** based on the reviewer's feedback
-6. **Compile and inspect** both PDFs: lualatex for the CV, xelatex for the cover letter. Claude reads the rendered pages and iterates on the LaTeX until the CV is exactly 2 pages with no orphaned entry titles, and the cover letter is exactly 1 page with the signature visible and fonts consistent.
-7. **ATS-check the CV**: extract the PDF's text layer (`pdftotext`, optional dependency) and verify it the way an ATS parser sees it — contact details present as literal text, no garbled glyphs, sane reading order — then score the posting's keyword coverage against the extraction. Keywords the profile genuinely supports get added; genuine gaps stay visible, never stuffed.
-8. **Present** the final output with a verification checklist
+1. **Разбор** вакансии (URL или текст)
+2. **Оценка соответствия** профилю (навыки, опыт, культура, локация, карьерные цели)
+3. **Черновик** резюме и сопроводительного письма в LaTeX под вакансию
+4. **Запуск агента-ревьюера**, который изучает компанию и критикует черновики
+5. **Правки** по замечаниям ревьюера
+6. **Сборка и проверка** обоих PDF: lualatex для резюме, xelatex для письма. Claude читает отрисованные страницы и правит LaTeX, пока резюме не займёт ровно 2 страницы без оторванных заголовков записей, а письмо — ровно 1 страницу с видимой подписью и единообразными шрифтами.
+7. **Проверка резюме на ATS**: извлекается текстовый слой PDF (`pdftotext`, необязательная зависимость) и проверяется так, как его видит парсер ATS, — контакты присутствуют обычным текстом, нет битых глифов, порядок чтения нормальный; затем оценивается покрытие ключевых слов вакансии по извлечённому тексту. Ключевые слова, которые профиль действительно подтверждает, добавляются; реальные пробелы остаются видны, их никогда не «впихивают».
+8. **Итог** с чек-листом проверки
 
-All claims in the CV and cover letter are verified against your actual profile. The system never fabricates skills or experience.
+Все утверждения в резюме и письме сверяются с вашим реальным профилем. Система никогда не выдумывает навыки или опыт.
 
-### What makes this workflow different
+### Чем этот процесс отличается
 
-- **PDF verification loop.** Most LaTeX-resume templates produce "looks fine in the .tex" output that breaks in the PDF: job titles orphan to the next page, cover letters spill onto page 2, bullet fonts silently fall back to the body font. The `/apply` command compiles and visually inspects every PDF and applies targeted fixes (`\needspace`, `\enlargethispage`, font-matching wrappers for list items) until the layout is clean. This runs automatically on every application.
-- **ATS verification on the PDF text layer.** An ATS reads the PDF's embedded text, not the rendered page — and LaTeX can silently produce PDFs whose text extracts as garbage (icon glyphs where the email should be, interleaved lines from multi-column layouts). `/apply` extracts the compiled CV's text layer with `pdftotext` and verifies contact details, reading order, and the posting's keyword coverage against what a parser actually sees. Honesty rule enforced: a keyword the profile doesn't support is acknowledged as a gap, never stuffed in.
-- **Relevance-weighted CV cutting.** When a CV overflows 2 pages, the workflow does not cut mechanically from the "oldest" section. It scores each candidate line by (a) relevance to the target posting, (b) uniqueness in the document, and (c) whether the cover letter depends on it, and cuts the lowest-total-score line first. An older-role bullet that hits posting keywords survives ahead of a recent-role bullet that does not.
-- **Drafter-reviewer separation.** The drafter writes; a second Claude agent, spawned with a fresh context, researches the company and critiques the drafts. The drafter then revises. This catches missed keywords, weak framing, and generic language that a single pass often leaves in.
-- **Token-efficient reviewer dispatch.** The reviewer agent receives drafts inline rather than re-reading them, and the verification checklist runs once at the end of the workflow rather than being duplicated by both agents. Note: the new compile-and-inspect step in Step 5 spends some of those savings on PDF rendering and layout iteration — the workflow trades some end-to-end token cost for a real reduction in broken PDFs reaching the user.
+- **Цикл проверки PDF.** Большинство LaTeX-шаблонов резюме выглядят нормально в .tex и ломаются в PDF: должность отрывается на следующую страницу, письмо вылезает на вторую страницу, шрифт маркеров молча подменяется основным. `/apply` собирает и визуально проверяет каждый PDF и применяет точечные исправления (`\needspace`, `\enlargethispage`, обёртки для шрифтов в списках), пока вёрстка не станет чистой. Это происходит автоматически при каждом отклике.
+- **Проверка ATS по текстовому слою PDF.** ATS читает встроенный в PDF текст, а не отрисованную страницу — а LaTeX может молча выдать PDF, из которого текст извлекается мусором (глифы иконок вместо email, перемешанные строки из многоколоночной вёрстки). `/apply` извлекает текстовый слой собранного резюме через `pdftotext` и проверяет контакты, порядок чтения и покрытие ключевых слов вакансии по тому, что реально видит парсер. Правило честности: ключевое слово, которое профиль не подтверждает, признаётся пробелом, а не вставляется.
+- **Сокращение резюме с учётом релевантности.** Когда резюме не влезает в 2 страницы, процесс не режет механически «самый старый» раздел. Каждая строка-кандидат оценивается по (a) релевантности вакансии, (b) уникальности в документе и (c) тому, опирается ли на неё письмо, и первой убирается строка с наименьшим суммарным баллом. Пункт про старую должность, попадающий в ключевые слова вакансии, переживёт пункт про недавнюю, который не попадает.
+- **Разделение автора и ревьюера.** Автор пишет; второй агент Claude, запущенный с чистым контекстом, изучает компанию и критикует черновики. Затем автор вносит правки. Так ловятся пропущенные ключевые слова, слабые формулировки и общие фразы, которые часто остаются после одного прохода.
+- **Экономный запуск ревьюера.** Агент-ревьюер получает черновики прямо в запросе, а не перечитывает их, а чек-лист проверки выполняется один раз в конце, а не дублируется обоими агентами. Важно: новый шаг сборки и проверки в Шаге 5 тратит часть этой экономии на отрисовку PDF и итерации вёрстки — процесс меняет немного токенов на реальное сокращение числа битых PDF, доходящих до пользователя.
 
-## Customization
+## Кастомизация
 
-### Which files to edit manually
+### Какие файлы править вручную
 
-If you prefer editing files directly instead of using `/setup`:
+Если вы предпочитаете править файлы напрямую, а не через `/setup`:
 
-| File | What to change |
+| Файл | Что менять |
 |------|---------------|
-| `CLAUDE.md` | Your full profile (name, education, experience, skills, goals) |
-| `01-candidate-profile.md` | Structured version of your CV data |
-| `02-behavioral-profile.md` | Your behavioral assessment or self-assessment |
-| `04-job-evaluation.md` | Skill match areas, career goals, motivation filters |
-| `05-cv-templates.md` | Profile statement templates for different role types |
-| `07-interview-prep.md` | Your STAR examples from actual experience |
-| `search-queries.md` | Job search queries for your skills and location |
+| `CLAUDE.md` | Полный профиль (имя, образование, опыт, навыки, цели) |
+| `01-candidate-profile.md` | Структурированные данные резюме |
+| `02-behavioral-profile.md` | Результаты поведенческой оценки или самооценка |
+| `04-job-evaluation.md` | Области совпадения навыков, карьерные цели, фильтры мотивации |
+| `05-cv-templates.md` | Шаблоны раздела «О себе» для разных типов ролей |
+| `07-interview-prep.md` | Ваши примеры STAR из реального опыта |
+| `search-queries.md` | Поисковые запросы под ваши навыки и локацию |
 
-### Updating your search queries
+### Обновление поисковых запросов
 
-As your priorities evolve, you can reconfigure just the job search without re-running the full profile setup:
+Когда приоритеты меняются, можно перенастроить только поиск, не перезапуская всю настройку профиля:
 
 ```
 /setup --section search
 ```
 
-This re-runs the search configuration interview: which roles to target, which skills to search for, which locations, and which portals. It also suggests role types you may not have considered based on your profile.
+Это заново проводит интервью по настройке поиска: какие роли искать, по каким навыкам, в каких городах и на каких порталах. Заодно команда предлагает типы ролей, о которых вы могли не подумать, исходя из профиля.
 
-### Custom templates
+<a id="custom-templates"></a>
+### Свои шаблоны
 
-The CV uses [moderncv](https://ctan.org/pkg/moderncv) (banking style). The cover letter uses a custom `cover.cls` with Lato/Raleway fonts. Both are LaTeX — the reference engine this repo ships and maintains.
+Резюме использует [moderncv](https://ctan.org/pkg/moderncv) (стиль banking). Сопроводительное письмо — собственный `cover.cls` со шрифтами Lato/Raleway. Оба на LaTeX — это эталонный движок, который репозиторий поставляет и поддерживает.
 
-To use your own template instead — LaTeX, [Typst](https://typst.app/), or any other toolchain that compiles to PDF from the command line — run:
+Чтобы использовать свой шаблон — LaTeX, [Typst](https://typst.app/) или любой другой инструмент, собирающий PDF из командной строки, — запустите:
 
 ```
 /add-template
 ```
 
-Point it at your source file (a `.tex` file plus any `.cls`/`.sty` files or bundled fonts; a `.typ` file plus any local packages; or an equivalent for another toolchain). The command interviews you for the template's instructions — source extension, compile command, fonts and where they live, style rules to preserve, hard page limit — stores everything under `templates/`, runs a mandatory test compile, and activates the template so `/apply` drafts and compiles from it. Templates are stored with `[PLACEHOLDER]` tokens instead of personal data, so they're safe to commit and share.
+Укажите исходный файл (`.tex` плюс нужные `.cls`/`.sty` или шрифты; `.typ` плюс локальные пакеты; или аналог для другого инструмента). Команда расспросит вас об инструкциях шаблона — расширение исходника, команда сборки, шрифты и где они лежат, правила оформления, которые надо сохранить, жёсткий лимит страниц, — сохранит всё в `templates/`, запустит обязательную тестовую сборку и активирует шаблон, чтобы `/apply` писал и собирал по нему. Шаблоны хранятся с токенами `[PLACEHOLDER]` вместо личных данных, поэтому их безопасно коммитить и публиковать.
 
-- `/add-template --list` shows registered templates
-- `/add-template --use <name>` switches between them
-- `/add-template --use default` reverts to the stock moderncv / cover.cls templates
+- `/add-template --list` показывает зарегистрированные шаблоны
+- `/add-template --use <name>` переключает между ними
+- `/add-template --use default` возвращает стандартные шаблоны moderncv / cover.cls
 
-If you prefer doing it by hand, the manual route still works: update the guidance in `05-cv-templates.md` and `06-cover-letter-templates.md`.
+Ручной путь тоже работает: обновите указания в `05-cv-templates.md` и `06-cover-letter-templates.md`.
 
-### Job search tools
+<a id="job-search-tools"></a>
+### Инструменты поиска вакансий
 
-The four Danish CLI tools in `.agents/skills/` (Jobbank, Jobdanmark, Jobindex, Jobnet) demonstrate the pattern for building a job-portal integration for a specific market. If you're in a different country, run:
+В `.agents/skills/` лежат два портала:
+
+- **`habr-search`** — [Хабр Карьера](https://career.habr.com): IT-вакансии РФ/СНГ через публичный JSON без ключа, включён по умолчанию, **без зависимостей времени выполнения**. Фильтры по городу (`--city`), грейду (`--grade`), удалёнке (`--remote`), зарплате в ₽ (`--salary`, `--with-salary`), типу занятости (`--employment`) и свежести (`--jobage`). Пример запуска — в [быстром старте](#2-установка-инструментов-поиска). См. `.agents/skills/habr-search/SKILL.md`.
+- **`freehire-search`** — запросы к публичному REST API агрегатора [freehire.me](https://freehire.me) (JSON, без ключа API). Ориентирован на IT (разработка, данные, инженерия, DevOps, удалёнка), поддерживает много рынков через флаги (`--region`, в том числе `cis`, `--country`, `--remote`), **без зависимостей времени выполнения**. Результаты приходят структурированными (навыки, грейд, категория). Бэкенд под лицензией MIT и [разворачивается у себя](https://github.com/strelov1/freehire) — направьте `FREEHIRE_API_URL` на свой экземпляр, если хотите. См. `.agents/skills/freehire-search/SKILL.md`.
+
+Поиска по hh.ru нет (API закрыт, подробности в разделе [Что изменено относительно оригинала](#что-изменено-относительно-оригинала)), но `/apply` по ссылке на вакансию hh.ru работает. Чтобы добавить другой сайт вакансий, запустите:
 
 ```
 /add-portal
 ```
 
-Give it your local job board's URL. The command investigates the portal (search-URL pattern, result-page structure, robots.txt/access rules), scaffolds a CLI skill with the same structure, commands, and output contract as the shipped ones, and test-runs a live query before registering anything. Auth-walled portals are declined, and portals with restrictive terms get a prominent personal-use-only warning in the generated skill. The generated skill is market-specific and lives in your fork; the generator itself is the universal part.
+Дайте ему URL сайта вакансий. Команда изучит портал (шаблон URL поиска, структуру страницы результатов, robots.txt и правила доступа), создаст CLI-навык с той же структурой, командами и контрактом вывода, что у встроенных, и перед регистрацией сделает живой тестовый запрос. Порталы за авторизацией отклоняются, а для порталов с ограничительными условиями в сгенерированный навык добавляется заметное предупреждение «только для личного использования». Сгенерированный навык привязан к рынку и живёт в вашей копии; универсальна только сама генерация.
 
-Maintaining a fork adapted to your market or language? Add it to the [Community forks & adaptations](https://github.com/MadsLorentzen/ai-job-search/discussions/78) thread so others can find it.
+Ведёте форк под свой рынок или язык? Добавьте его в обсуждение [Community forks & adaptations](https://github.com/MadsLorentzen/ai-job-search/discussions/78) (в оригинальном репозитории), чтобы другие могли его найти.
 
-For **country-agnostic** starting points outside Denmark, the repo ships two portal skills alongside the Danish demos:
+### Расширение фреймворка: порталы, шаблоны, критерии — и заимствования из других форков
 
-- **`linkedin-search`** — built on LinkedIn's public, unauthenticated `jobs-guest` endpoints. Field-agnostic, **zero runtime dependencies** (runs with just `bun`), and takes the search location as an explicit flag, so it works for any market out of the box (`-l "Berlin, Germany"`, `-l "Mumbai, Maharashtra, India"`, `-l "Remote"`, …). Intended for **personal use only** — automated access is against LinkedIn's Terms of Service, so keep volume low. See `.agents/skills/linkedin-search/SKILL.md`.
-- **`freehire-search`** — queries the [freehire.me](https://freehire.me) aggregator's public REST API (JSON, no API key). Tech-focused (software, data, engineering, DevOps, remote), multi-market via facet flags (`--region`, `--country`, `--remote`), and **zero runtime dependencies**. Unlike the HTML-scraping Danish portals, results come back structured (skills, seniority, category). The backend is MIT-licensed and [self-hostable](https://github.com/strelov1/freehire) — point `FREEHIRE_API_URL` at your own instance if you prefer. See `.agents/skills/freehire-search/SKILL.md`.
+Всё описанное выше складывается в модель расширения, поэтому скажем прямо. У фреймворка три точки расширения, и ни одна не требует правок в основном репозитории (upstream):
 
-### Extending the framework: portals, templates, criteria - and borrowing from other forks
+1. **Навыки порталов** — модульная система для сайтов вакансий. Каждый навык `*-search` — самодостаточная папка в `.agents/skills/` с одинаковым контрактом (CLI с `search`/`detail`, вывод `--format json|table|plain`, флаг `enabled:` в `SKILL.md`, собственные тесты). `/scrape` автоматически находит любой установленный навык, следующий контракту, — ничего не надо регистрировать и подключать. `/add-portal` генерирует новые; [индекс порталов сообщества](https://github.com/MadsLorentzen/ai-job-search/discussions/78) собирает те, что сделали другие форки.
+2. **Шаблоны документов** — `/add-template` регистрирует любой инструмент для резюме или письма, собирающий PDF из командной строки, на LaTeX или нет.
+3. **Критерии оценки** — стоп-факторы и предпочтения в профиле пишутся в свободной форме, и рубрика оценки работает по тому, что вы туда положили. «Хорошие условия декретного отпуска», «зарплата не ниже X ₽ на руки», «без дежурств» — каждое это одна строка профиля, без кода, и она реально весит в оценках соответствия `/rank` и `/apply`. Язык — единственный тип стоп-фактора со специальной структурированной обработкой: `/setup` записывает все рабочие языки и ваш уровень (спрашивает напрямую или выводит из резюме/экспорта LinkedIn) в таблицу `Languages`, а Языковой фильтр (Language Gate) (`04-job-evaluation.md`) жёстко отклоняет вакансию, требующую языка, который вы вообще не указали, и лишь помечает — не отклоняет автоматически — вакансию, где требуется уровень выше указанного вами в языке, которым вы владеете. Так пограничный случай (скажем, строгое «свободный» при вашем B1/B2) получает ваше решение, а не тихо отсеивается.
 
-Everything above adds up to an extension model, so here it is stated plainly. The framework has three extension points, and none of them require touching upstream:
+**Заимствование навыка портала из другого форка** — задуманный способ получить сайт вакансий, которого нет в поставке: найдите его в [индексе порталов](https://github.com/MadsLorentzen/ai-job-search/discussions/78), откройте форк и скопируйте одну папку в свою `.agents/skills/`. Прежде чем запускать:
 
-1. **Portal skills** - the module system for job boards. Every `*-search` skill is a self-contained folder under `.agents/skills/` with the same contract (a `search`/`detail` CLI, `--format json|table|plain` output, an `enabled:` flag in its `SKILL.md`, its own tests). `/scrape` auto-discovers any installed skill that follows the contract - nothing to register, nothing to wire up. `/add-portal` generates new ones; the [community portal index](https://github.com/MadsLorentzen/ai-job-search/discussions/78) catalogs the ones other forks have built.
-2. **Document templates** - `/add-template` registers any CV or cover-letter toolchain that compiles to PDF from the command line, LaTeX or otherwise.
-3. **Evaluation criteria** - deal-breakers and preferences in your profile are free-form, and the evaluation rubric scores against whatever you put there. "Strong parental-leave terms", "minimum salary X per my union's scale", "no on-call" - each is one profile line, no code, and it carries real weight in `/rank` and `/apply` fit evaluations. Language is the one deal-breaker type with dedicated, structured handling: `/setup` captures every language you work in and your level (asked directly, or inferred from your CV/LinkedIn export) into a `Languages` table, and the Language Gate (`04-job-evaluation.md`) hard-rejects a posting that requires a language you haven't declared at all, while flagging - not auto-rejecting - one that asks for a higher level than you declared in a language you do work in, so a borderline case (a strict "fluent" bar against your own B1/B2, say) gets your judgment instead of a silent drop.
+- **Прочитайте код.** Весь — эти CLI запускаются на вашей машине без подтверждения (`.claude/settings.json` их разрешает) и работают рядом с вашими карьерными данными. Убедитесь, что сетевые запросы идут только на заявленный сайт вакансий, что в `package.json` нет `dependencies` и скриптов жизненного цикла (`postinstall` и т. п.) и что ничего не читается и не пишется за пределами своей папки.
+- **Запустите его тесты офлайн** (`bun test` в папке `cli/` навыка) — у хорошо сделанного навыка тесты проходят без сети.
+- Проверьте флаг `enabled:` и собственные заметки навыка об условиях использования.
 
-**Borrowing a portal skill from another fork** is the intended way to get a board that upstream doesn't ship: find it in the [portal index](https://github.com/MadsLorentzen/ai-job-search/discussions/78), open that fork, and copy the one folder into your own `.agents/skills/`. Before you run it:
+Копирование ручное намеренно. Ваши настройки уже разрешают установленным навыкам порталов запускаться без вопросов — поэтому установщик, который тянул бы их за вас из чужих репозиториев, пропустил бы единственную важную проверку: вас, читающего код. Такого установщика нет, и это решение по безопасности, а не недостающая функция.
 
-- **Read the code.** All of it - these CLIs run pre-approved on your machine (`.claude/settings.json` allowlists them) against your career data. Check that the only network calls go to the job board it claims to search, that `package.json` has no `dependencies` and no lifecycle scripts (`postinstall` etc.), and that nothing reads or writes outside its own folder.
-- **Run its tests offline** (`bun test` in the skill's `cli/` directory) - a well-built skill's tests pass with no network access.
-- Check the `enabled:` flag and the skill's own ToS notes.
+Источники *данных* под конкретный рынок (национальная база зарплат, местные тарифные таблицы) устроены так же, как порталы: им место в форке под рынок, а делиться ими стоит через [#78](https://github.com/MadsLorentzen/ai-job-search/discussions/78), а не в основном репозитории.
 
-The copy step is manual on purpose. Your settings already allow installed portal skills to run without asking each time - so an installer that fetched them from third-party repos for you would skip the one check that matters: you, reading the code first. There isn't one, and that's a security decision rather than a missing feature.
+### Сравнение зарплат
 
-Market-specific *data sources* (a national salary database, local award-rate tables) follow the same pattern as portals: they belong in a market fork, shared via [#78](https://github.com/MadsLorentzen/ai-job-search/discussions/78), not upstream.
+Инструмент зарплат работает с любыми вашими данными (зарплатные отчёты Хабр Карьеры, исследования hh.ru, собственные данные и т. п.). Формат и настройка — в `tools/README_SALARY_TOOL.md`. Если данных нет, шаг с зарплатой просто пропускается.
 
-### Salary benchmarking
+<a id="starting-over"></a>
+### Начать заново
 
-The salary tool works with any salary data you provide (union statistics, Glassdoor exports, personal research, etc.). See `tools/README_SALARY_TOOL.md` for the expected format and setup. If you don't have salary data, the salary step is simply skipped.
-
-### Starting over
-
-To wipe your profile data and start fresh:
+Чтобы стереть данные профиля и начать с нуля:
 
 ```
-/reset profile    # clears skill files, preserves framework rules
-/reset documents  # deletes files from documents/ folder
-/reset all        # both
+/reset profile    # очищает файлы навыков, сохраняет правила фреймворка
+/reset documents  # удаляет файлы из папки documents/
+/reset all        # и то, и другое
 ```
 
-`/reset` shows exactly what will be deleted and requires you to type `RESET` to confirm. Nothing is deleted until you do.
+`/reset` показывает, что именно будет удалено, и требует ввести `RESET` для подтверждения. Пока вы этого не сделаете, ничего не удаляется.
 
-### Staying up to date
+### Обновления
 
-Upstream moves fast. Rather than pulling raw `master` and hoping, update your fork to a tagged [release](../../releases) - a vetted checkpoint described in [CHANGELOG.md](CHANGELOG.md). `python3 tools/check_upstream_updates.py` previews exactly which of your personalized files an update touches before you merge, and `python3 tools/upstream_triage.py` sorts the commits you're behind into "worth reviewing" vs "probably skip" (a weekly workflow can post this to a rolling issue). Full walkthrough in [SETUP.md, section 8](SETUP.md#8-pulling-upstream-updates-into-your-fork).
+Основной репозиторий (upstream) этого форка — [MadsLorentzen/ai-job-search](https://github.com/MadsLorentzen/ai-job-search); изменения оттуда переносятся сюда, а ваша копия получает их уже из `spichkinevgeniy/ai-job-search-ru`. Проект развивается быстро. Вместо того чтобы тянуть сырой `master` наудачу, обновляйтесь до размеченного [релиза](../../releases) — проверенной точки, описанной в [CHANGELOG.md](CHANGELOG.md). `python3 tools/check_upstream_updates.py` заранее показывает, какие из ваших персонализированных файлов затронет обновление, а `python3 tools/upstream_triage.py` сортирует коммиты, от которых вы отстали, на «стоит посмотреть» и «можно пропустить» (еженедельный workflow может публиковать это в одно обновляемое issue). Полное руководство — в [SETUP.md, раздел 8](SETUP.md#8-pulling-upstream-updates-into-your-fork).
 
-## Tips for better results
+## Советы для лучшего результата
 
-### Profile depth matters
+### Глубина профиля решает
 
-The single biggest factor in output quality is how much detail you put into your profile. A thin profile produces generic applications; a detailed one enables genuinely tailored results.
+Главный фактор качества результата — насколько подробно заполнен профиль. Скудный профиль даёт шаблонные отклики; подробный позволяет по-настоящему подогнать результат.
 
-- **Role descriptions:** Don't just list job titles. Describe what you actually did in each position: specific projects, tools used, responsibilities, and measurable achievements. The more material you provide, the more precisely the system can reframe your experience for different roles.
-- **Skills in context:** Instead of listing "Python" or "project management," describe how and where you applied them. "Built ML pipelines for customer churn prediction in Python using scikit-learn" gives the system far more to work with than "Python, machine learning."
-- **All onboarding paths work:** Whether you point `/setup` at your `documents/` folder, paste a single CV, or walk through the interview, the principle is the same: richer input produces sharper output.
+- **Описание ролей:** не ограничивайтесь названиями должностей. Опишите, что вы реально делали на каждой позиции: конкретные проекты, инструменты, обязанности и измеримые достижения. Чем больше материала, тем точнее система переформулирует ваш опыт под разные роли.
+- **Навыки в контексте:** вместо «Python» или «управление проектами» опишите, как и где вы их применяли. «Построил ML-пайплайны для прогноза оттока клиентов на Python и scikit-learn» даёт системе намного больше, чем «Python, машинное обучение».
+- **Все пути онбординга работают:** укажете ли вы `/setup` на папку `documents/`, вставите одно резюме или пройдёте интервью — принцип один: чем богаче вход, тем точнее результат.
 
-### Career path discovery
+### Поиск карьерных путей
 
-The framework supports two distinct modes of job searching:
+Фреймворк поддерживает два режима поиска работы:
 
-- **Explicit targeting:** You know which roles or sectors you want. The system helps refine and prioritize based on fit.
-- **Latent opportunity discovery:** By analyzing your full history (not just job titles, but the actual work you did), the system can surface career paths you haven't considered. Transferable skills that map to unexpected industries, patterns in what you enjoyed or excelled at, or emerging roles that combine your domain expertise with new technology.
+- **Явная цель:** вы знаете, какие роли или отрасли вам нужны. Система помогает уточнить и расставить приоритеты по соответствию.
+- **Поиск скрытых возможностей:** анализируя всю вашу историю (не только названия должностей, а реальную работу), система может предложить карьерные пути, о которых вы не думали: переносимые навыки, подходящие для неожиданных отраслей, закономерности в том, что вам нравилось или удавалось, или новые роли, сочетающие вашу экспертизу с новыми технологиями.
 
-To get the most from this, invest time during `/setup` in describing not just your experience, but what energized you, what drained you, and what you'd want more of. This context directly shapes how the system evaluates fit and which roles it surfaces during `/scrape`.
+Чтобы выжать из этого максимум, уделите время в `/setup` описанию не только опыта, но и того, что вас заряжало, что выматывало и чего хотелось бы больше. Этот контекст напрямую влияет на оценку соответствия и на то, какие роли система предлагает в `/scrape`.
 
-## Contributing
+## Участие в разработке
 
-Thinking about a PR? Read [CONTRIBUTING.md](CONTRIBUTING.md) first - it explains what gets merged, what lives in forks, and why.
+Думаете о PR? Сначала прочитайте [CONTRIBUTING.md](CONTRIBUTING.md) — там сказано, что принимается в этот форк, а что лучше отправлять в оригинал.
 
-## Acknowledgements
+## Благодарности
 
-- [Mikkel Krogholm](https://github.com/mikkelkrogsholm) ([skills repo](https://github.com/mikkelkrogsholm/skills)) for the job search CLI skills
-- Built with [Claude Code](https://claude.com/claude-code) by [Anthropic](https://anthropic.com)
+- [Mads Lorentzen](https://github.com/MadsLorentzen) — автор оригинального [ai-job-search](https://github.com/MadsLorentzen/ai-job-search)
+- [Mikkel Krogholm](https://github.com/mikkelkrogsholm) ([репозиторий навыков](https://github.com/mikkelkrogsholm/skills)) — за CLI-навыки поиска вакансий
+- Построено на [Claude Code](https://claude.com/claude-code) от [Anthropic](https://anthropic.com)
 
-## License
+## Лицензия
 
-MIT
+MIT. Копирайт оригинального проекта сохраняется — см. [LICENSE](LICENSE).

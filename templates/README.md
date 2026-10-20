@@ -1,26 +1,28 @@
-# Custom Templates
+# Свои шаблоны
 
-This folder holds user-registered templates (LaTeX, Typst, or any other toolchain with a declared compile command), managed by the `/add-template` command. The framework works out of the box with its stock templates (moderncv for CVs, `cover.cls` for cover letters) — this folder only gets content when you register your own.
+В этой папке хранятся шаблоны, зарегистрированные пользователем (LaTeX, Typst или любой другой инструмент с заданной командой сборки); ими управляет команда `/add-template`. Фреймворк сразу работает со стандартными шаблонами (moderncv для резюме, `cover.cls` для сопроводительных писем) — в этой папке что-то появляется, только когда вы регистрируете свой.
 
-## Layout
+## Структура
 
 ```
 templates/
 ├── cv/
 │   └── <template-name>/
-│       ├── template.<ext>  # Profile-agnostic skeleton ([PLACEHOLDER] tokens), e.g. template.tex or template.typ
-│       ├── TEMPLATE.md      # Manifest: source extension, compile command, fonts, page limit, style rules, pitfalls
-│       ├── *.cls / *.sty    # Custom class/style files, or Typst packages (if the template needs them)
-│       └── fonts/           # Bundled font files (if not using system fonts)
+│       ├── template.<ext>  # Каркас без привязки к профилю (токены [PLACEHOLDER]), например template.tex или template.typ
+│       ├── TEMPLATE.md      # Манифест: расширение исходника, команда сборки, шрифты, лимит страниц, правила оформления, подводные камни
+│       ├── *.cls / *.sty    # Свои файлы классов/стилей или пакеты Typst (если шаблону нужны)
+│       └── fonts/           # Встроенные файлы шрифтов (если не используются системные)
 └── cover_letters/
     └── <template-name>/
-        └── (same layout)
+        └── (та же структура)
 ```
 
-## How it works
+## Как это работает
 
-- `/add-template` interviews you for the template's instructions (source extension, compile command, fonts, style rules, page limit), stores the files here, and runs a mandatory test compile before registering anything.
-- Activating a template adds a managed block to `05-cv-templates.md` or `06-cover-letter-templates.md`, which is what `/apply` reads when drafting and compiling — no other wiring needed.
-- `/add-template --list` shows registered templates; `/add-template --use <name>` switches; `/add-template --use default` reverts to the stock templates.
+- `/add-template` расспрашивает вас об инструкциях шаблона (расширение исходника, команда сборки, шрифты, правила оформления, лимит страниц), сохраняет файлы здесь и перед регистрацией обязательно запускает тестовую сборку.
+- При активации шаблона в `05-cv-templates.md` или `06-cover-letter-templates.md` добавляется управляемый блок — именно его читает `/apply` при написании черновиков и сборке, больше ничего подключать не нужно.
+- `/add-template --list` показывает зарегистрированные шаблоны; `/add-template --use <name>` переключает; `/add-template --use default` возвращает стандартные шаблоны.
 
-Templates are stored with `[PLACEHOLDER]` tokens instead of personal data, so they are safe to commit and share.
+Для резюме и писем на русском шаблон должен поддерживать кириллицу (шрифты с кириллическими глифами); тестовая сборка — хороший момент это проверить.
+
+Шаблоны хранятся с токенами `[PLACEHOLDER]` вместо личных данных, поэтому их безопасно коммитить и публиковать.

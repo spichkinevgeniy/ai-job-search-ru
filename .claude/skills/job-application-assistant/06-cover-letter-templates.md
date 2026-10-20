@@ -2,37 +2,45 @@
 framework_version: 1.0.2
 ---
 
-# Cover Letter Templates and Tailoring Guide
+# Шаблоны сопроводительных писем и правила адаптации
 
-## Template: Custom cover.cls (XeLaTeX)
+## Шаблон: собственный cover.cls (XeLaTeX)
 
-Cover letters use a custom LaTeX document class (`cover.cls`) with Lato/Raleway fonts.
+Сопроводительные письма используют собственный класс документа LaTeX (`cover.cls`) со шрифтами Lato/Raleway.
 
-**Output file:** `cover_letters/cover_<company>_<role>.tex`
-**Compile with:** XeLaTeX (cover.cls requires fontspec)
-**Font directory:** `cover_letters/OpenFonts/fonts/`
+**Выходной файл:** `cover_letters/cover_<company>_<role>.tex`
+**Компиляция:** XeLaTeX (cover.cls требует fontspec)
+**Папка шрифтов:** `cover_letters/OpenFonts/fonts/`
 
-### Compile command
+### Кириллица в письме (важно)
+
+Письмо по умолчанию пишется по-русски, если вакансия на русском. Версии Lato и Raleway, которые сейчас лежат в `cover_letters/OpenFonts/fonts/`, **не содержат кириллицы** (и знака `₽`): XeLaTeX компилирует без ошибок, но русские буквы пропадают из PDF, а в логе появляется `Missing character`. Перед первым русским письмом:
+
+- положи в `cover_letters/OpenFonts/fonts/lato/` и `.../raleway/` версии шрифтов с кириллицей (Lato 2.x и Raleway с Google Fonts её содержат) под теми же именами файлов, что ждёт `cover.cls`, либо замени шрифты в адаптированном письме на шрифт с кириллицей через fontspec;
+- после компиляции всегда проверяй лог на `Missing character` и визуально — что русский текст на месте;
+- если шрифта с `₽` нет, пиши «руб.».
+
+### Команда компиляции
 
 ```bash
 cd cover_letters && xelatex -interaction=nonstopmode cover_<company>_<role>.tex
 ```
 
-Expected output: `Output written on cover_<company>_<role>.pdf (1 page, ...)`. Any page count other than 1 is a failure that must be fixed before presenting to the user.
+Ожидаемый вывод: `Output written on cover_<company>_<role>.pdf (1 page, ...)`. Любое число страниц, кроме 1, — ошибка, которую нужно исправить до показа пользователю.
 
-## Compile-and-Inspect Loop (MANDATORY)
+## Цикл «компиляция и проверка» (ОБЯЗАТЕЛЬНО)
 
-After writing the cover letter and before presenting to the user, always compile and visually inspect the PDF. Iterate until the layout is clean:
+После написания письма и до показа пользователю всегда компилируй и визуально проверяй PDF. Повторяй, пока вёрстка не станет чистой:
 
-1. Run `xelatex -interaction=nonstopmode cover_<company>_<role>.tex`
-2. Confirm page count is exactly 1 and compile succeeded
-3. Read the PDF via the Read tool and visually check: signature fits at the bottom, no text cut off, bullet font matches body
+1. Запусти `xelatex -interaction=nonstopmode cover_<company>_<role>.tex`
+2. Убедись, что страница ровно одна и компиляция прошла успешно
+3. Прочитай PDF через инструмент Read и визуально проверь: подпись помещается внизу, текст не обрезан, шрифт пунктов совпадает с основным текстом
 
-### Known template pitfall: itemize inside `\lettercontent{}`
+### Известная ловушка шаблона: itemize внутри `\lettercontent{}`
 
-The `\lettercontent{}` macro appends `\\` to its argument. This breaks when the argument ends in `\end{itemize}` because `\\` has no line to break after the environment closes, producing `! LaTeX Error: There's no line here to end.` and no PDF output.
+Макрос `\lettercontent{}` добавляет `\\` в конец своего аргумента. Это ломается, когда аргумент заканчивается на `\end{itemize}`: после закрытия окружения у `\\` нет строки, которую можно разорвать, и получается `! LaTeX Error: There's no line here to end.` без PDF на выходе.
 
-**Wrong (breaks compile):**
+**Неправильно (ломает компиляцию):**
 ```latex
 \lettercontent{Here is how my experience maps:
 \begin{itemize}
@@ -40,7 +48,7 @@ The `\lettercontent{}` macro appends `\\` to its argument. This breaks when the 
 \end{itemize}}
 ```
 
-**Correct — close `\lettercontent{}` before the list and wrap the list in the matching Raleway-Medium font so typography stays consistent:**
+**Правильно — закрой `\lettercontent{}` перед списком и оберни список в тот же шрифт Raleway-Medium, чтобы типографика осталась единой:**
 ```latex
 \lettercontent{Here is how my experience maps:}
 
@@ -53,9 +61,9 @@ The `\lettercontent{}` macro appends `\\` to its argument. This breaks when the 
 \lettercontent{[next paragraph]}
 ```
 
-The font wrapper is mandatory — if you just move `\begin{itemize}` outside `\lettercontent{}` without the `\fontspec` block, bullets render in the default body font (Lato) and visually mismatch the rest of the letter.
+Обёртка со шрифтом обязательна: если просто вынести `\begin{itemize}` за пределы `\lettercontent{}` без блока `\fontspec`, пункты выведутся шрифтом основного текста по умолчанию (Lato) и визуально не совпадут с остальным письмом.
 
-## Document Structure
+## Структура документа
 
 ```latex
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -113,68 +121,79 @@ The font wrapper is mandatory — if you just move `\begin{itemize}` outside `\l
 \end{document}
 ```
 
-## Key Commands Reference
+Для письма на русском замени в адаптированном файле английские строки шаблона: `\lettercontent{Dear [Name/Team],}` → `\lettercontent{Здравствуйте!}` или `\lettercontent{Добрый день, Анна!}`; `\lettercontent{I look forward to hearing from you.}` → `\lettercontent{Буду рад обсудить, чем могу быть полезен.}`; `\closing{Kind regards,}` → `\closing{С уважением,}`; `Page` в `\rfoot` → `Страница`. Дату `\today` без русской локализации XeLaTeX выведет по-английски, поэтому пиши её явно: `\currentdate{20 октября 2026 г.}`. Ссылку на LinkedIn в `\namesection` оставляй, только если она есть у кандидата; для российских работодателей подойдёт ссылка на резюме на hh.ru, профиль на Хабр Карьере, GitHub или Telegram.
 
-| Command | Purpose |
+## Справочник команд
+
+| Команда | Назначение |
 |---------|---------|
-| `\namesection{}{Name}{contact info}` | Header with name and contact |
-| `\currentdate{date}` | Date field (use `\today` or explicit date) |
-| `\lettercontent{text}` | Body paragraph (adds spacing after) |
-| `\closing{text}` | Closing line |
-| `\signature{name}` | Printed name below signature |
+| `\namesection{}{Name}{contact info}` | Шапка с именем и контактами |
+| `\currentdate{date}` | Поле даты (`\today` или явная дата) |
+| `\lettercontent{text}` | Абзац основного текста (добавляет отступ после) |
+| `\closing{text}` | Завершающая строка |
+| `\signature{name}` | Имя под подписью |
 
-## Tailoring Guidelines
+## Правила адаптации
 
-### Salutation
-- If you know the hiring manager's name: "Dear [First Last],"
-- If you know the team: "Dear [Company] hiring team,"
-- Generic: "Dear [Company]," (avoid "To whom it may concern")
+### Обращение
+- Если знаешь имя нанимающего менеджера или рекрутера: «Добрый день, [Имя]!» (в российской деловой переписке — по имени или имени-отчеству, как человек подписывается в вакансии; по-английски — "Dear [First Last],")
+- Если знаешь команду: «Здравствуйте, команда [Компания]!» (по-английски — "Dear [Company] hiring team,")
+- Без имени: «Здравствуйте!» (по-английски — "Dear [Company],"; избегай "To whom it may concern" и «Уважаемые господа»)
 
-### Length - Hard 1-Page Limit
-- Target: 1 page including signature block
-- Maximum: **never exceed 1 page**
-- **Word budget: 250-300 words** of body text (not counting LaTeX markup). This is the safe maximum. 350 words will overflow.
-- **Always count**: opening paragraph + bullet list paragraph + closing paragraph = 3 blocks. Add a 4th only if the others are short.
-- When adding company-specific content, trim other content to compensate rather than adding net length
+### Объём — жёсткий лимит в 1 страницу
+- Цель: 1 страница вместе с подписью
+- Максимум: **никогда не больше 1 страницы**
+- **Бюджет слов: 250-300 слов** основного текста (без разметки LaTeX). Это безопасный максимум. 350 слов не поместятся. Русский текст при том же числе слов обычно длиннее английского, поэтому для русского письма целься в нижнюю границу.
+- **Всегда считай**: вступительный абзац + абзац со списком + завершающий абзац = 3 блока. Четвёртый добавляй, только если остальные короткие.
+- Добавляя содержимое о компании, сокращай другое, а не увеличивай общий объём
 
-### Line Spacing
-- Add `\usepackage{setspace}` and `\setstretch{1.0}` if the letter is long and needs to fit on one page
-- Use `\vspace{.5cm}` between major sections for readability (only if space permits)
+### Межстрочный интервал
+- Добавь `\usepackage{setspace}` и `\setstretch{1.0}`, если письмо длинное и его нужно уместить на одну страницу
+- Используй `\vspace{.5cm}` между крупными частями для читаемости (только если есть место)
 
-### Bullet Lists
-- Place `\begin{itemize}...\end{itemize}` **outside** a `\lettercontent{}` block (see "Known template pitfall" above), wrapped in the matching Raleway-Medium `\fontspec` so the bullet font matches the body
-- 3-5 bullets is ideal
-- Start each bullet with bold label or action verb
-- Use `\textbf{Label:}` for category-style bullets
-- A bullet whose text begins with a literal `[` must be braced: `\item {[text]}`. Unbraced, LaTeX parses `[text]` as `\item`'s optional label and renders it off the left page edge, missing from the PDF text layer entirely
+### Маркированные списки
+- Ставь `\begin{itemize}...\end{itemize}` **вне** блока `\lettercontent{}` (см. «Известная ловушка шаблона» выше), обёрнутым в тот же `\fontspec` Raleway-Medium, чтобы шрифт пунктов совпадал с основным текстом
+- Идеально 3-5 пунктов
+- Начинай каждый пункт с жирной метки или глагола действия
+- Используй `\textbf{Label:}` для пунктов-категорий
+- Пункт, текст которого начинается с буквального `[`, надо взять в фигурные скобки: `\item {[text]}`. Без скобок LaTeX разберёт `[text]` как необязательную метку `\item` и выведет её за левым краем страницы, и в текстовом слое PDF её не будет совсем
 
-### LaTeX Special Characters
-Escape these wherever they appear in body text:
-- Ampersand: `\&` (company names: Brüel \& Kjær, H\&M) - unescaped, the compile fails loudly
-- Percent: `\%` ("grew revenue 30\%") - unescaped, it does **not** fail: everything after the `%` on that line is silently eaten as a LaTeX comment
-- Dollar: `\$`, hash: `\#`, underscore: `\_`
-- Tilde: `\textasciitilde{}`, caret: `\textasciicircum{}`, backslash: `\textbackslash{}`
+### Спецсимволы LaTeX
+Экранируй их везде, где они встречаются в основном тексте:
+- Амперсанд: `\&` (названия компаний: Procter \& Gamble, H\&M) — без экранирования компиляция громко падает
+- Процент: `\%` («выручка выросла на 30\%») — без экранирования **не** падает: всё после `%` в этой строке молча съедается как комментарий LaTeX
+- Доллар: `\$`, решётка: `\#`, подчёркивание: `\_`
+- Тильда: `\textasciitilde{}`, крышка: `\textasciicircum{}`, обратный слэш: `\textbackslash{}`
 
-### Non-English Cover Letters
-- Same template structure, just write content in the posting's language
-- Adjust date format to local convention
-- Adjust closing to local convention (e.g. "Med venlig hilsen," for Danish)
+### Письма не на английском
+- Та же структура шаблона, просто пиши содержимое на языке вакансии
+- Формат даты — по местным правилам (по-русски: «20 октября 2026 г.» или «20.10.2026»)
+- Завершающую формулу — по местным правилам (по-русски: «С уважением,»)
 
-## Checklist Before Finalizing
-- [ ] No em-dashes (use commas or periods instead)
-- [ ] No cliches or empty filler
-- [ ] Every claim backed by specific example
-- [ ] Forward-looking framing: focuses on tasks you'll solve, not just past duties
-- [ ] Motivation section references this specific company's mission/values
-- [ ] Company name and role are correct throughout
-- [ ] Date is current
-- [ ] Fits on one page
-- [ ] Language matches the job posting language
-- [ ] Salutation is appropriate (named person if possible)
-- [ ] Headline is engaging and specific, not generic
+## Короткий отклик на hh.ru и Хабр Карьере
 
-## Submission Guidelines (Best Practice)
-- Submit only the documents the employer requests
-- Export as PDF to preserve formatting
-- Name files clearly: "[Your Name] CV" and "[Your Name] Cover Letter"
-- Follow all employer instructions regarding anonymity or specific materials
+В российской практике чаще всего откликаются через форму на сайте вакансий: к резюме на hh.ru или профилю на Хабр Карьере прикладывают короткое сопроводительное прямо в поле отклика, а PDF-письмо нужно реже (крупные компании, международные роли, отклик по email). Если пользователь откликается через форму, кроме PDF подготовь короткий вариант:
+- 3-6 предложений, обычно до 1000 знаков (если у поля есть лимит символов, укладывайся в него; см. `08-application-forms.md`)
+- Обращение («Здравствуйте!» или по имени рекрутера), одна фраза о роли и грейде, 2-3 факта из опыта под требования вакансии, готовность к следующему шагу, подпись «С уважением, [YOUR_NAME]»
+- Те же правила стиля из `03-writing-style.md`: без длинных тире, без штампов, только проверенные факты о компании
+- Не дублируй резюме целиком: рекрутер откроет его рядом
+
+## Чек-лист перед финализацией
+- [ ] Нет длинных тире (вместо них запятые или точки)
+- [ ] Нет штампов и пустой воды
+- [ ] Каждое утверждение подкреплено конкретным примером
+- [ ] Взгляд вперёд: упор на задачи, которые ты решишь, а не только на прошлые обязанности
+- [ ] Раздел о мотивации ссылается на миссию/ценности именно этой компании
+- [ ] Название компании и роль верны по всему тексту
+- [ ] Дата актуальна
+- [ ] Помещается на одну страницу
+- [ ] Язык совпадает с языком вакансии
+- [ ] Обращение уместное (по возможности к конкретному человеку)
+- [ ] Заголовок цепляет и конкретен, а не шаблонный
+- [ ] Кириллица на месте (в логе нет `Missing character`), если письмо на русском
+
+## Правила отправки (лучшая практика)
+- Отправляй только те документы, которые просит работодатель
+- Экспортируй в PDF, чтобы сохранить форматирование
+- Называй файлы понятно: «[Ваше имя] Резюме» и «[Ваше имя] Сопроводительное письмо» (для английского отклика — "[Your Name] CV" и "[Your Name] Cover Letter")
+- Выполняй все инструкции работодателя по анонимности или конкретным материалам

@@ -50,23 +50,23 @@ class RankCommandSpec(unittest.TestCase):
         body with tools/posting_guard.py, and return the verdict as `guard`."""
         text = COMMAND.read_text(encoding="utf-8")
         sections = _sections(text)
-        step2 = sections["Step 2: Batch-Fetch and Score"]
+        step2 = sections["Шаг 2: Пакетная загрузка и оценка"]
         self.assertIn("posting-scorer", step2, "Step 2 must dispatch the posting-scorer agent")
         self.assertNotIn("general-purpose", step2, "Step 2 must no longer dispatch general-purpose agents")
         self.assertIn("posting_guard", step2, "Step 2 must run the integrity gate on each fetched body")
         self.assertIn('"guard"', step2, "Step 2's JSON must carry the gate verdict")
-        step4 = sections["Step 4: Update State"]
+        step4 = sections["Шаг 4: Обновление состояния"]
         self.assertIn("guard", step4, "Step 4 must persist the gate verdict")
         # Step 5 embeds an example report whose "## Job Ranking" line would split
         # _sections early, so anchor on the next real heading instead.
-        step5 = re.search(r"## Step 5: Present the Shortlist(.*?)\n## Important Rules", text, re.DOTALL).group(1)
+        step5 = re.search(r"## Шаг 5: Показ шорт-листа(.*?)\n## Важные правила", text, re.DOTALL).group(1)
         self.assertIn("guard", step5, "Step 5 must surface a flagged posting")
         self.assertIn("⚠", step5)
 
     def test_step1_empty_candidates_still_sweeps_and_reports(self):
         """No new jobs must not bypass expiry maintenance of ranked jobs."""
-        step1 = _sections(COMMAND.read_text(encoding="utf-8"))["Step 1: Load State"]
-        empty_branch = step1.partition("If it reports no candidates")[2].partition("Then read")[0]
+        step1 = _sections(COMMAND.read_text(encoding="utf-8"))["Шаг 1: Загрузка состояния"]
+        empty_branch = step1.partition("Если кандидатов нет")[2].partition("Затем прочитай")[0]
         self.assertIn(
             "python3 tools/rank_state.py sweep --write",
             empty_branch,
@@ -75,8 +75,8 @@ class RankCommandSpec(unittest.TestCase):
         self.assertNotIn("--exclude", empty_branch, "no jobs were re-scored on this path")
         for field in ("swept", "newly_expired", "closing_soon", "unparseable_deadlines"):
             self.assertIn(field, empty_branch, f"the empty-run report must consume {field}")
-        self.assertIn("Skip", empty_branch)
-        self.assertIn("Steps 2-4", empty_branch, "an empty run must not fetch or score jobs")
+        self.assertIn("пропусти", empty_branch)
+        self.assertIn("Шаги 2–4", empty_branch, "an empty run must not fetch or score jobs")
 
     def test_agent_status_contract_matches_the_state_helper(self):
         """#534: `rank_state.py` owns the set of statuses a scoring agent may
@@ -104,22 +104,22 @@ class RankCommandSpec(unittest.TestCase):
 
     def test_step4_persists_gaps_and_strengths(self):
         sections = _sections(COMMAND.read_text(encoding="utf-8"))
-        step4 = sections.get("Step 4: Update State", "")
+        step4 = sections.get("Шаг 4: Обновление состояния", "")
         self.assertIn('"gaps"', step4, "Step 4 must persist the gaps array into seen_jobs.json")
         self.assertIn('"strengths"', step4, "Step 4 must persist the strengths array into seen_jobs.json")
 
     def test_step4_documents_verbatim_no_accumulate_and_untrusted_data_rules(self):
         sections = _sections(COMMAND.read_text(encoding="utf-8"))
-        step4 = sections.get("Step 4: Update State", "")
-        self.assertIn("verbatim", step4, "Step 4 must require storing gaps/strengths verbatim, never reformatted")
-        self.assertIn("replaces", step4, "Step 4 must state that --all re-scoring replaces, not accumulates, the arrays")
-        self.assertIn("untrusted data", step4, "Step 4 must restate that stored gaps/strengths are untrusted data")
+        step4 = sections.get("Шаг 4: Обновление состояния", "")
+        self.assertIn("сохраняются **дословно**", step4, "Step 4 must require storing gaps/strengths verbatim, never reformatted")
+        self.assertIn("**заменяет** оба массива", step4, "Step 4 must state that --all re-scoring replaces, not accumulates, the arrays")
+        self.assertIn("непроверенными данными", step4, "Step 4 must restate that stored gaps/strengths are untrusted data")
 
     def test_important_rules_link_honest_scoring_to_persistence(self):
         sections = _sections(COMMAND.read_text(encoding="utf-8"))
-        rules = sections.get("Important Rules", "")
+        rules = sections.get("Важные правила", "")
         self.assertIn(
-            "persisted with it",
+            "сохраняются вместе с оценкой",
             rules,
             "Rule 5 must note that gaps are persisted (Step 4), not just printed (Step 5)",
         )
@@ -129,7 +129,7 @@ class RankCommandSpec(unittest.TestCase):
         self.assertIn("strengths", text)
         self.assertIn("gaps", text)
         self.assertIn(
-            "readers tolerate their absence",
+            "читатели терпят их отсутствие",
             text,
             "schema note must say old entries lacking strengths/gaps are tolerated, never backfilled",
         )
@@ -147,12 +147,12 @@ class RankCommandSpec(unittest.TestCase):
             "or every later run has no stored value to re-derive urgency from",
         )
         self.assertIn(
-            "never infer a deadline",
+            "никогда не выводи срок",
             text,
             "the schema note must forbid guessing a deadline from null or from a missing key",
         )
         self.assertIn(
-            "base field rather than a `/rank` extension",
+            "базовое поле, а не расширение `/rank`",
             text,
             "the note must say the deadline is written when the job is first seen, "
             "not only when /rank re-scores it",
@@ -178,7 +178,7 @@ class RankCommandSpec(unittest.TestCase):
             "location key, which the scraper uses for a place",
         )
         self.assertIn(
-            "legacy",
+            "устаревшую строку PASS/FAIL/FLAG",
             text,
             "Step 4 must carry a migration rule for entries that stored the "
             "verdict under the old location key",
@@ -207,7 +207,7 @@ class RankCommandSpec(unittest.TestCase):
         important to persist as the score itself"). The framework text must name
         the tracked fields and must not claim they are untracked."""
         text = EVALUATION.read_text(encoding="utf-8")
-        gate = text.partition("## Language Gate")[2].partition("\n## ")[0]
+        gate = text.partition("## Языковой фильтр (Language Gate)")[2].partition("\n## ")[0]
         self.assertTrue(gate, "04-job-evaluation.md has no Language Gate section")
         self.assertIn(
             "language_gate",
@@ -219,8 +219,9 @@ class RankCommandSpec(unittest.TestCase):
             gate,
             "the Language Gate section must name the language_note field /rank persists",
         )
+        # русский вариант устаревшего утверждения «is not a field /scrape or /rank track»
         self.assertNotIn(
-            "not a field",
+            "не является полем",
             gate,
             "stale claim: the gate result IS tracked by /scrape and /rank now",
         )
@@ -234,19 +235,19 @@ class RankCommandSpec(unittest.TestCase):
         silently changes state needs one at least as much."""
         text = COMMAND.read_text(encoding="utf-8")
         self.assertIn(
-            "Parse stored deadlines defensively",
+            "Разбирай сохранённые дедлайны защитно",
             text,
             "rule 6's sweep must state the defensive-parse rule",
         )
         self.assertRegex(
             text,
-            r"not a `YYYY-MM-DD` date[^.]*treated exactly like an absent one",
+            r"не является датой `YYYY-MM-DD`[^.]*обрабатывается точно как отсутствующее",
             "a non-ISO stored deadline must be handled as absent, not compared or guessed at",
         )
 
     def test_step2_schema_includes_language_gate_fields(self):
         sections = _sections(COMMAND.read_text(encoding="utf-8"))
-        step2 = sections.get("Step 2: Batch-Fetch and Score", "")
+        step2 = sections.get("Шаг 2: Пакетная загрузка и оценка", "")
         self.assertIn('"language_gate"', step2, "Step 2's scoring-agent JSON must include language_gate")
         self.assertIn('"language_note"', step2, "Step 2's scoring-agent JSON must include language_note")
         self.assertIn(
@@ -255,7 +256,7 @@ class RankCommandSpec(unittest.TestCase):
             "language_gate must use the same PASS/FAIL/FLAG verdict set as the location veto",
         )
         self.assertIn(
-            "distinct from",
+            "это не то же, что `language`",
             step2,
             "spec must distinguish language_gate/language_note from the pre-existing 'language' field "
             "(which records the posting's own language, not a veto verdict) - the two are easy to conflate",
@@ -263,14 +264,14 @@ class RankCommandSpec(unittest.TestCase):
 
     def test_step3_documents_language_veto(self):
         sections = _sections(COMMAND.read_text(encoding="utf-8"))
-        step3 = sections.get("Step 3: Aggregate and Rank", "")
+        step3 = sections.get("Шаг 3: Сведение и ранжирование", "")
         self.assertIn(
-            "Language veto",
+            "Запрет по языку",
             step3,
             "Step 3 must document a Language veto rule, mirroring the existing Location veto",
         )
         self.assertIn(
-            "excludes the job from the shortlist",
+            "исключает вакансию из шорт-листа",
             step3,
             "a language_gate FAIL must be documented as excluding the job, same as a location FAIL",
         )
@@ -284,11 +285,11 @@ class RankCommandSpec(unittest.TestCase):
         persistence bug, so a future edit can't silently reintroduce either loss.
         """
         sections = _sections(COMMAND.read_text(encoding="utf-8"))
-        step4 = sections.get("Step 4: Update State", "")
+        step4 = sections.get("Шаг 4: Обновление состояния", "")
         self.assertIn('"language_gate"', step4, "Step 4 must persist language_gate into seen_jobs.json")
         self.assertIn('"language_note"', step4, "Step 4 must persist language_note into seen_jobs.json")
         self.assertIn(
-            "as important to persist as the score itself",
+            "так же важно, как саму оценку",
             step4,
             "Step 4 must call out that the veto fields (location/language_gate/language_note) are not optional extras",
         )
@@ -300,15 +301,15 @@ class RankCommandSpec(unittest.TestCase):
         recover the date (#319). Pins the persistence in the Step 4 field list.
         """
         sections = _sections(COMMAND.read_text(encoding="utf-8"))
-        step4 = sections.get("Step 4: Update State", "")
+        step4 = sections.get("Шаг 4: Обновление состояния", "")
         self.assertIn('"deadline"', step4, "Step 4 must persist the deadline into seen_jobs.json")
         self.assertIn(
-            "from the same Step 2 JSON",
+            "из того же JSON Шага 2",
             step4,
             "Step 4 must source the persisted deadline from the scoring agent's JSON, not from a guess",
         )
         self.assertIn(
-            "absence is not a correction",
+            "отсутствие — не исправление",
             step4,
             "Step 4 must keep an existing stored deadline when the agent returned null, "
             "so a fresh run never blanks a date the scraper already recorded",
@@ -320,14 +321,14 @@ class RankCommandSpec(unittest.TestCase):
         posting (which is the dead-URL source the field exists to replace).
         """
         sections = _sections(COMMAND.read_text(encoding="utf-8"))
-        step3 = sections.get("Step 3: Aggregate and Rank", "")
+        step3 = sections.get("Шаг 3: Сведение и ранжирование", "")
         self.assertIn(
-            "stored `deadline`",
+            "сохранённый `deadline`",
             step3,
             "Step 3 must take the deadline from seen_jobs.json for a job that already carries one",
         )
         self.assertIn(
-            "costs no fetch",
+            "сохранённое значение не требует загрузки",
             step3,
             "Step 3 must state that the stored value costs no fetch - that is the entire point of persisting it",
         )
@@ -337,20 +338,20 @@ class RankCommandSpec(unittest.TestCase):
         enforcing the only-open-positions rule beyond the moment of fetching.
         """
         sections = _sections(COMMAND.read_text(encoding="utf-8"))
-        step3 = sections.get("Step 3: Aggregate and Rank", "")
+        step3 = sections.get("Шаг 3: Сведение и ранжирование", "")
         self.assertIn(
-            "Expiry sweep",
+            "Проверка сроков по уже ранжированным записям",
             step3,
             "Step 3 must document a sweep over already-ranked entries this run did not re-score",
         )
         self.assertIn(
-            "date comparison against values already on disk",
+            "сравнение дат со значениями, уже лежащими на диске",
             step3,
             "the sweep must be a pure on-disk comparison - no fetch, no agent",
         )
-        step5 = sections.get("Job Ranking - YYYY-MM-DD", "")
+        step5 = sections.get("Ранжирование вакансий — YYYY-MM-DD", "")
         self.assertIn(
-            "Closing soon",
+            "Скоро закрываются",
             step5,
             "Step 5's template must name the Closing soon heading rule 6 lists under",
         )
@@ -364,15 +365,15 @@ class RankCommandSpec(unittest.TestCase):
         And a status change made without a fetch needs a stated way back, or
         `expired` reads as terminal and a wrongly swept job looks unrecoverable.
         """
-        step3 = _sections(COMMAND.read_text(encoding="utf-8")).get("Step 3: Aggregate and Rank", "")
+        step3 = _sections(COMMAND.read_text(encoding="utf-8")).get("Шаг 3: Сведение и ранжирование", "")
         self.assertIn(
-            "never guessed at",
+            "не трогается и не угадывается",
             step3,
             "rule 6 must say an entry with no stored deadline is left alone - it is the "
             "majority case, and inferring one would retire jobs on a date nobody set",
         )
         self.assertIn(
-            "revived by a later `--all`",
+            "может оживить последующий `--all`",
             step3,
             "rule 6 must state that --all re-scores expired entries, or the sweep is an "
             "irreversible automated status change",
@@ -388,9 +389,9 @@ class RankCommandSpec(unittest.TestCase):
         implementer following Step 4 literally skips the sweep, which is the
         whole feature.
         """
-        step4 = _sections(COMMAND.read_text(encoding="utf-8")).get("Step 4: Update State", "")
+        step4 = _sections(COMMAND.read_text(encoding="utf-8")).get("Шаг 4: Обновление состояния", "")
         self.assertIn(
-            "deliberate exception",
+            "сознательное исключение",
             step4,
             "Step 4's idempotency line must name rule 6's sweep as its exception, or the "
             "spec tells the reader both that already-ranked entries are skipped and that "
@@ -406,9 +407,9 @@ class RankCommandSpec(unittest.TestCase):
         two rules interlock, and an unexplained constraint is the kind that gets
         simplified away later.
         """
-        step4 = _sections(COMMAND.read_text(encoding="utf-8")).get("Step 4: Update State", "")
+        step4 = _sections(COMMAND.read_text(encoding="utf-8")).get("Шаг 4: Обновление состояния", "")
         self.assertIn(
-            "immortal to the sweep",
+            "бессмертной для проверки сроков",
             step4,
             "the null-overwrite rule must state why it matters here: erasing a stored "
             "deadline also removes the entry from rule 6's reach forever",
@@ -417,9 +418,9 @@ class RankCommandSpec(unittest.TestCase):
     def test_step5_reports_the_sweep_counts(self):
         """A background status mutation with no reported count is the failure mode
         this whole change set exists to object to."""
-        step5 = _sections(COMMAND.read_text(encoding="utf-8")).get("Job Ranking - YYYY-MM-DD", "")
+        step5 = _sections(COMMAND.read_text(encoding="utf-8")).get("Ранжирование вакансий — YYYY-MM-DD", "")
         self.assertIn(
-            "Swept",
+            "Проверено сроков у",
             step5,
             "Step 5's template must report how many already-ranked entries the sweep "
             "checked and how many it retired - it rewrites seen_jobs.json silently otherwise",
@@ -433,9 +434,9 @@ class RankCommandSpec(unittest.TestCase):
         line the transition happens in reasoning only and disk never changes.
         """
         sections = _sections(COMMAND.read_text(encoding="utf-8"))
-        step4 = sections.get("Step 4: Update State", "")
+        step4 = sections.get("Шаг 4: Обновление состояния", "")
         self.assertIn(
-            "retired by Step 3's rule 6 sweep",
+            "списанные проверкой сроков по правилу 6 Шага 3",
             step4,
             "Step 4 must persist the Step 3 rule 6 sweep's expiries, not just the ones "
             "the scoring agents reported",
@@ -450,7 +451,7 @@ class RankCommandSpec(unittest.TestCase):
         # reason - documented here since it's easy to trip over when adding a new
         # Step-5-content test.
         sections = _sections(COMMAND.read_text(encoding="utf-8"))
-        step5_rules = sections.get("Job Ranking - YYYY-MM-DD", "")
+        step5_rules = sections.get("Ранжирование вакансий — YYYY-MM-DD", "")
         self.assertIn(
             "language_gate: FLAG",
             step5_rules,
@@ -485,7 +486,7 @@ class PostedDateStalenessSpec(unittest.TestCase):
 
     def setUp(self):
         self.step3 = _sections(COMMAND.read_text(encoding="utf-8")).get(
-            "Step 3: Aggregate and Rank", ""
+            "Шаг 3: Сведение и ранжирование", ""
         )
         self.assertTrue(self.step3, "Step 3 section missing from rank.md")
         # The spec hard-wraps its prose; assertions match against collapsed
@@ -509,7 +510,7 @@ class PostedDateStalenessSpec(unittest.TestCase):
     def test_staleness_is_a_flag_never_a_veto(self):
         self.assertRegex(
             self.flat,
-            r"[Aa]ge is a signal, never a veto",
+            r"Возраст — сигнал, а не запрет",
             "staleness must keep FLAG semantics - the #390 posting was 27 months "
             "old AND still live, so excluding on age would bury real openings",
         )
@@ -517,7 +518,7 @@ class PostedDateStalenessSpec(unittest.TestCase):
     def test_staleness_never_inferred_for_absent_values(self):
         self.assertRegex(
             self.flat,
-            r"no `posted_date`.*no flag and no guess",
+            r"без `posted_date`.*не получает ни флага, ни догадки",
             "entries predating the field must get no staleness signal - inferring "
             "age from first_seen would flag jobs on a date nobody posted",
         )
@@ -530,7 +531,7 @@ class PostedDateStalenessSpec(unittest.TestCase):
     def test_staleness_parses_posted_date_defensively(self):
         self.assertRegex(
             self.flat,
-            r"defensive-parse rule applies wherever a stored `posted_date` is compared",
+            r"[Пп]равило защитного разбора из правила 6 действует везде, где сравнивается сохранённый `posted_date`",
             "posted_date comparisons must carry rule 6's defensive-parse rule - the "
             "contract test pins the field's presence, not its format, and portals "
             "have shipped free-text shapes into stored date fields before",
@@ -544,18 +545,18 @@ class RankBatchLimitSpec(unittest.TestCase):
         self.sections = _sections(COMMAND.read_text(encoding="utf-8"))
 
     def test_step0_documents_default_limit_distinct_from_top(self):
-        step0 = self.sections.get("Step 0: Parse Input", "")
+        step0 = self.sections.get("Шаг 0: Разбор ввода", "")
         self.assertIn("`--limit <N>`", step0)
-        self.assertIn("default 10", step0)
+        self.assertIn("по умолчанию 10", step0)
         self.assertIn("`--top <N>`", step0)
         self.assertIn(
-            "They are independent",
+            "Они независимы",
             step0,
             "--limit must bound scoring without being confused with shortlist size",
         )
 
     def test_step1_applies_limit_via_the_state_tool(self):
-        step1 = self.sections.get("Step 1: Load State", "")
+        step1 = self.sections.get("Шаг 1: Загрузка состояния", "")
         self.assertIn(
             "tools/rank_state.py candidates --limit 10",
             step1,
@@ -569,9 +570,9 @@ class RankBatchLimitSpec(unittest.TestCase):
         )
 
     def test_step5_reports_deferral_and_how_to_continue(self):
-        report = self.sections.get("Job Ranking - YYYY-MM-DD", "")
-        self.assertIn("jobs deferred", report)
-        self.assertIn("re-run `/rank` to continue", report)
+        report = self.sections.get("Ранжирование вакансий — YYYY-MM-DD", "")
+        self.assertIn("вакансий отложено", report)
+        self.assertIn("запусти `/rank` снова, чтобы продолжить", report)
 
 
 class RankStateToolSpec(unittest.TestCase):
@@ -597,23 +598,23 @@ class RankStateToolSpec(unittest.TestCase):
         hardcoded, so a future edit to that contract is what this test reads
         - it cannot silently drift from what agents actually return.
         """
-        step2 = self.sections.get("Step 2: Batch-Fetch and Score", "")
+        step2 = self.sections.get("Шаг 2: Пакетная загрузка и оценка", "")
         block = step2.split("```json", 1)[1].split("```", 1)[0]
         fields = re.findall(r'"([a-z_]+)":', block)
         self.assertTrue(fields, "could not extract Step 2's JSON field names - block shape changed")
         return fields
 
     def test_step1_never_reads_the_state_file_manually(self):
-        step1 = self.sections.get("Step 1: Load State", "")
+        step1 = self.sections.get("Шаг 1: Загрузка состояния", "")
         self.assertIn(
-            "Never read `job_scraper/seen_jobs.json` into the conversation",
+            "Никогда не читай `job_scraper/seen_jobs.json` в разговор",
             step1,
             "Step 1 must forbid the manual read this fix removes",
         )
         self.assertIn("tools/rank_state.py candidates", step1)
 
     def test_step4_writes_back_through_apply_not_by_hand(self):
-        step4 = self.sections.get("Step 4: Update State", "")
+        step4 = self.sections.get("Шаг 4: Обновление состояния", "")
         self.assertIn(
             "tools/rank_state.py apply",
             step4,
@@ -621,7 +622,7 @@ class RankStateToolSpec(unittest.TestCase):
             "reproduces the exact cost this fix removes",
         )
         self.assertIn(
-            "never re-read to build it",
+            "для этого никогда не перечитывается",
             step4,
             "apply's own printed output, not a fresh read of the state file, must be what "
             "Step 5's report is built from",
@@ -631,7 +632,7 @@ class RankStateToolSpec(unittest.TestCase):
         """The condition on this change: Step 4's write-back semantics must
         survive the move into a script, for every field Step 2 promises to
         return - not just the ones a hand-picked list happens to name."""
-        step4 = self.sections.get("Step 4: Update State", "")
+        step4 = self.sections.get("Шаг 4: Обновление состояния", "")
         # `language` (the posting's own language) is Step 2 output the write-back
         # rules were never required to persist - 04-job-evaluation.md's Language
         # Gate section already documents it as informational, not stored state.
@@ -645,28 +646,28 @@ class RankStateToolSpec(unittest.TestCase):
         self.assertFalse(missing, f"Step 4 does not mention persisting: {missing}")
 
     def test_step4_documents_the_location_verdict_legacy_migration(self):
-        step4 = self.sections.get("Step 4: Update State", "")
+        step4 = self.sections.get("Шаг 4: Обновление состояния", "")
         self.assertIn(
-            "never the bare `location` key",
+            "никогда не голый ключ `location`",
             step4,
             "Step 4 must forbid writing the verdict to the scraper's place field",
         )
         self.assertIn(
-            "legacy",
+            "устаревшую строку PASS/FAIL/FLAG",
             step4,
             "Step 4 must document the location_verdict-absent migration from the old location key",
         )
 
     def test_step4_documents_deadline_null_is_not_a_correction(self):
-        step4 = self.sections.get("Step 4: Update State", "")
+        step4 = self.sections.get("Шаг 4: Обновление состояния", "")
         self.assertIn(
-            "absence is not a correction",
+            "отсутствие — не исправление",
             step4,
             "a null deadline from the agent must never erase a stored one",
         )
 
     def test_step3_sweep_runs_through_the_tool(self):
-        step3 = self.sections.get("Step 3: Aggregate and Rank", "")
+        step3 = self.sections.get("Шаг 3: Сведение и ранжирование", "")
         self.assertIn(
             "tools/rank_state.py sweep",
             step3,
@@ -674,9 +675,9 @@ class RankStateToolSpec(unittest.TestCase):
         )
 
     def test_tracker_stays_read_only(self):
-        step4 = self.sections.get("Step 4: Update State", "")
+        step4 = self.sections.get("Шаг 4: Обновление состояния", "")
         self.assertIn(
-            "never applies",
+            "`/rank` никогда не откликается",
             step4,
             "Step 4 must still state that job_search_tracker.csv is read-only for /rank",
         )

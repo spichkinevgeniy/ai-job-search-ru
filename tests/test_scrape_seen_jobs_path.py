@@ -18,7 +18,6 @@ ROOT = Path(__file__).resolve().parent.parent
 SPECS = [
     ROOT / ".claude" / "skills" / "job-scraper" / "SKILL.md",
     ROOT / ".claude" / "commands" / "rank.md",
-    ROOT / ".claude" / "commands" / "notion-sync.md",
     ROOT / ".claude" / "skills" / "upskill" / "SKILL.md",
 ]
 BARE = re.compile(r"(?<!job_scraper/)(?<![\w/.-])seen_jobs\.json")

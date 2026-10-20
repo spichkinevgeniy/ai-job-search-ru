@@ -1,146 +1,146 @@
-# /html-report - Generate Application Tracker Dashboard
+# /html-report — дашборд трекера откликов
 
-Generate a self-contained HTML dashboard from `job_search_tracker.csv` and the application archives under `documents/applications/`. The output is a single `.html` file — no server, no dependencies — that can be opened directly in a browser.
+Сгенерируй самодостаточный HTML-дашборд из `job_search_tracker.csv` и архивов откликов в `documents/applications/`. Результат — один файл `.html`, без сервера и зависимостей, который открывается прямо в браузере.
 
-## Step 0: Parse Arguments
+## Шаг 0: Разбор аргументов
 
-- No argument → output to `reports/application-dashboard.html`
-- A path argument (e.g. `/html-report ~/Desktop/report.html`) → use that path
-- `--open` flag → after writing, tell the user to open the file (cannot open a browser directly)
+- Без аргумента → вывод в `reports/application-dashboard.html`
+- Аргумент-путь (например, `/html-report ~/Desktop/report.html`) → используй этот путь
+- Флаг `--open` → после записи скажи пользователю открыть файл (открыть браузер напрямую ты не можешь)
 
-Create `reports/` if it does not exist.
+Создай `reports/`, если папки нет.
 
 ---
 
-## Step 1: Collect Data
+## Шаг 1: Сбор данных
 
-Read in parallel:
+Прочитай параллельно:
 
-1. **`job_search_tracker.csv`** — the primary source. Parse every row into a record with fields:
+1. **`job_search_tracker.csv`** — основной источник. Разбери каждую строку в запись с полями:
    `date`, `company`, `sector`, `role`, `role_type`, `channel`, `status`, `contact_person`, `fit_rating`, `notes`, `cv_file`, `cover_letter_file`, `source`, `deadline`
 
-   Rows written before `deadline` existed have thirteen fields and no fourteenth value. Treat the missing field as empty - never drop the row, and never infer a deadline from its `date`.
+   Строки, записанные до появления `deadline`, содержат тринадцать полей и не имеют четырнадцатого значения. Считай отсутствующее поле пустым — никогда не отбрасывай строку и никогда не выводи дедлайн из её `date`.
 
-2. **`documents/applications/*/outcome.md`** — for each resolved application, read the outcome file to get the exact interview stages reached (the checkboxes) and any notes. Merge this into the matching tracker row by company+role fuzzy match (lowercase, ignore punctuation). If an archive exists for a row but there is no match, attach it as extra context anyway.
+2. **`documents/applications/*/outcome.md`** — для каждого завершённого отклика прочитай файл результата, чтобы узнать точные этапы собеседований (чекбоксы) и заметки. Присоедини это к подходящей строке трекера по нечёткому совпадению компания+должность (нижний регистр, без пунктуации). Если архив есть, а совпадения со строкой нет, всё равно приложи его как дополнительный контекст.
 
-Status normalisation — map tracker values to six canonical buckets before computing stats:
-- `drafted` → **Drafted** (documents written by `/apply`, not yet submitted)
-- `applied` → **Active** (resume submitted, no further signal)
+Нормализация статусов — до подсчёта статистики сведи значения трекера к шести каноническим группам:
+- `drafted` → **Drafted** (документы написаны `/apply`, ещё не отправлены)
+- `applied` → **Active** (резюме отправлено, других сигналов нет)
 - `interview` → **Interview**
 - `offer` → **Offer**
 - `hired` → **Hired**
 - `rejected` / `no_response` / `no response` / `offer_declined` / `offer declined` / `withdrawn` → **Rejected/Closed**
-- anything else → **Rejected/Closed**, and name the unrecognised value once in the status breakdown — matching is case-insensitive
+- всё остальное → **Rejected/Closed**, и один раз назови нераспознанное значение в разбивке по статусам — сравнение без учёта регистра
 
-   The bucket map tolerates the legacy space spellings on read so nothing written before
-   the canonical forms were locked drops out of the stats; the **Tracker status vocabulary**
-   in `/outcome` is the authoritative set.
-
----
-
-## Step 2: Compute Summary Stats
-
-From the normalised data compute:
-
-**Drafted rows are excluded from every statistic below** — they were never submitted. Report the Drafted count on its own, and include it only in the status breakdown.
-
-- **Total applications**
-- **By status bucket:** count per bucket
-- **By sector:** count per unique sector value
-- **By channel:** portal vs online vs referral vs other
-- **By year/season:** group by the `date` field (which may be a year like `2025` or a full date)
-- **Funnel rates:** what % progressed past resume screen (reached Interview or beyond). Compute stage-reached from history, not current status: an application counts as having reached a stage when its current status implies it **or** its merged `outcome.md` stage checkboxes (Step 1.2) show the stage was reached - a `rejected` row whose outcome file ticks an interview stage reached Interview, and a `hired` row reached every stage before Hired. Current status alone structurally undercounts every earlier stage: a finished search would read as though nobody ever interviewed.
-- **Rejection rate:** true rejections (`rejected`, `no_response`) ÷ applications with a final outcome. `offer_declined` (the candidate turned the offer down - a success) and `withdrawn` (candidate-initiated) are not rejections and stay out of the numerator; Interview and Offer rows are still unresolved, so they stay out of the denominator along with Active. The Rejected/Closed status *bucket* still groups all closed rows for the doughnut - the rate just must not reuse the bucket blindly.
+   Карта групп при чтении допускает устаревшие написания через пробел, чтобы ничего, записанное
+   до фиксации канонических форм, не выпало из статистики; авторитетный набор —
+   **Словарь статусов трекера (Tracker status vocabulary)** в `/outcome`.
 
 ---
 
-## Step 3: Generate the HTML
+## Шаг 2: Сводная статистика
 
-Write a single self-contained HTML file. All CSS is inline in a `<style>` block. All JS is inline in a `<script>` block. Draw the doughnut and bar charts as hand-generated inline SVG — no Chart.js, no CDN, no external dependencies of any kind. The report must render fully offline on every open.
+По нормализованным данным посчитай:
 
-**Escaping (required):** HTML-escape every CSV/outcome-file value (`&` `<` `>` `"` `'`) before interpolating it into the page — this includes table cells, `title` attributes on truncated notes, and any text placed inside SVG (`<text>` labels, chart tooltips). Notes and company names copied from job postings routinely contain these characters; unescaped, they break the layout or inject markup into a page the user opens routinely.
+**Строки Drafted исключаются из всей статистики ниже** — они так и не были отправлены. Число Drafted показывай отдельно и включай только в разбивку по статусам.
 
-### Layout
+- **Всего откликов**
+- **По группам статусов:** количество в каждой группе
+- **По отраслям:** количество для каждого уникального значения sector
+- **По каналам:** портал / онлайн / рекомендация / другое
+- **По году/сезону:** группировка по полю `date` (это может быть год вроде `2025` или полная дата)
+- **Воронка:** какой % прошёл дальше отбора по резюме (дошёл до Interview или дальше). Достигнутый этап считай по истории, а не по текущему статусу: отклик дошёл до этапа, если на это указывает его текущий статус **или** присоединённые чекбоксы этапов из `outcome.md` (Шаг 1.2) — строка `rejected`, у которой в файле результата отмечен этап собеседования, дошла до Interview, а строка `hired` прошла все этапы до Hired. Один только текущий статус систематически занижает все ранние этапы: завершённый поиск выглядел бы так, будто никто никогда не доходил до собеседования.
+- **Доля отказов:** настоящие отказы (`rejected`, `no_response`) ÷ отклики с окончательным результатом. `offer_declined` (кандидат сам отказался от оффера — это успех) и `withdrawn` (по инициативе кандидата) — не отказы и в числитель не входят; строки Interview и Offer ещё не завершены, поэтому вместе с Active не входят и в знаменатель. *Группа* статусов Rejected/Closed по-прежнему объединяет все закрытые строки для кольцевой диаграммы — просто доля отказов не должна слепо использовать эту группу.
+
+---
+
+## Шаг 3: Генерация HTML
+
+Запиши один самодостаточный HTML-файл. Весь CSS — инлайн в блоке `<style>`. Весь JS — инлайн в блоке `<script>`. Кольцевую и столбчатые диаграммы рисуй вручную сгенерированным инлайн-SVG — без Chart.js, без CDN, без каких-либо внешних зависимостей. Отчёт должен полностью отображаться офлайн при каждом открытии.
+
+**Экранирование (обязательно):** HTML-экранируй каждое значение из CSV/файла результата (`&` `<` `>` `"` `'`) перед вставкой в страницу — это касается ячеек таблицы, атрибутов `title` у обрезанных заметок и любого текста внутри SVG (подписи `<text>`, всплывающие подсказки диаграмм). Заметки и названия компаний, скопированные из вакансий, регулярно содержат эти символы; без экранирования они ломают вёрстку или внедряют разметку в страницу, которую пользователь открывает постоянно.
+
+### Макет
 
 ```
 ┌─────────────────────────────────────────────┐
-│  🔍 Job Search Dashboard    Generated: DATE  │
+│  🔍 Дашборд поиска работы    Создан: ДАТА    │
 ├──────┬──────┬──────┬──────┬──────┬───────────┤
-│Sent  │Draft │Active│Inter-│Offer │Rejected/  │  ← stat cards
-│  N   │  N   │  N   │view N│  N   │Closed   N │
+│Отпр. │Черн. │Актив.│Собе- │Оффер │Отказ/     │  ← карточки
+│  N   │  N   │  N   │сед. N│  N   │Закрыт   N │
 ├──────┴──────┴──────┴──────┴──────┴───────────┤
-│  Status breakdown (doughnut) │ By sector (bar)│  ← charts row
+│  Статусы (кольцо)           │ По отраслям    │  ← ряд диаграмм
 ├─────────────────────────────────────────────  ┤
-│  By channel (bar)  │  Funnel (horizontal bar) │  ← charts row
+│  По каналам (столбцы) │ Воронка (горизонт.)  │  ← ряд диаграмм
 ├──────────────────────────────────────────────  ┤
-│  Applications  [Status ▾] [Sector ▾] [🔍 ...]│  ← table with filters
-│  date │ company │ sector │ role │ status │ ... │
+│  Отклики  [Статус ▾] [Отрасль ▾] [🔍 ...]    │  ← таблица с фильтрами
+│  дата │ компания │ отрасль │ должность │ ... │
 │  ...                                          │
 └───────────────────────────────────────────────┘
 ```
 
-### Design spec
+### Требования к оформлению
 
-- **Colour palette:** CSS custom properties. Status colours:
-  - Drafted: `#64748b` (slate)
-  - Active: `#3b82f6` (blue)
-  - Interview: `#f59e0b` (amber)
-  - Offer: `#8b5cf6` (purple)
-  - Hired: `#22c55e` (green)
-  - Rejected/Closed: `#ef4444` (red)
-- **Font:** system-ui stack, no web fonts
-- **Stat cards:** white background, subtle shadow, large bold number, label below, left border in status colour
-- **Charts:** contained in a 2-column grid on wide screens, stacked on narrow
-- **Table:**
-  - Alternating row shading
-  - Status column uses a coloured pill/badge
-  - `source` column renders as a hyperlink if the value is a URL (starts with `http`)
-  - Empty cells render as `—`
-  - Client-side filter: a text search input filters rows across company + role + sector; the status and sector dropdowns filter independently; all three combine (AND)
-  - Rows are sorted newest-first by default (by `date` descending, then alphabetically by company)
-- **Responsive:** usable at 900px+, not broken below that
-- **Footer:** "Generated by Claude Code · ai-job-search · {ISO date}"
+- **Палитра:** пользовательские CSS-свойства. Цвета статусов:
+  - Drafted: `#64748b` (сланцевый)
+  - Active: `#3b82f6` (синий)
+  - Interview: `#f59e0b` (янтарный)
+  - Offer: `#8b5cf6` (фиолетовый)
+  - Hired: `#22c55e` (зелёный)
+  - Rejected/Closed: `#ef4444` (красный)
+- **Шрифт:** стек system-ui, без веб-шрифтов
+- **Карточки статистики:** белый фон, лёгкая тень, крупное жирное число, подпись снизу, левая граница цвета статуса
+- **Диаграммы:** в сетке из 2 колонок на широких экранах, друг под другом на узких
+- **Таблица:**
+  - Чередующаяся заливка строк
+  - Колонка статуса — цветная плашка/бейдж
+  - Колонка `source` отображается ссылкой, если значение — URL (начинается с `http`)
+  - Пустые ячейки отображаются как `—`
+  - Фильтр на стороне клиента: текстовое поле ищет по компании + должности + отрасли; выпадающие списки статуса и отрасли фильтруют независимо; все три сочетаются (И)
+  - По умолчанию строки отсортированы от новых к старым (по `date` по убыванию, затем по компании по алфавиту)
+- **Адаптивность:** удобно от 900px, ниже — не ломается
+- **Подвал:** «Сгенерировано Claude Code · ai-job-search · {ISO date}»
 
-### Charts (inline SVG)
+### Диаграммы (инлайн-SVG)
 
-1. **Status doughnut** — slices for each status bucket, colours from the palette above
-2. **By sector bar** (horizontal) — company count per sector, sorted descending
-3. **By channel bar** — online / referral / other
-4. **Application funnel** (horizontal bar) — Applied → Interview → Offer → Hired, each bar = count reaching that stage, derived per Step 2's funnel rule (current status **plus** the merged `outcome.md` stage checkboxes), so a candidate who interviewed and was later rejected still counts in the Interview bar
+1. **Кольцо статусов** — сектор на каждую группу статусов, цвета из палитры выше
+2. **По отраслям** (горизонтальные столбцы) — число компаний по отраслям, по убыванию
+3. **По каналам** — онлайн / рекомендация / другое
+4. **Воронка откликов** (горизонтальные столбцы) — Applied → Interview → Offer → Hired, каждый столбец = число дошедших до этапа, по правилу воронки из Шага 2 (текущий статус **плюс** присоединённые чекбоксы этапов из `outcome.md`), так что кандидат, прошедший собеседование и позже получивший отказ, всё равно учитывается в столбце Interview
 
-Build each chart as a hand-written `<svg>` element: compute bar lengths/doughnut arc angles from the stats in Step 2 and emit the `<rect>`/`<path>`/`<circle>` and `<text>` elements directly — no charting library, no `<canvas>`. Each `<svg>` has `role="img"` and an `aria-label` summarizing the chart (e.g. "Status breakdown: 3 Active, 2 Interview, 1 Offer"). Wrap each in a `<div class="chart-card">` with an `<h3>` title above. Remember to escape any label/value text drawn into `<text>` nodes per the escaping rule above.
+Каждую диаграмму строй как написанный вручную элемент `<svg>`: вычисли длины столбцов и углы дуг кольца по статистике из Шага 2 и выведи элементы `<rect>`/`<path>`/`<circle>` и `<text>` напрямую — без библиотек диаграмм, без `<canvas>`. У каждого `<svg>` есть `role="img"` и `aria-label` с кратким содержанием диаграммы (например, «Статусы: 3 Active, 2 Interview, 1 Offer»). Оберни каждую в `<div class="chart-card">` с заголовком `<h3>` сверху. Не забудь экранировать любой текст подписей/значений в узлах `<text>` по правилу экранирования выше.
 
-### Table: columns to include
+### Таблица: какие колонки включить
 
-`Date` · `Deadline` · `Company` · `Role` · `Sector` · `Channel` · `Status` · `Notes` (truncated to 80 chars with `title` tooltip for full text) · `Source` (link or `—`)
+`Date` · `Deadline` · `Company` · `Role` · `Sector` · `Channel` · `Status` · `Notes` (обрезаны до 80 символов, полный текст — во всплывающей подсказке `title`) · `Source` (ссылка или `—`)
 
-Columns with only empty values across all rows may be omitted.
+Колонки, пустые во всех строках, можно опустить.
 
 ---
 
-## Step 4: Write and Confirm
+## Шаг 4: Запись и подтверждение
 
-Write the complete HTML to the output path using the Write tool.
+Запиши полный HTML по пути вывода инструментом Write.
 
-Then present:
+Затем покажи:
 
-> **Dashboard generated:** `<output path>`
+> **Дашборд создан:** `<output path>`
 >
-> Open it in any browser — no server needed.
+> Откройте его в любом браузере — сервер не нужен.
 >
-> **Summary:**
-> - Applications sent: N · drafted, not yet sent: N
+> **Сводка:**
+> - Отправлено откликов: N · черновиков, ещё не отправлено: N
 > - Active: N · Interview: N · Hired: N · Rejected/Closed: N
-> - Funnel: N% progressed past resume screen
+> - Воронка: N% прошли дальше отбора по резюме
 >
-> Re-run `/html-report` any time after adding new entries via `/apply` or `/outcome` to refresh the dashboard.
+> Запускайте `/html-report` в любой момент после новых записей через `/apply` или `/outcome`, чтобы обновить дашборд.
 
 ---
 
-## Design Principles
+## Принципы
 
-- **Self-contained.** One file, fully offline — charts are inline SVG, no CDN or external requests of any kind.
-- **Data-only.** This command reads and renders; it never writes to the tracker or archive.
-- **Idempotent.** Re-running overwrites the previous report at the same path — no accumulation.
-- **Graceful on sparse data.** With only a few rows (as now), charts render correctly for small N; the table is the primary value. Do not suppress charts just because N is small.
-- **No fabrication.** Every number in the report comes directly from the CSV or outcome files. Do not infer or estimate missing fields.
+- **Самодостаточность.** Один файл, полностью офлайн — диаграммы на инлайн-SVG, никаких CDN и внешних запросов.
+- **Только данные.** Команда читает и отображает; она никогда не пишет в трекер или архив.
+- **Идемпотентность.** Повторный запуск перезаписывает прошлый отчёт по тому же пути — ничего не накапливается.
+- **Устойчивость к малым данным.** При небольшом числе строк (как сейчас) диаграммы корректно отображаются для малых N; главная ценность — таблица. Не скрывай диаграммы только потому, что N мало.
+- **Никаких выдумок.** Каждое число в отчёте берётся напрямую из CSV или файлов результата. Не выводи и не оценивай отсутствующие поля.

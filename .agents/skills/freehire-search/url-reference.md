@@ -1,88 +1,87 @@
-# freehire.me API reference
+# Справочник по API freehire.me
 
-The endpoints, parameters, and response shapes this skill depends on. This is the
-file to update if the freehire API changes. Base URL defaults to
-`https://freehire.me` and is overridable via the `FREEHIRE_API_URL` env var.
+Эндпоинты, параметры и форматы ответов, от которых зависит этот навык. Этот
+файл нужно обновить, если API freehire изменится. Базовый URL по умолчанию —
+`https://freehire.me`, его можно переопределить переменной окружения `FREEHIRE_API_URL`.
 
-## Authentication
+## Авторизация
 
-None for reads. `GET /api/v1/jobs/*` and `/companies/*` are public; only per-user
-tracking mutations (`apply`/`save`/`me`) require a bearer API key, and this skill
-does not use them.
+Для чтения не нужна. `GET /api/v1/jobs/*` и `/companies/*` публичные; только
+изменения персонального трекинга (`apply`/`save`/`me`) требуют bearer API-ключ, и этот навык
+их не использует.
 
-Verified against the live API:
+Проверено на живом API:
 
-| Endpoint | Status |
+| Эндпоинт | Статус |
 |----------|--------|
 | `GET /api/v1/agent/jobs/search` | 200 |
-| `GET /api/v1/jobs/search` | 200 (the web variant; used by `--no-description`) |
+| `GET /api/v1/jobs/search` | 200 (веб-вариант; используется для `--no-description`) |
 | `GET /api/v1/jobs/facets` | 200 |
 | `GET /api/v1/jobs/{slug}` | 200 |
-| `GET /api/v1/auth/me` | 401 (auth required — not used here) |
+| `GET /api/v1/auth/me` | 401 (нужна авторизация — здесь не используется) |
 
-## Envelope
+## Обёртка ответа
 
-Every response is `{ "data": ..., "meta": {...}, "error": "..." }`. Lists put the
-array in `data` and pagination in `meta` (`{ total, limit, offset }`); a single
-item puts the object in `data`. Errors are `{ "error": "<message>" }` with a 4xx/5xx
-status (e.g. 404 → `{ "error": "not found" }`).
+Каждый ответ — `{ "data": ..., "meta": {...}, "error": "..." }`. Списки кладут
+массив в `data`, а пагинацию в `meta` (`{ total, limit, offset }`); одиночный
+объект кладётся в `data`. Ошибки — `{ "error": "<message>" }` со статусом 4xx/5xx
+(например, 404 → `{ "error": "not found" }`).
 
 ## `GET /api/v1/agent/jobs/search`
 
-The endpoint the skill's `search` command uses. Full-text + facet search over open
-jobs, returning `data: [job, …]` with `meta.total` = the estimated match count.
+Эндпоинт, который использует команда `search` навыка. Полнотекстовый + фасетный поиск по открытым
+вакансиям, возвращает `data: [job, …]` с `meta.total` = оценкой числа совпадений.
 
-It runs the **same query** as the web-facing `/api/v1/jobs/search` — same `q`, same
-facets, same ranking, same pagination guard (`offset + limit ≤ 10000`) — and differs
-in one respect: it replaces the search index's truncated `description`
-preview with the posting's **full** description read from the database. That is what
-lets a search of N roles stay one request instead of N + 1.
+Он выполняет **тот же запрос**, что и веб-эндпоинт `/api/v1/jobs/search`, — те же `q`, те же
+фасеты, то же ранжирование, то же ограничение пагинации (`offset + limit ≤ 10000`) — и отличается
+одним: заменяет обрезанное превью `description` из поискового индекса **полным**
+описанием вакансии из базы данных. Именно поэтому поиск N ролей остаётся одним запросом, а не N + 1.
 
-It always does so - there is no parameter to turn hydration off - so the skill's
-`--no-description` mode calls `/api/v1/jobs/search` instead. One extra parameter
-controls the rendering:
+Он делает это всегда — параметра, чтобы отключить подгрузку, нет, — поэтому режим навыка
+`--no-description` вызывает вместо него `/api/v1/jobs/search`. Один дополнительный параметр
+управляет отображением:
 
-| Param | Maps to CLI flag | Notes |
+| Параметр | Флаг CLI | Примечания |
 |-------|------------------|-------|
-| `description_format` | `--description-format` | `markdown` (the skill's default), `text`, or `html`. **An unrecognized value is not an error** — the API falls back to `html`, so the CLI validates the flag itself. |
+| `description_format` | `--description-format` | `markdown` (по умолчанию в навыке), `text` или `html`. **Нераспознанное значение не является ошибкой** — API откатывается на `html`, поэтому CLI сам проверяет флаг. |
 
-Hydration is best-effort per hit: a result whose row has vanished from the database
-(the index lagging a just-removed job) keeps the preview rather than being dropped,
-so `description` is a full text in practice but never guaranteed to be.
+Подгрузка выполняется по мере возможности для каждого результата: результат, чья строка исчезла из базы
+(индекс отстаёт от только что удалённой вакансии), сохраняет превью, а не отбрасывается,
+так что `description` на практике полный текст, но это никогда не гарантировано.
 
-A `404` from this path means the instance predates the endpoint (a self-hosted
-freehire behind `FREEHIRE_API_URL`), not a missing job; the CLI reports it as an
-error naming the path rather than as an empty result set.
+`404` по этому пути означает, что экземпляр старше эндпоинта (self-hosted
+freehire за `FREEHIRE_API_URL`), а не отсутствующую вакансию; CLI сообщает об этом как об
+ошибке с указанием пути, а не как о пустом наборе результатов.
 
 ## `GET /api/v1/jobs/search`
 
-The web variant of the same search — identical query surface, but `description` is
-always the index's truncated preview. The skill calls it for `--no-description`,
-where reading every full body from the database would be wasted work.
+Веб-вариант того же поиска — та же поверхность запроса, но `description`
+всегда обрезанное превью из индекса. Навык вызывает его для `--no-description`,
+где чтение каждого полного текста из базы было бы лишней работой.
 
-Query parameters used by the skill:
+Параметры запроса, которые использует навык:
 
-| Param | Maps to CLI flag | Notes |
+| Параметр | Флаг CLI | Примечания |
 |-------|------------------|-------|
-| `q` | `--query` / `-q` | Keyword full-text query. Uppercase `OR` separates up to 5 alternatives (more is a 400); a leading `title:` restricts an alternative to the title. |
-| `limit` | `--limit` / `-n` | Page size. Default 25 in the CLI. |
-| `offset` | (derived) | `offset = (page - 1) * limit`. |
-| `posted_within_days` | `--jobage` | Restrict to postings from the last N days. |
-| `regions` | `--region` | Repeatable; OR within the facet. Values: `global`, `eu`, `uk`, `north_america`, `latam`, `apac`, `mena`, `africa`, `cis`. `us` is a country (`countries`), not a region. |
-| `countries` | `--country` | Repeatable; ISO-3166 alpha-2 (lowercased). |
-| `cities` | `--city` | Repeatable; display-name city. |
-| `seniority` | `--seniority` | Repeatable; `junior`, `middle`, `senior`, `staff`, … |
-| `category` | `--category` | Repeatable; `backend`, `frontend`, `fullstack`, `devops`, `ml_ai`, … |
-| `skills` | `--skill` | Repeatable; canonical skill names. |
-| `company_slug` | `--company` | Single company. |
+| `q` | `--query` / `-q` | Полнотекстовый запрос по ключевым словам. Заглавный `OR` разделяет до 5 вариантов (больше — 400); `title:` в начале ограничивает вариант названием. |
+| `limit` | `--limit` / `-n` | Размер страницы. В CLI по умолчанию 25. |
+| `offset` | (вычисляется) | `offset = (page - 1) * limit`. |
+| `posted_within_days` | `--jobage` | Только вакансии за последние N дней. |
+| `regions` | `--region` | Можно повторять; OR внутри фасета. Значения: `global`, `eu`, `uk`, `north_america`, `latam`, `apac`, `mena`, `africa`, `cis` (СНГ, включая РФ). `us` — это страна (`countries`), а не регион. |
+| `countries` | `--country` | Можно повторять; ISO-3166 alpha-2 (в нижнем регистре). |
+| `cities` | `--city` | Можно повторять; отображаемое название города. |
+| `seniority` | `--seniority` | Можно повторять; `junior`, `middle`, `senior`, `staff`, … |
+| `category` | `--category` | Можно повторять; `backend`, `frontend`, `fullstack`, `devops`, `ml_ai`, … |
+| `skills` | `--skill` | Можно повторять; канонические названия навыков. |
+| `company_slug` | `--company` | Одна компания. |
 | `work_mode` | `--remote` | `remote` \| `hybrid` \| `onsite`. |
-| any facet param | `--facet key=value` | Escape hatch for the long tail (e.g. `salary_min`, `visa_sponsorship`, `employment_type`, `english_level`). |
+| любой фасетный параметр | `--facet key=value` | Запасной выход для редких параметров (например, `salary_min`, `visa_sponsorship`, `employment_type`, `english_level`). |
 
-Repeated params (`?seniority=senior&seniority=staff`) are ORed within a facet;
-different facets are ANDed (geography ORs into one location group). Deep paging is
-bounded server-side (`offset + limit ≤ 10000`).
+Повторённые параметры (`?seniority=senior&seniority=staff`) объединяются по OR внутри фасета;
+разные фасеты — по AND (география объединяется по OR в одну группу локаций). Глубокая пагинация
+ограничена на сервере (`offset + limit ≤ 10000`).
 
-### Job object (the fields the skill reads)
+### Объект вакансии (поля, которые читает навык)
 
 ```jsonc
 {
@@ -113,33 +112,33 @@ bounded server-side (`offset + limit ≤ 10000`).
 }
 ```
 
-The internal numeric id is deliberately never exposed; `public_slug` is the stable
-identifier.
+Внутренний числовой id намеренно никогда не раскрывается; стабильный
+идентификатор — `public_slug`.
 
 ## `GET /api/v1/jobs/{slug}`
 
-A single job by its `public_slug`. Returns the same job object in `data`. A closed
-posting is still served here (with a non-null `closed_at`); a missing slug is 404
-`{ "error": "not found" }`. The skill's `detail` command maps a 404 to a
-`NOT_FOUND` error on stderr.
+Одна вакансия по её `public_slug`. Возвращает тот же объект вакансии в `data`. Закрытая
+вакансия здесь тоже отдаётся (с ненулевым `closed_at`); отсутствующий slug — это 404
+`{ "error": "not found" }`. Команда `detail` навыка превращает 404 в
+ошибку `NOT_FOUND` в stderr.
 
 ## `GET /api/v1/jobs/facets`
 
-The market's facet-value distributions under an optional filter — each facet's live
-values with counts. `data.facets` is `{ <facet>: { <value>: <count> } }`. This skill
-does not call it programmatically, but it is the vocabulary source the SKILL.md
-points users to (`?q=<role>` scopes the counts). Example:
+Распределения значений фасетов на рынке под необязательным фильтром — актуальные
+значения каждого фасета с количеством. `data.facets` — это `{ <facet>: { <value>: <count> } }`. Навык
+не вызывает его программно, но это источник словаря, на который SKILL.md
+отправляет пользователей (`?q=<role>` сужает подсчёт). Пример:
 `GET /api/v1/jobs/facets?q=react`.
 
-## Parsing notes
+## Заметки о разборе
 
-- The response is JSON, so there is no HTML card parsing (unlike the scraping
-  portals). The only markup handling left client-side is `detail`'s: `/jobs/{slug}`
-  serves HTML, which `cleanHtml` (`cli/src/helpers.ts`) strips into readable text.
-  Search descriptions arrive already rendered by the API and are passed through
-  verbatim — stripping them again would undo the Markdown structure.
-- Fetch sends `User-Agent: MadsLorentzen/ai-job-search/1.0 (+https://github.com/MadsLorentzen/ai-job-search; freehire-search)`
-  and `Accept: application/json`, and uses exponential backoff with jitter on 429/5xx (max 6 retries). A connection error (API
-  unreachable) fails fast with a clear message — no retry, since it is not
-  transient server load — which is the graceful-degradation contract: an outage
-  degrades this source quickly instead of hanging the caller.
+- Ответ — JSON, поэтому разбора HTML-карточек нет (в отличие от порталов,
+  которые парсят страницы). Единственная обработка разметки на клиенте — у `detail`: `/jobs/{slug}`
+  отдаёт HTML, который `cleanHtml` (`cli/src/helpers.ts`) превращает в читаемый текст.
+  Описания из поиска приходят уже отрендеренными API и передаются
+  как есть — повторная очистка разрушила бы структуру Markdown.
+- Запрос отправляется с `User-Agent: MadsLorentzen/ai-job-search/1.0 (+https://github.com/MadsLorentzen/ai-job-search; freehire-search)`
+  и `Accept: application/json` и использует экспоненциальную задержку с джиттером при 429/5xx (максимум 6 повторов). Ошибка соединения (API
+  недоступен) сразу завершается с понятным сообщением — без повтора, поскольку это не
+  временная нагрузка на сервер, — в этом и состоит контракт аккуратной деградации: сбой
+  быстро выводит из строя этот источник, а не подвешивает вызывающий код.

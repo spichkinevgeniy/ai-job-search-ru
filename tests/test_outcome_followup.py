@@ -27,7 +27,7 @@ class OutcomeFollowupBranchSpec(unittest.TestCase):
     def test_followup_branch_exists(self):
         text = COMMAND.read_text(encoding="utf-8")
         self.assertIn(
-            "## Step 2b: Follow-Up Branch",
+            "## Шаг 2b: Ветка напоминаний",
             text,
             "outcome.md lost its follow-up branch section",
         )
@@ -43,7 +43,7 @@ class OutcomeFollowupBranchSpec(unittest.TestCase):
     def test_draft_only_rule_present(self):
         text = COMMAND.read_text(encoding="utf-8")
         self.assertIn(
-            "draft only, never send",
+            "только черновик, никогда не отправляй",
             text,
             "spec lost the rule that the follow-up branch never sends anything on the user's behalf",
         )
@@ -51,7 +51,7 @@ class OutcomeFollowupBranchSpec(unittest.TestCase):
     def test_no_new_claims_rule_present(self):
         text = COMMAND.read_text(encoding="utf-8")
         self.assertIn(
-            "no new claims",
+            "никаких новых утверждений",
             text,
             "spec lost the rule that follow-ups only reuse claims from the archived submitted materials",
         )
@@ -59,7 +59,7 @@ class OutcomeFollowupBranchSpec(unittest.TestCase):
     def test_two_followup_cap_present(self):
         text = COMMAND.read_text(encoding="utf-8")
         self.assertIn(
-            "Maximum two follow-ups per application",
+            "Не больше двух напоминаний на отклик",
             text,
             "spec lost the cap that stops the follow-up branch from nagging indefinitely",
         )
@@ -67,7 +67,7 @@ class OutcomeFollowupBranchSpec(unittest.TestCase):
     def test_threshold_contrast_with_gmail_sync_documented(self):
         text = COMMAND.read_text(encoding="utf-8")
         self.assertIn(
-            "30-day staleness flag",
+            "30-дневный флаг застоя",
             text,
             "spec lost the rationale for the 10-day nudge vs /gmail-sync's 30-day alarm",
         )

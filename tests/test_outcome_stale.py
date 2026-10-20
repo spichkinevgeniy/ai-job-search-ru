@@ -23,31 +23,31 @@ class OutcomeStaleBranchSpecTests(unittest.TestCase):
         self.text = COMMAND.read_text(encoding="utf-8")
 
     def test_stale_argument_documented_in_step0(self):
-        self.assertIn("`stale` or `sweep`", self.text)
-        self.assertIn("`stale <N>` or `sweep <N>`", self.text)
+        self.assertIn("`stale` или `sweep`", self.text)
+        self.assertIn("`stale <N>` или `sweep <N>`", self.text)
 
     def test_step1_suggests_stale_sweep(self):
         self.assertIn("/outcome stale", self.text)
-        self.assertIn("60+ days", self.text)
+        self.assertIn("60+ дней", self.text)
 
     def test_step2c_section_exists(self):
-        self.assertIn("## Step 2c: Stale Sweep Branch", self.text)
+        self.assertIn("## Шаг 2c: Ветка чистки зависших откликов", self.text)
 
     def test_drafted_rows_excluded_from_stale_candidates(self):
-        match = re.search(r"## Step 2c: Stale Sweep Branch(.*?)(?=## Step 3:)", self.text, re.DOTALL)
+        match = re.search(r"## Шаг 2c: Ветка чистки зависших откликов(.*?)(?=## Шаг 3:)", self.text, re.DOTALL)
         self.assertTrue(match, "Step 2c must exist")
         step2c = match.group(1)
-        self.assertIn("neither final nor `drafted`", step2c)
-        self.assertIn("never submitted and cannot receive a response", step2c)
+        self.assertIn("ни финальный, ни `drafted`", step2c)
+        self.assertIn("не отправлялись и ответа получить не могут", step2c)
 
     def test_default_60_day_threshold(self):
-        match = re.search(r"## Step 2c: Stale Sweep Branch(.*?)(?=## Step 3:)", self.text, re.DOTALL)
+        match = re.search(r"## Шаг 2c: Ветка чистки зависших откликов(.*?)(?=## Шаг 3:)", self.text, re.DOTALL)
         self.assertTrue(match)
         step2c = match.group(1)
-        self.assertIn("60 days", step2c)
+        self.assertIn("60 дней", step2c)
 
     def test_user_confirmation_options_required(self):
-        match = re.search(r"## Step 2c: Stale Sweep Branch(.*?)(?=## Step 3:)", self.text, re.DOTALL)
+        match = re.search(r"## Шаг 2c: Ветка чистки зависших откликов(.*?)(?=## Шаг 3:)", self.text, re.DOTALL)
         self.assertTrue(match)
         step2c = match.group(1)
         self.assertIn("`all`", step2c)
@@ -55,7 +55,7 @@ class OutcomeStaleBranchSpecTests(unittest.TestCase):
         self.assertIn("`skip`", step2c)
 
     def test_resolves_to_canonical_no_response(self):
-        match = re.search(r"## Step 2c: Stale Sweep Branch(.*?)(?=## Step 3:)", self.text, re.DOTALL)
+        match = re.search(r"## Шаг 2c: Ветка чистки зависших откликов(.*?)(?=## Шаг 3:)", self.text, re.DOTALL)
         self.assertTrue(match)
         step2c = match.group(1)
         self.assertIn("no_response", step2c)

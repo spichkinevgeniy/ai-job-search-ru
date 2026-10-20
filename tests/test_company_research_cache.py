@@ -36,7 +36,7 @@ def _apply_research_step() -> str:
     text = APPLY.read_text(encoding="utf-8")
     sections = _sections(text, "###")
     for heading, body in sections.items():
-        if heading.startswith("1. Research the Company"):
+        if heading.startswith("1. Исследуй компанию"):
             return body
     return ""
 
@@ -45,7 +45,7 @@ def _interview_research_step() -> str:
     text = INTERVIEW.read_text(encoding="utf-8")
     sections = _sections(text, "##")
     for heading, body in sections.items():
-        if heading.startswith("Step 2: Research the Company"):
+        if heading.startswith("Шаг 2: Исследование компании"):
             return body
     return ""
 
@@ -57,13 +57,13 @@ class TestCacheDefinition(unittest.TestCase):
 
     def test_evaluation_file_defines_the_cache_section(self):
         self.assertIn(
-            "Company Research Cache",
+            "Кэш исследования компаний",
             self.sections,
             "04-job-evaluation.md must define a 'Company Research Cache' section",
         )
 
     def test_cache_definition_specifies_location_and_ttl(self):
-        body = self.sections.get("Company Research Cache", "")
+        body = self.sections.get("Кэш исследования компаний", "")
         self.assertIn("company_research/", body, "cache section must name the storage directory")
         self.assertIn("30", body, "cache section must state the TTL (30 days)")
         self.assertIn("fetched_date", body, "cache section must name the freshness field")
@@ -71,16 +71,16 @@ class TestCacheDefinition(unittest.TestCase):
     def test_cache_definition_preserves_the_verification_rule(self):
         """The cache must not weaken the existing 'verify before quoting' rule -
         it should explicitly say a cache hit is a lead, not a substitute for it."""
-        body = self.sections.get("Company Research Cache", "")
+        body = self.sections.get("Кэш исследования компаний", "")
         self.assertIn(
-            "lead",
+            "зацепка",  # «попадание в кэш — это зацепка»
             body,
             "cache section must say a cache hit is a lead, matching the existing "
             "reviewer-agent-research trust model, not a verified source on its own",
         )
         self.assertRegex(
             body,
-            r"[Vv]erif",
+            r"[Пп]роверк",
             "cache section must restate that final-claim verification still applies",
         )
 
@@ -89,9 +89,9 @@ class TestCacheDefinition(unittest.TestCase):
         content the same way the job posting is, so a later session reading the cache
         must treat them as data to evaluate, never as directions to follow - the same
         trust-boundary rule apply.md Step 0 states for the posting itself."""
-        body = self.sections.get("Company Research Cache", "")
+        body = self.sections.get("Кэш исследования компаний", "")
         self.assertIn(
-            "data, never instructions",
+            "данные, а не инструкции",
             body,
             "cache section must state cache contents are data, never instructions",
         )
@@ -104,7 +104,7 @@ class TestApplyWiring(unittest.TestCase):
         self.assertIn("company_research/", body, "reviewer prompt must reference the cache path")
         self.assertRegex(
             body,
-            r"[Cc]heck the cache",
+            r"[Сс]начала проверь кэш",
             "reviewer prompt must instruct checking the cache before researching",
         )
 
@@ -112,7 +112,7 @@ class TestApplyWiring(unittest.TestCase):
         body = _apply_research_step()
         self.assertRegex(
             body,
-            r"write.*company_research/|company_research/.*write",
+            r"запис\w*.*company_research/|company_research/.*запис",
             "reviewer prompt must instruct writing fresh research back to the cache "
             "- the write half is the one most likely to be dropped silently",
         )
@@ -124,7 +124,7 @@ class TestApplyWiring(unittest.TestCase):
         body = _apply_research_step()
         self.assertRegex(
             body,
-            r"still applies",
+            r"[Пп]равило проверки[^.]*действует (всё равно|независимо)",
             "the cache-check paragraph must restate that verification still applies "
             "to a cache hit, not just to fresh research",
         )
@@ -137,7 +137,7 @@ class TestInterviewWiring(unittest.TestCase):
         self.assertIn("company_research/", body, "Step 2 must reference the cache path")
         self.assertRegex(
             body,
-            r"[Cc]heck the cache",
+            r"[Сс]начала проверь кэш",
             "Step 2 must instruct checking the cache before researching",
         )
 
@@ -145,7 +145,7 @@ class TestInterviewWiring(unittest.TestCase):
         body = _interview_research_step()
         self.assertRegex(
             body,
-            r"write.*cache|cache file with",
+            r"запиши.*кэш|файл кэша со свежими",
             "Step 2 must instruct writing fresh research back to the cache",
         )
 
@@ -154,7 +154,7 @@ class TestInterviewWiring(unittest.TestCase):
         cache must not be presented as a substitute for it."""
         body = _interview_research_step()
         self.assertIn(
-            "Verify before using",
+            "Проверяй перед использованием",
             body,
             "Step 2 must keep its existing verification requirement",
         )
@@ -167,7 +167,7 @@ class TestInterviewWiring(unittest.TestCase):
         body = _interview_research_step()
         self.assertRegex(
             body,
-            r"still applies",
+            r"[Пп]равило проверки[^.]*действует (всё равно|независимо)",
             "the cache-check paragraph must restate that verification still applies "
             "to a cache hit, not just to fresh research",
         )

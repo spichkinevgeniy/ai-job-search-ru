@@ -1,176 +1,176 @@
-# /outcome - Record the Result of an Application
+# /outcome - Записать результат отклика
 
-You are recording what happened to a job application: progress updates (interview invitations, stages completed, offers) and final resolutions (hired, rejected, no response). The data lands in two places the framework already reads but nothing systematically writes:
+Ты записываешь, что произошло с откликом на вакансию: промежуточные события (приглашения на собеседование, пройденные этапы, офферы) и итоговые развязки (наняли, отказали, нет ответа). Данные попадают в два места, которые фреймворк уже читает, но которые никто систематически не заполняет:
 
-- `job_search_tracker.csv` - the status column that `/scrape` and `/rank` use for dedup and exclusion
-- `documents/applications/<company>_<role>/` - the per-application archive (posting, submitted drafts, `outcome.md`) that `/setup` Path A mines to calibrate `04-job-evaluation.md` and surface STAR candidates
+- `job_search_tracker.csv` - колонка статуса, по которой `/scrape` и `/rank` убирают дубли и исключают вакансии
+- `documents/applications/<company>_<role>/` - архив по каждому отклику (вакансия, отправленные документы, `outcome.md`), который `/setup` (Путь A) разбирает, чтобы откалибровать `04-job-evaluation.md` и найти кандидатов в примеры STAR (Ситуация–Задача–Действие–Результат)
 
-`/outcome` writes the data; `/setup` interprets it. This command never edits the evaluation framework or profile files itself.
+`/outcome` записывает данные; `/setup` их интерпретирует. Сама эта команда никогда не правит фреймворк оценки и файлы профиля.
 
-The command also owns the stretch *before* there is an outcome to record: the **follow-up branch** (Step 2b) surfaces open applications that have gone quiet, drafts a brief follow-up note in the user's voice, and logs it - so the chase and the resolution it eventually leads to live in one flow.
+Команда отвечает и за отрезок *до* того, как появился результат: **ветка напоминаний** (Шаг 2b) находит открытые отклики, по которым давно тишина, пишет короткое напоминание работодателю (follow-up) голосом пользователя и логирует его - так что и «дожим», и развязка, к которой он в итоге приводит, живут в одном потоке.
 
-Follow these steps **in order**.
-
----
-
-## Step 0: Parse Input
-
-`$ARGUMENTS` may contain:
-
-- Nothing → list open applications and ask which one to update
-- A company name (optionally with a role), e.g. `/outcome acme` or `/outcome acme ml engineer` → target that application
-- `followup` → enter the follow-up branch (Step 2b) over every quiet open application, using the default threshold of **10 days**
-- `followup <N>`, e.g. `/outcome followup 14` → follow-up branch with an N-day threshold
-- `followup <company>`, e.g. `/outcome followup acme` → draft a follow-up for that application now, regardless of threshold
-- `stale` or `sweep` → enter the stale application sweep branch (Step 2c) over open applications quiet for **60+ days**
-- `stale <N>` or `sweep <N>`, e.g. `/outcome stale 90` → stale sweep branch with an N-day threshold
+Выполняй шаги **строго по порядку**.
 
 ---
 
-## Step 1: Load State and Identify the Application
+## Шаг 0: Разбор ввода
 
-1. Read `job_search_tracker.csv`. If it does not exist, create it with the standard header:
+`$ARGUMENTS` может содержать:
+
+- Ничего → покажи открытые отклики и спроси, какой обновить
+- Название компании (можно с должностью), например `/outcome acme` или `/outcome acme ml engineer` → работай с этим откликом
+- `followup` → войди в ветку напоминаний (Шаг 2b) по всем «затихшим» открытым откликам с порогом по умолчанию **10 дней**
+- `followup <N>`, например `/outcome followup 14` → ветка напоминаний с порогом N дней
+- `followup <company>`, например `/outcome followup acme` → напиши напоминание по этому отклику прямо сейчас, независимо от порога
+- `stale` или `sweep` → войди в ветку чистки зависших откликов (Шаг 2c) по открытым откликам без движения **60+ дней**
+- `stale <N>` или `sweep <N>`, например `/outcome stale 90` → чистка с порогом N дней
+
+---
+
+## Шаг 1: Загрузи состояние и найди отклик
+
+1. Прочитай `job_search_tracker.csv`. Если файла нет, создай его со стандартным заголовком:
    ```
    date,company,sector,role,role_type,channel,status,contact_person,fit_rating,notes,cv_file,cover_letter_file,source,deadline
    ```
-   **If the file exists and its header does not end in `,deadline`, append `,deadline` to the header line only** - no data row is touched. Legacy rows then read as an empty deadline. This is the one edit to an existing tracker this command may make outside a matched row, and Step 4's "never restructure the CSV" governs that row, not this header line.
-2. **With an argument:** match rows case-insensitively on company (and role, if given). One match → proceed. Several → list them and ask. None → the application was made outside the workflow; collect company, role, date applied, channel, and posting URL from the user and add a tracker row.
-3. **Without an argument:** list all rows whose status is not final (see **Tracker status vocabulary** below) as a numbered table (company, role, date applied, current status, deadline, days quiet, follow-ups sent) and ask which to update. The two derived columns come straight from existing data: **days quiet** counts from the row's `date` or the latest dated entry in `notes`, whichever is more recent; **follow-ups sent** counts the `followed up YYYY-MM-DD` markers in `notes`. If any open row is 10+ days quiet with fewer than two follow-ups sent, add one line under the table: "Some of these have gone quiet - want a follow-up draft? (Step 2b)". If any open rows are 60+ days quiet, also offer: "You have applications quiet for 60+ days — run `/outcome stale` to batch-resolve them (Step 2c)." If every row is resolved, say so and stop.
+   **Если файл есть, а его заголовок не заканчивается на `,deadline`, допиши `,deadline` только в строку заголовка** - ни одна строка данных не меняется. Старые строки тогда читаются с пустым дедлайном. Это единственная правка существующего трекера, которую команде можно сделать вне найденной строки, а правило Шага 4 «никогда не перестраивай CSV» относится к той строке, а не к этому заголовку.
+2. **С аргументом:** ищи строки без учёта регистра по компании (и по должности, если она указана). Одно совпадение → продолжай. Несколько → покажи их и спроси. Ни одного → отклик сделан в обход фреймворка; узнай у пользователя компанию, должность, дату отклика, канал и ссылку на вакансию и добавь строку в трекер.
+3. **Без аргумента:** покажи все строки, чей статус не финальный (см. **Словарь статусов трекера** ниже), нумерованной таблицей (компания, должность, дата отклика, текущий статус, дедлайн, дней тишины, отправлено напоминаний) и спроси, какую обновить. Две вычисляемые колонки берутся прямо из имеющихся данных: **дней тишины** считается от `date` строки или от последней датированной записи в `notes`, смотря что позже; **отправлено напоминаний** - это число отметок `followed up YYYY-MM-DD` в `notes`. Если какая-то открытая строка молчит 10+ дней и по ней отправлено меньше двух напоминаний, добавь под таблицей одну строку: «По некоторым откликам тишина - написать напоминание? (Шаг 2b)». Если какие-то открытые строки молчат 60+ дней, предложи ещё: «Есть отклики без движения 60+ дней — запусти `/outcome stale`, чтобы закрыть их пачкой (Шаг 2c)». Если все строки закрыты, так и скажи и остановись.
 
-   **`drafted` rows are listed but never counted as quiet** - nothing was sent, so nobody is late replying. List them under their own heading ("Drafted, not yet submitted"), leave **days quiet** and **follow-ups sent** blank, and keep them out of the follow-up offer above.
+   **Строки `drafted` показываются, но никогда не считаются «затихшими»** - ничего не отправлено, значит, никто не опаздывает с ответом. Выведи их под отдельным заголовком («Подготовлено, но не отправлено»), оставь **дней тишины** и **отправлено напоминаний** пустыми и не включай их в предложение напоминаний выше.
 
-   **Deadline urgency is the one clock that does apply to a drafted row.** Show the `deadline` column when the row has one and leave it blank otherwise. Mark a deadline within 7 days with 🔥 and one that has already passed with ⚠, on the same 7-day threshold `/rank` Step 3 uses so the two commands never disagree. A passed deadline on a `drafted` row is the failure this column exists to catch - documents written, never sent, and now unsendable - so name it in one line under the table rather than leaving the user to compare dates. This changes nothing about the follow-up offer: a drafted row is still never chased, because nobody is late replying to something that was never sent.
+   **Срочность по дедлайну - единственные часы, которые к `drafted` применяются.** Показывай колонку `deadline`, если в строке она есть, иначе оставляй пустой. Дедлайн в пределах 7 дней помечай 🔥, уже прошедший - ⚠, по тому же 7-дневному порогу, что и `/rank` Шаг 3, чтобы две команды никогда не расходились. Прошедший дедлайн у строки `drafted` - ровно та беда, ради которой эта колонка существует: документы написаны, не отправлены, а теперь отправлять уже поздно, - поэтому назови это одной строкой под таблицей, а не оставляй пользователя сравнивать даты самому. На предложение напоминаний это не влияет: по `drafted` напоминание всё равно никогда не пишется, потому что никто не опаздывает с ответом на то, что не отправляли.
 
-4. Derive the archive folder name: `documents/applications/<company>_<role>/` by the **Subfolder naming** rule in `documents/README.md`. Check whether the folder and an `outcome.md` already exist - if so, you are updating, not creating.
+4. Выведи имя папки архива: `documents/applications/<company>_<role>/` по правилу **Subfolder naming** в `documents/README.md`. Проверь, есть ли уже папка и `outcome.md` - если да, ты обновляешь, а не создаёшь.
 
 ---
 
-## Tracker status vocabulary
+## Словарь статусов трекера
 
-Canonical spellings for the tracker CSV `status` column (underscores, never spaces):
+Канонические написания для колонки `status` в CSV трекера (через подчёркивание, никогда через пробел):
 
 `drafted` | `applied` | `interview` | `offer` | `hired` | `rejected` | `no_response` | `offer_declined` | `withdrawn`
 
-- **Final** (application closed): `hired`, `rejected`, `no_response`, `offer_declined`, `withdrawn`
-- **Open**: everything else, `drafted` included — a row is active until its status is one of the **Final** values.
-- **`drafted`** is open but distinct — nothing was sent, so no follow-up is ever due.
-- Readers must also accept the legacy space spellings `no response` and `offer declined` on read, so that existing trackers keep working without a migration. Never write them — they are the same values as `no_response` and `offer_declined`, not separate statuses, equally **Final**, and every rule that names one applies to the other.
+- **Финальные** (отклик закрыт): `hired`, `rejected`, `no_response`, `offer_declined`, `withdrawn`
+- **Открытые**: все остальные, включая `drafted`, — строка активна, пока её статус не станет одним из **финальных**.
+- **`drafted`** - открытый, но особый: ничего не отправлено, поэтому напоминание никогда не положено.
+- При чтении принимай и старые написания через пробел `no response` и `offer declined`, чтобы существующие трекеры работали без миграции. Никогда их не пиши — это те же значения, что `no_response` и `offer_declined`, а не отдельные статусы, они так же **финальные**, и любое правило, где упомянуто одно, относится и к другому.
 
-> Distinct from the archive `Status:` enum in `documents/README.md`
+> Не путай с перечнем `Status:` для архива в `documents/README.md`
 > (`in_progress` | `hired` | `offer_declined` | `rejected` | `no_response` | `interview_only`),
-> which describes the per-application `outcome.md` file, not this column. The two enums
-> are never written to the same field.
+> который описывает файл `outcome.md` отдельного отклика, а не эту колонку. Два перечня
+> никогда не пишутся в одно и то же поле.
 
 ---
 
-## Step 2: Collect What Happened
+## Шаг 2: Узнай, что произошло
 
-Ask the user what happened, then classify:
+Спроси пользователя, что произошло, и классифицируй:
 
-**Progress updates** (application still open):
-- Interview invitation / stage scheduled or completed (phone screen, technical, case, final round)
-- Offer received (not yet accepted or declined)
+**Промежуточные события** (отклик ещё открыт):
+- Приглашение на собеседование / этап назначен или пройден (скрининг по телефону, техническое, кейс, финальный этап)
+- Получен оффер (ещё не принят и не отклонён)
 
-**Resolutions** (application closed) — these map to the archive `Status:` enum in `documents/README.md` that `/setup` parses (distinct from the tracker CSV column; see **Tracker status vocabulary** above):
-- `hired` - accepted an offer
-- `offer_declined` - received an offer, turned it down
-- `rejected` - explicit rejection at any stage
-- `no_response` - no reply; if the user is unsure whether to call it, note how long it has been since the last contact and let them decide - do not impose a cutoff
-- `interview_only` - reached interviews but the process stalled or was abandoned without an explicit rejection
+**Развязки** (отклик закрыт) — соответствуют перечню `Status:` архива в `documents/README.md`, который разбирает `/setup` (не путать с колонкой CSV трекера; см. **Словарь статусов трекера** выше):
+- `hired` - принял оффер
+- `offer_declined` - получил оффер и отказался
+- `rejected` - явный отказ на любом этапе
+- `no_response` - ответа нет; если пользователь не уверен, пора ли так считать, скажи, сколько прошло с последнего контакта, и дай решить ему - не навязывай срок
+- `interview_only` - дошёл до собеседований, но процесс заглох или брошен без явного отказа
 
-Also collect, without interrogating - one or two open questions are enough:
-- Dates for the stages reached
-- Any feedback received, verbatim where the user remembers it
-- What they'd do differently, and any signal about what the company valued (these feed `/setup`'s calibration and STAR-candidate mining, so concrete beats polished)
-
----
-
-## Step 2b: Follow-Up Branch (chase a quiet application)
-
-Enter this branch from the `followup` argument (Step 0) or from the offer under the open-pipeline table (Step 1.3). Standard practice is a brief, polite follow-up one to two weeks after applying, at most twice; this branch operationalizes that.
-
-**Candidates.** An application qualifies when its status is neither final nor `drafted`, the threshold has passed since its `date` (or since the last `followed up` marker in `notes`, if any), and it has fewer than **two** logged follow-ups. Parse dates defensively - skip rows whose dates do not parse and say so rather than guessing. Present qualifying applications as a table (company, role, days quiet, follow-ups sent, channel, contact person) and draft only for the ones the user picks.
-
-**Threshold.** The 10-day default is deliberately earlier than `/gmail-sync`'s 30-day staleness flag (its Step 9): that check is a read-only alarm that a row has been forgotten entirely; this branch is the proactive nudge while a reply is still plausible. The two numbers serve different moments, which is why they differ.
-
-**Drafting.** For each selected application:
-
-1. Read the archive folder: the `job_posting.md`, `cv_draft.tex`, and `cover_letter.tex` that Step 3 maintains are the source of **every claim** the note may make - this is Rule 3 (never fabricate) widened to "no new claims": a follow-up that introduces skills or experience the submitted materials don't contain is a fabrication vector.
-2. Apply the writing style rules from `03-writing-style.md` (no cliches, no em-dashes, warm but direct), and match the application's language - draw the register from the archived cover letter.
-3. Write roughly **60 to 120 words**: address the `contact_person` from the tracker if present (otherwise the team, in the application's language); one sentence restating interest in the specific role; one concrete value-reminder drawn from the submitted materials; one polite question about the timeline. No pressure, no "just checking in" filler.
-4. Shape it for the `channel` column: email (with a subject line reusing the application's headline), LinkedIn message (shorter, no subject), or portal message (plain text).
-5. Present the draft and iterate until the user is happy.
-
-**Logging.** Once the user confirms they will send it (or have sent it), log it in the same turn - an unlogged follow-up breaks the next run's quiet-days math:
-
-- Append `followed up YYYY-MM-DD` to the row's `notes` column (Step 4's rule applies: append a dated note, never restructure the CSV).
-- Save the final note as `followup_YYYY-MM-DD.md` in the application's archive folder. Safe by documented convention: `/setup` reads only the four named archive files and ignores extras (the same rule that covers `/interview`'s prep files), and `documents/applications/**` is gitignored personal data.
-
-If the user decides not to send, log nothing.
-
-**Termination.** When an application hits two follow-ups and stays silent, do not offer a third. This is the moment to continue in this same command's Step 2: note how long it has been since last contact and let the user decide whether to record `no_response` - as ever, no imposed cutoff. And if the user mentions an actual response while in this branch (an interview invitation, a rejection), drop out of the branch and record it through the normal Step 2 flow.
+Также собери, не устраивая допрос, - одного-двух открытых вопросов хватит:
+- Даты пройденных этапов
+- Полученную обратную связь, дословно, если пользователь помнит
+- Что он сделал бы иначе и любые сигналы о том, что ценила компания (это питает калибровку `/setup` и поиск примеров STAR, так что конкретика важнее гладкости)
 
 ---
 
-## Step 2c: Stale Sweep Branch (batch-resolve quiet applications)
+## Шаг 2b: Ветка напоминаний (дожать затихший отклик)
 
-Enter this branch from the `stale` or `sweep` argument (Step 0), or from the suggestion under the open-pipeline table in Step 1.3. In an extended job hunt, applications that received no response accumulate and clutter the tracker, `/html-report` funnel metrics, and `/notion-sync`. This branch operationalizes batch-cleaning old quiet applications while keeping the user in full control.
+Сюда попадаешь по аргументу `followup` (Шаг 0) или из предложения под таблицей открытых откликов (Шаг 1.3). Обычная практика - короткое вежливое напоминание через одну-две недели после отклика, не больше двух раз; эта ветка превращает её в процесс.
 
-**Candidates.** An application qualifies when its tracker `status` is open and submitted (`applied` or `interview`), the threshold has passed since its `date` (or since the latest dated entry in `notes`, whichever is more recent), and its status is neither final nor `drafted` (`drafted` applications were never submitted and cannot receive a response). Parse dates defensively — skip unparseable rows with a note.
+**Кандидаты.** Отклик подходит, если его статус ни финальный, ни `drafted`, с его `date` (или с последней отметки `followed up` в `notes`, если она есть) прошёл порог и залогировано меньше **двух** напоминаний. Разбирай даты осторожно - строки с неразбираемыми датами пропускай и прямо об этом говори, а не угадывай. Покажи подходящие отклики таблицей (компания, должность, дней тишины, отправлено напоминаний, канал, контактное лицо) и пиши черновики только для тех, что выберет пользователь.
 
-**Threshold.** The default threshold is **60 days** quiet. If the user specified an integer `<N>` (e.g. `/outcome stale 90` or `/outcome sweep 45`), use N days instead.
+**Порог.** 10 дней по умолчанию намеренно раньше, чем 30-дневный флаг застоя в `/gmail-sync` (его Шаг 9): та проверка - сигнал «только для чтения», что о строке совсем забыли; эта ветка - активный толчок, пока ответ ещё правдоподобен. Два числа служат разным моментам, поэтому и различаются.
 
-**Presentation.** If no open applications exceed the threshold, report:
-> "No open applications exceed the <N>-day quiet threshold. Your tracker is up to date!"
-and stop.
+**Черновик.** Для каждого выбранного отклика:
 
-Otherwise, present qualifying applications as a numbered table:
+1. Прочитай папку архива: `job_posting.md`, `cv_draft.tex` и `cover_letter.tex`, которые ведёт Шаг 3, - источник **каждого утверждения** в напоминании. Это Правило 3 (ничего не выдумывай), расширенное до «никаких новых утверждений»: напоминание, где появляются навыки или опыт, которых нет в отправленных документах, - канал для выдумки.
+2. Применяй правила стиля из `03-writing-style.md` (без штампов, без длинных тире, тепло, но прямо) и пиши на языке отклика - тон бери из архивного сопроводительного письма.
+3. Объём примерно **60–120 слов**: обратись к `contact_person` из трекера, если он есть (иначе - к команде, на языке отклика); одно предложение о том, что интерес к конкретной вакансии сохраняется; одно конкретное напоминание о ценности кандидата из отправленных документов; один вежливый вопрос о сроках. Без давления, без пустого «просто хотел уточнить».
+4. Подгони под колонку `channel`: письмо (с темой, повторяющей заголовок отклика), сообщение в мессенджере или чате рекрутера (короче, без темы) или сообщение через портал (простой текст).
+5. Покажи черновик и дорабатывай, пока пользователя не устроит.
+
+**Логирование.** Как только пользователь подтвердит, что отправит (или уже отправил), залогируй это в том же ходе - незалогированное напоминание ломает подсчёт дней тишины в следующем прогоне:
+
+- Допиши `followed up YYYY-MM-DD` в колонку `notes` строки (действует правило Шага 4: дописывай датированную заметку, никогда не перестраивай CSV).
+- Сохрани итоговый текст как `followup_YYYY-MM-DD.md` в папке архива отклика. Это безопасно по задокументированному соглашению: `/setup` читает только четыре названных файла архива и игнорирует остальные (то же правило покрывает файлы подготовки `/interview`), а `documents/applications/**` - личные данные в gitignore.
+
+Если пользователь решил не отправлять, ничего не логируй.
+
+**Завершение.** Когда по отклику уже два напоминания, а ответа нет, третье не предлагай. Это момент перейти к Шагу 2 этой же команды: скажи, сколько прошло с последнего контакта, и дай пользователю решить, записывать ли `no_response` - как всегда, без навязанного срока. А если пользователь в этой ветке упомянет реальный ответ (приглашение на собеседование, отказ), выйди из ветки и запиши его обычным путём через Шаг 2.
+
+---
+
+## Шаг 2c: Ветка чистки зависших откликов (закрыть затихшие пачкой)
+
+Сюда попадаешь по аргументу `stale` или `sweep` (Шаг 0) или из подсказки под таблицей открытых откликов в Шаге 1.3. В долгом поиске работы отклики без ответа копятся и засоряют трекер и воронку в `/html-report`. Эта ветка позволяет пачкой закрыть старые затихшие отклики, оставляя пользователю полный контроль.
+
+**Кандидаты.** Отклик подходит, если его `status` в трекере открытый и отправленный (`applied` или `interview`), с его `date` (или с последней датированной записи в `notes`, смотря что позже) прошёл порог, а статус ни финальный, ни `drafted` (отклики `drafted` не отправлялись и ответа получить не могут). Разбирай даты осторожно — неразбираемые строки пропускай с пометкой.
+
+**Порог.** По умолчанию **60 дней** тишины. Если пользователь указал целое `<N>` (например `/outcome stale 90` или `/outcome sweep 45`), используй N дней.
+
+**Вывод.** Если ни один открытый отклик не превышает порог, сообщи:
+> «Нет открытых откликов без движения дольше <N> дней. Трекер в порядке!»
+и остановись.
+
+Иначе покажи подходящие отклики нумерованной таблицей:
 
 ```
-## Stale Applications ([K] quiet for [N]+ days)
+## Зависшие отклики ([K] без движения [N]+ дней)
 
-| # | Company | Role | Date Applied | Days Quiet | Follow-ups Sent | Current Status | Proposed Status |
-|---|---------|------|--------------|------------|-----------------|----------------|-----------------|
-| 1 | Acme    | SWE  | 2026-05-10   | 118        | 2               | applied        | no_response     |
-| 2 | Beta    | MLE  | 2026-06-01   | 96         | 1               | applied        | no_response     |
+| # | Компания | Должность | Дата отклика | Дней тишины | Напоминаний | Текущий статус | Предлагаемый статус |
+|---|----------|-----------|--------------|-------------|-------------|----------------|---------------------|
+| 1 | Яндекс   | SWE       | 2026-05-10   | 118         | 2           | applied        | no_response         |
+| 2 | Ozon     | MLE       | 2026-06-01   | 96          | 1           | applied        | no_response         |
 ```
 
-Then ask:
+Затем спроси:
 
-> **How would you like to resolve these applications?**
+> **Как закрыть эти отклики?**
 >
-> - **`all`** — Mark all [K] applications as `no_response` and update archives
-> - **`select`** — Specify which numbers to resolve (e.g. "1, 3" or "1-4")
-> - **`skip`** — Cancel without making any changes
+> - **`all`** — отметить все [K] откликов как `no_response` и обновить архивы
+> - **`select`** — указать, какие номера закрыть (например «1, 3» или «1-4»)
+> - **`skip`** — отменить без изменений
 
-Wait for the user's explicit response before writing anything.
+Дождись явного ответа пользователя, прежде чем что-либо записывать.
 
-**Execution.** For each application the user confirms:
+**Выполнение.** Для каждого отклика, который подтвердил пользователь:
 
-1. **Update Tracker:** update the row's `status` column to `no_response` (using the canonical spelling from **Tracker status vocabulary**). Append `stale resolved no_response (YYYY-MM-DD)` to `notes`. Follow Step 4's rule: never restructure the CSV, preserve all other columns intact.
-2. **Update Archive:** derive `documents/applications/<company>_<role>/` per the **Subfolder naming** rule. If the folder exists, update or write `outcome.md` with:
+1. **Обнови трекер:** поставь в колонку `status` строки `no_response` (каноническое написание из **Словаря статусов трекера**). Допиши в `notes` `stale resolved no_response (YYYY-MM-DD)`. Следуй правилу Шага 4: никогда не перестраивай CSV, все остальные колонки сохраняй нетронутыми.
+2. **Обнови архив:** выведи `documents/applications/<company>_<role>/` по правилу **Subfolder naming**. Если папка есть, обнови или запиши `outcome.md`:
    - `**Status:** no_response`
    - `**Date resolved:** YYYY-MM-DD`
-   - Append to `## Notes`: `- Stale resolution: marked no_response after [N] days quiet (YYYY-MM-DD)`
+   - Допиши в `## Notes`: `- Stale resolution: marked no_response after [N] days quiet (YYYY-MM-DD)`
 
-**Calibration Handoff.** If 3 or more applications were resolved in this sweep, continue to Step 5 to offer calibration handoff. Otherwise present a summary of resolved applications and stop.
+**Передача на калибровку.** Если в этой чистке закрыто 3 или больше откликов, переходи к Шагу 5 и предложи калибровку. Иначе покажи сводку закрытых откликов и остановись.
 
 ---
 
-## Step 3: Archive the Application Materials
+## Шаг 3: Заархивируй материалы отклика
 
-Create or update `documents/applications/<company>_<role>/`. All content here is personal data - the folder is already gitignored (`documents/applications/**`), so nothing needs redacting.
+Создай или обнови `documents/applications/<company>_<role>/`. Всё содержимое здесь - личные данные; папка уже в gitignore (`documents/applications/**`), так что ничего вымарывать не нужно.
 
-1. **`cv_draft.tex` and `cover_letter.tex`** - copy (never move) the submitted files. Locate them via the tracker row's `cv_file`/`cover_letter_file` columns; if those are empty, look for `cv/main_<company>_<role>.*` and `cover_letters/cover_<company>_<role>.*`, deriving `<company>_<role>` by the **Subfolder naming** rule in `documents/README.md`. **Never widen those globs to the company alone** - two roles at one company both match it, and the first hit wins silently. If a file already exists in the archive, leave it - the archived version is what was actually submitted. If nothing matches (application made outside `/apply`), skip with a note rather than widening the search: a sibling role's CV recorded as what you submitted is worse than no file at all.
-2. **`job_posting.md`** - if it already exists, leave it. Otherwise try WebFetch on the tracker row's `source` URL, retrying a 403 with browser headers per `.claude/skills/job-application-assistant/09-web-research.md`, run the result through `python3 tools/posting_guard.py` (`--html` on a saved page, `--text` otherwise) and save the **cleaned** text plus a `## posting_guard` section with the verdict and finding counts only, exactly as `/apply` Step 6b does. If the URL is dead (postings expire fast - this is exactly why the archive matters), ask the user to paste the posting, or write a stub noting the posting is unavailable. **Never reconstruct a posting from memory.**
-3. **`outcome.md`** - write or update it in exactly the format documented in `documents/README.md`, so `/setup` Path A parses it without special cases:
+1. **`cv_draft.tex` и `cover_letter.tex`** - скопируй (никогда не перемещай) отправленные файлы. Найди их по колонкам `cv_file`/`cover_letter_file` строки трекера; если они пусты, ищи `cv/main_<company>_<role>.*` и `cover_letters/cover_<company>_<role>.*`, выводя `<company>_<role>` по правилу **Subfolder naming** в `documents/README.md`. **Никогда не расширяй эти маски до одной компании** - под неё попадут две вакансии одной компании, и первое совпадение молча победит. Если файл в архиве уже есть, не трогай его - архивная версия и есть то, что реально отправили. Если ничего не нашлось (отклик сделан в обход `/apply`), пропусти с пометкой, а не расширяй поиск: резюме на соседнюю вакансию, записанное как отправленное, хуже, чем отсутствие файла.
+2. **`job_posting.md`** - если уже есть, не трогай. Иначе попробуй WebFetch по URL из колонки `source` строки трекера, при 403 повтори с браузерными заголовками по `.claude/skills/job-application-assistant/09-web-research.md`, прогони результат через `python3 tools/posting_guard.py` (`--html` для сохранённой страницы, иначе `--text`) и сохрани **очищенный** текст плюс раздел `## posting_guard` только с вердиктом и числом находок - ровно как делает `/apply` Шаг 6b. Если ссылка мёртвая (вакансии снимают быстро - именно поэтому архив и важен), попроси пользователя вставить текст вакансии или запиши заглушку о том, что вакансия недоступна. **Никогда не восстанавливай вакансию по памяти.**
+3. **`outcome.md`** - запиши или обнови строго в формате, описанном в `documents/README.md`, чтобы `/setup` (Путь A) разбирал его без особых случаев. Служебные заголовки и метки оставляй как в схеме:
 
 ```markdown
 # Outcome: <Company> — <Role>
 
 **Status:** in_progress | hired | offer_declined | rejected | no_response | interview_only
 
-**Date resolved:** YYYY-MM-DD   <- only when resolved; omit while in_progress
+**Date resolved:** YYYY-MM-DD   <- только при развязке; пока in_progress, не пиши
 
 ## Interview stages reached
 - [x] Phone screen (YYYY-MM-DD)
@@ -180,64 +180,62 @@ Create or update `documents/applications/<company>_<role>/`. All content here is
 - [ ] Offer received
 
 ## Notes
-<feedback received, what to do differently, signals about what they valued -
-appended per update with a date, never overwritten>
+<полученная обратная связь, что сделать иначе, сигналы о том, что ценили, -
+дописывается при каждом обновлении с датой, никогда не перезаписывается>
 ```
 
-Update rules: tick stage checkboxes as they are reached (add the date in parentheses), append dated entries to Notes, and only change `Status` from `in_progress` to a final value on resolution. Re-running `/outcome` on the same application is idempotent - it appends new information, never duplicates or rewrites history.
+Правила обновления: отмечай чекбоксы этапов по мере прохождения (с датой в скобках), дописывай датированные записи в Notes и меняй `Status` с `in_progress` на финальное значение только при развязке. Повторный запуск `/outcome` по тому же отклику идемпотентен - он дописывает новую информацию и никогда не дублирует и не переписывает историю.
 
-**Thank-you note trigger:** when this step ticks a newly completed interview stage, offer in the same turn: "Want a short thank-you note for the interviewer? A prompt one is standard practice." If accepted, draft it under Step 2b's drafting and logging rules (same voice, same no-new-claims boundary, same `followup_YYYY-MM-DD.md` archive convention). Recording the stage is the trigger - no scanning for recent stages is ever needed.
-
----
-
-## Step 4: Update the Tracker
-
-Update the matched row's `status` column using the canonical spellings from **Tracker status vocabulary** above (e.g. `drafted` → `applied` → `interview` → `offer` → `hired` / `rejected` / `no_response` / `offer_declined` / `withdrawn`) and append a short dated note to the `notes` column, **containing no commas, double quotes or line breaks**. No writer here emits a quoted tracker field, so a comma in the note shifts `cv_file`, `cover_letter_file` and `source` a column left for `csv.DictReader` (`tools/rank_state.py`) as much as for a naive split, and a line break ends the row - `rejected, no feedback given` is exactly the sentence that corrupts it; write `rejected - no feedback given`. `/gmail-sync` Step 7a applies the same rule to the email subjects it appends. Never restructure the CSV, reorder rows, or touch other rows. The rewrite touches only the `status` and `notes` columns: preserve every other field of the row, parsed or not, so a value the row carries - the `deadline` written by `/apply` Step 6b, or any column added in the future - is never blanked by a status update.
-
-**Moving a row off `drafted`:** rows written by `/apply` Step 6b carry the date the documents were drafted, not the date they were sent. Whenever this step advances such a row to any other status - `applied`, or straight to `interview` or `rejected` when the user reports an outcome for something they submitted without recording it - overwrite its `date` column with the actual submission date. The `date` column is read as "applied on" by `/notion-sync` and drives `/html-report`'s year/season grouping and this command's own days-quiet count, so leaving the draft date in place would misreport the application.
+**Повод для письма-благодарности:** когда этот шаг отмечает только что пройденный этап собеседования, в том же ходе предложи: «Написать короткое благодарственное письмо интервьюеру? Отправить его быстро - обычная практика». Если пользователь согласен, напиши его по правилам черновика и логирования Шага 2b (тот же голос, та же граница «никаких новых утверждений», то же соглашение об архиве `followup_YYYY-MM-DD.md`). Поводом служит сама запись этапа - искать недавние этапы никогда не нужно.
 
 ---
 
-## Step 5: Calibration Handoff
+## Шаг 4: Обнови трекер
 
-Count the `outcome.md` files under `documents/applications/` with a **final** status (not `in_progress`).
+Обнови колонку `status` найденной строки каноническими написаниями из **Словаря статусов трекера** выше (например `drafted` → `applied` → `interview` → `offer` → `hired` / `rejected` / `no_response` / `offer_declined` / `withdrawn`) и допиши короткую датированную заметку в колонку `notes`, **без запятых, двойных кавычек и переносов строк**. Никто из пишущих сюда не выводит поля в кавычках, поэтому запятая в заметке сдвигает `cv_file`, `cover_letter_file` и `source` на колонку влево и для `csv.DictReader` (`tools/rank_state.py`), и для наивного split, а перенос строки обрывает строку - `отказ, без обратной связи` ровно то предложение, которое её портит; пиши `отказ - без обратной связи`. `/gmail-sync` Шаг 7a применяет то же правило к темам писем, которые дописывает. Никогда не перестраивай CSV, не меняй порядок строк и не трогай другие строки. Перезапись касается только колонок `status` и `notes`: сохраняй все остальные поля строки, разобранные или нет, чтобы значение в строке - `deadline`, записанный `/apply` Шагом 6b, или любая колонка, добавленная в будущем, - никогда не обнулялось обновлением статуса.
 
-- If 3 or more are resolved (or 2+ share a pattern - same role type rejected twice, same sector going silent), suggest:
-  > "You now have <N> resolved applications on record. Run `/setup` (Path A) to fold them into your evaluation framework - it calibrates fit scoring from what actually got interviews, and mines your interview feedback for STAR examples."
-- Do **not** write anything into `04-job-evaluation.md` or other skill files yourself. `/setup` Path A owns that merge - it is read-before-write and idempotent, and duplicating its logic here would race it.
+**Перевод строки из `drafted`:** строки, записанные `/apply` Шагом 6b, хранят дату подготовки документов, а не дату отправки. Всякий раз, когда этот шаг переводит такую строку в любой другой статус - `applied` или сразу в `interview` или `rejected`, когда пользователь сообщает результат по тому, что отправил, не записав, - перезапиши колонку `date` реальной датой отправки. Колонка `date` читается как «дата отклика»: по ней `/html-report` группирует по годам/сезонам и по ней же эта команда считает дни тишины, так что дата черновика на её месте исказила бы картину.
 
 ---
 
-## Step 6: Confirm
+## Шаг 5: Передача на калибровку
 
-Summarize what was recorded:
+Посчитай файлы `outcome.md` в `documents/applications/` с **финальным** статусом (не `in_progress`).
 
-> **Outcome recorded for <Role> at <Company>.**
+- Если закрыто 3 или больше (или 2+ складываются в закономерность - один тип ролей дважды отказал, один сектор дважды замолчал), предложи:
+  > «У тебя уже <N> закрытых откликов. Запусти `/setup` (Путь A), чтобы учесть их во фреймворке оценки - он откалибрует оценку соответствия по тому, что реально приводило к собеседованиям, и вытащит из обратной связи примеры для STAR.»
+- **Не** пиши ничего в `04-job-evaluation.md` или другие файлы навыков сам. Это слияние принадлежит `/setup` (Путь A) - он читает перед записью и идемпотентен, а дублирование его логики здесь создало бы гонку.
+
+---
+
+## Шаг 6: Подтверждение
+
+Подведи итог записанного:
+
+> **Результат отклика записан: <Role> в <Company>.**
 >
-> - `documents/applications/<company>_<role>/outcome.md` - status: <status>, <what changed>
-> - Archived: <which of cv_draft.tex / cover_letter.tex / job_posting.md were copied or fetched, and which were skipped and why>
-> - Tracker: status → <new status>
+> - `documents/applications/<company>_<role>/outcome.md` - статус: <status>, <что изменилось>
+> - В архиве: <какие из cv_draft.tex / cover_letter.tex / job_posting.md скопированы или загружены, какие пропущены и почему>
+> - Трекер: статус → <new status>
 >
-> [Calibration suggestion from Step 5, if triggered]
+> [Предложение калибровки из Шага 5, если сработало]
 
-If the update recorded an upcoming or newly scheduled interview stage, also suggest:
+Если в обновлении записан предстоящий или только что назначенный этап собеседования, предложи ещё:
 
-> "Interview coming up? `/interview <company>` builds a prep pack for that stage from this application's archive - the posting, the documents you submitted, and any feedback recorded from earlier rounds."
+> «Скоро собеседование? `/interview <company>` соберёт пакет подготовки к этому этапу из архива отклика - вакансия, отправленные документы и обратная связь с прошлых раундов.»
 
-If the recorded status is `hired`, congratulate the user warmly first - this is the moment the whole framework exists for. Then add this single line (once; never on re-runs for the same application, and never for any other status):
-
-> "If this framework helped you get there, consider [buying it a coffee](https://ko-fi.com/madslorentzen) - it keeps this free for the next job-seeker out there. ☕"
+Если записан статус `hired`, сначала тепло поздравь пользователя - ради этого момента весь фреймворк и существует.
 
 ---
 
-## Important Rules
+## Важные правила
 
-1. **Write data, don't interpret it.** The archive and tracker are the outputs; calibration belongs to `/setup`. This command never edits profile or framework files.
-2. **The archived version is the submitted version.** Existing files in the application folder are never overwritten by fresher drafts.
-3. **Never fabricate.** A dead posting URL gets a user-pasted copy or an explicit "unavailable" stub, not a reconstruction. Feedback is recorded as the user reports it.
-4. **Stay schema-compatible.** `outcome.md` follows the format in `documents/README.md` exactly (`in_progress` is the one addition, for open applications); the tracker keeps its columns.
-5. **Idempotent updates.** Re-running on the same application appends new stages and notes; it never duplicates folders, rows, or history.
-6. **Follow-ups: draft only, never send.** The follow-up branch produces text for the user to send themselves. It never emails, messages, or submits anything, and it must not be wired to tools that do.
-7. **Follow-ups: no new claims.** Every substantive statement in a follow-up or thank-you note comes from the archived submitted materials. Rule 3 applies with no exceptions.
-8. **Maximum two follow-ups per application.** After the second silent follow-up, the honest move is recording the resolution, not persistence.
-9. **Stale sweep: user confirms before writing.** The stale sweep branch never marks applications as no_response automatically. It always presents the qualifying candidate list and waits for explicit user confirmation (all, select, or skip).
+1. **Пиши данные, не интерпретируй их.** Архив и трекер - это результат; калибровка принадлежит `/setup`. Эта команда никогда не правит файлы профиля и фреймворка.
+2. **Архивная версия и есть отправленная.** Существующие файлы в папке отклика никогда не перезаписываются более свежими черновиками.
+3. **Ничего не выдумывай.** Мёртвая ссылка на вакансию получает вставленную пользователем копию или явную заглушку «недоступна», а не реконструкцию. Обратная связь записывается так, как её передал пользователь.
+4. **Держи совместимость со схемой.** `outcome.md` строго следует формату в `documents/README.md` (`in_progress` - единственное дополнение, для открытых откликов); у трекера остаются его колонки.
+5. **Идемпотентные обновления.** Повторный запуск по тому же отклику дописывает новые этапы и заметки; он никогда не дублирует папки, строки или историю.
+6. **Напоминания: только черновик, никогда не отправляй.** Ветка напоминаний готовит текст, который пользователь отправит сам. Она никогда не шлёт письма, сообщения и ничего не отправляет через формы, и её нельзя подключать к инструментам, которые это делают.
+7. **Напоминания: никаких новых утверждений.** Каждое содержательное утверждение в напоминании или благодарственном письме берётся из архивных отправленных материалов. Правило 3 действует без исключений.
+8. **Не больше двух напоминаний на отклик.** После второго напоминания без ответа честный шаг - записать развязку, а не настаивать.
+9. **Чистка зависших: пользователь подтверждает до записи.** Ветка чистки никогда не отмечает отклики как no_response автоматически. Она всегда показывает список кандидатов и ждёт явного подтверждения (all, select или skip).

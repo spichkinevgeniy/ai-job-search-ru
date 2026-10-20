@@ -46,17 +46,17 @@ class FreeFormNotesWritersStateTheRule(unittest.TestCase):
     CASES = [
         (
             GMAIL_SYNC,
-            "### Step 7a: Write Approved Updates",
-            "append to `notes`",
-            "with every comma, double quote and line break deleted from the subject first",
+            "### Шаг 7a: Запиши одобренные обновления",
+            "допиши в `notes`",
+            "предварительно удалив из темы все запятые, двойные кавычки и переносы строк",
             "Step 7a item 2 deliberately keeps the subject verbatim in `outcome.md`, "
             "so the rule must sit on the tracker append, not anywhere in the step",
         ),
         (
             OUTCOME,
-            "## Step 4: Update the Tracker",
-            "append a short dated note",
-            "containing no commas, double quotes or line breaks",
+            "## Шаг 4: Обнови трекер",
+            "допиши короткую датированную заметку",
+            "без запятых, двойных кавычек и переносов строк",
             "Step 4 is the primary status-update path and its note is written "
             "free-form - `rejected, no feedback given` is the natural sentence",
         ),

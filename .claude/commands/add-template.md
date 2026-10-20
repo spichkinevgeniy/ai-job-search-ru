@@ -1,107 +1,107 @@
-# /add-template - Register a Custom CV or Cover Letter Template
+# /add-template - Подключить свой шаблон резюме или сопроводительного письма
 
-You are helping the user register their own CV or cover letter template with the AI Job Search framework — LaTeX, Typst, or any other toolchain that compiles to PDF from the command line. The framework ships with moderncv (banking style) for CVs and a custom `cover.cls` for cover letters. This command lets the user swap in their own template: store the template files, capture usage instructions (source extension, compile command, fonts, style rules, page limits), verify the template compiles, and wire it into the `/apply` workflow so every future application uses it.
+Ты помогаешь пользователю подключить к фреймворку AI Job Search собственный шаблон резюме или сопроводительного письма — на LaTeX, Typst или любом другом инструменте, который собирает PDF из командной строки. Из коробки фреймворк использует moderncv (стиль banking) для резюме и собственный `cover.cls` для сопроводительных писем. Эта команда позволяет заменить их своим шаблоном: сохранить файлы шаблона, записать инструкции по использованию (расширение исходника, команду сборки, шрифты, правила оформления, лимит страниц), проверить, что шаблон собирается, и встроить его в процесс `/apply`, чтобы все будущие отклики использовали его.
 
-`$ARGUMENTS` may contain a subcommand, a file path, or nothing.
+`$ARGUMENTS` может содержать подкоманду, путь к файлу или ничего.
 
-Follow these steps **in order**.
+Выполняй шаги **строго по порядку**. Общайся с пользователем по-русски.
 
 ---
 
-## Step 0: Parse Arguments
+## Шаг 0: Разбор аргументов
 
-- If `$ARGUMENTS` contains `--list`: run **List Mode** below and stop.
-- If `$ARGUMENTS` contains `--use <name>`: run **Switch Mode** below, then continue to **Step 5: Activate** with the resolved template metadata. `--use default` deactivates any custom template and restores the stock guidance (see Step 5).
-- If `$ARGUMENTS` contains a file path or @-mentioned file: treat it as the template source and carry it into Step 1.
-- Otherwise: start the registration flow at Step 1.
+- Если в `$ARGUMENTS` есть `--list`: выполни **Режим списка** ниже и остановись.
+- Если в `$ARGUMENTS` есть `--use <name>`: выполни **Режим переключения** ниже, затем переходи к **Шагу 5: Активация** с найденными метаданными шаблона. `--use default` отключает любой свой шаблон и возвращает стандартные указания (см. Шаг 5).
+- Если в `$ARGUMENTS` есть путь к файлу или @-упоминание файла: считай его исходником шаблона и передай в Шаг 1.
+- Иначе: начни регистрацию с Шага 1.
 
-### List Mode
+### Режим списка
 
-Use Glob with `templates/**/TEMPLATE.md` to find registered templates. For each, read the manifest and print a table:
+Найди зарегистрированные шаблоны через Glob с `templates/**/TEMPLATE.md`. Для каждого прочитай манифест и выведи таблицу:
 
 ```
-## Registered Templates
+## Зарегистрированные шаблоны
 
-| Name | Type | Source | Toolchain | Fonts | Active |
-|------|------|--------|-----------|-------|--------|
-| <name> | CV / Cover letter | .tex/.typ/... | lualatex/typst/... | <main font> | yes/no |
+| Имя | Тип | Исходник | Инструмент | Шрифты | Активен |
+|-----|-----|----------|------------|--------|---------|
+| <name> | Резюме / Сопроводительное письмо | .tex/.typ/... | lualatex/typst/... | <основной шрифт> | да/нет |
 ```
 
-A template is **active** if `05-cv-templates.md` (CV) or `06-cover-letter-templates.md` (cover letter) contains an `ACTIVE-TEMPLATE` managed block naming it. If no custom templates exist, say so and explain that `/add-template` registers one. Stop here.
+Шаблон **активен**, если `05-cv-templates.md` (резюме) или `06-cover-letter-templates.md` (сопроводительное письмо) содержит управляемый блок `ACTIVE-TEMPLATE` с его именем. Если своих шаблонов нет, так и скажи и объясни, что `/add-template` регистрирует шаблон. На этом остановись.
 
-### Switch Mode
+### Режим переключения
 
-If `$ARGUMENTS` contains `--use <name>`:
+Если в `$ARGUMENTS` есть `--use <name>`:
 
-1. If `<name>` is `default`, skip template resolution and continue to Step 5 with `default` as the activation target.
-2. Use Glob with `templates/**/TEMPLATE.md` and find manifests whose parent folder name exactly matches `<name>`.
-3. If no manifest matches, stop and say the template is not registered. Suggest `/add-template --list` to see available names.
-4. If more than one manifest matches, stop and list the matching manifest paths. Ask the user to rename one of the templates; activation must be unambiguous.
-5. Read the matching `TEMPLATE.md` and extract:
-   - **Type:** `CV` or `Cover letter`
-   - **Source extension:** e.g. `.tex`, `.typ`
-   - **Compile command:** the full declared command
-   - **Engine/toolchain:** e.g. `lualatex`, `typst` (display label)
+1. Если `<name>` - `default`, пропусти поиск шаблона и переходи к Шагу 5 с `default` как целью активации.
+2. Найди через Glob с `templates/**/TEMPLATE.md` манифесты, у которых имя родительской папки в точности совпадает с `<name>`.
+3. Если ни один манифест не совпал, остановись и скажи, что шаблон не зарегистрирован. Предложи `/add-template --list`, чтобы увидеть доступные имена.
+4. Если совпало больше одного манифеста, остановись и перечисли пути найденных манифестов. Попроси пользователя переименовать один из шаблонов: активация должна быть однозначной.
+5. Прочитай найденный `TEMPLATE.md` и извлеки:
+   - **Type:** `CV` или `Cover letter`
+   - **Source extension:** например `.tex`, `.typ`
+   - **Compile command:** полную объявленную команду
+   - **Engine/toolchain:** например `lualatex`, `typst` (метка для отображения)
    - **Page limit:** `<N> page(s)`
-   - **Fonts:** the full font summary line
-6. Derive the template folder from the manifest path and verify `template<source-extension>` exists in the same folder. If it is missing, stop with an error; the template registration is incomplete.
-7. Derive `<type>` for Step 5 from the manifest path:
+   - **Fonts:** всю строку-сводку по шрифтам
+6. Выведи папку шаблона из пути манифеста и проверь, что в той же папке есть `template<source-extension>`. Если его нет, остановись с ошибкой: регистрация шаблона не завершена.
+7. Выведи `<type>` для Шага 5 из пути манифеста:
    - `templates/cv/<name>/TEMPLATE.md` -> `cv`
    - `templates/cover_letters/<name>/TEMPLATE.md` -> `cover_letters`
-8. Continue to Step 5 using the resolved `<name>`, `<type>`, `<source-extension>`, `<compile-command>`, engine/toolchain label, font summary, page limit, template skeleton path, and manifest path. Do not re-run Steps 1-4; `--use` switches an already-registered template.
+8. Переходи к Шагу 5 с найденными `<name>`, `<type>`, `<source-extension>`, `<compile-command>`, меткой движка/инструмента, сводкой по шрифтам, лимитом страниц, путём к скелету шаблона и путём к манифесту. Не повторяй Шаги 1-4: `--use` переключает уже зарегистрированный шаблон.
 
 ---
 
-## Step 1: Template Type and Source
+## Шаг 1: Тип и исходник шаблона
 
-Ask the user (skip anything already answered by `$ARGUMENTS`):
+Спроси пользователя (пропусти то, на что уже ответил `$ARGUMENTS`):
 
-1. **Type:** Is this a **CV** template or a **cover letter** template?
-2. **Source:** Where is the template? Accept any of:
-   - A path or @-mention of a source file in any toolchain (`.tex` plus optional `.cls`/`.sty`, `.typ` plus optional local packages, or another compile-to-PDF format)
-   - Pasted template content
-   - A directory containing the template and its assets (class/package files, fonts, images)
+1. **Тип:** это шаблон **резюме** или **сопроводительного письма**?
+2. **Исходник:** где шаблон? Принимай любой вариант:
+   - Путь или @-упоминание исходного файла любого инструмента (`.tex` плюс при необходимости `.cls`/`.sty`, `.typ` плюс при необходимости локальные пакеты или другой формат, собираемый в PDF)
+   - Вставленное содержимое шаблона
+   - Папку с шаблоном и его ресурсами (файлы классов/пакетов, шрифты, картинки)
 
-Read every provided file. If the template references an include the declared toolchain doesn't ship by default — a custom `.cls`/`.sty` not part of standard TeX distributions, a Typst package imported via a local `#import`, or an equivalent for another toolchain — confirm the user has the file and ask for it if missing — the template cannot compile without it.
-
----
-
-## Step 2: Capture Template Instructions
-
-Interview the user for the metadata that `/apply` needs to use the template correctly. Infer as much as possible from the source first (LaTeX: documentclass, `\fontspec` calls, geometry, colors; Typst: `#set`/`#show` rules, `#import`s; other toolchains: whatever the format exposes) and present your inferences for confirmation rather than asking blind questions.
-
-Collect:
-
-1. **Name** - short kebab-case identifier (e.g. `awesome-cv`, `classic-serif`). Must not collide with an existing folder in `templates/`.
-2. **Source extension** - the main file's extension (`.tex`, `.typ`, ...), inferred from the provided source file.
-3. **Compile command** - the full command `/apply` and Step 4's test compile will run, using `<file>` (no extension) as the placeholder for the output basename:
-   - **`.tex` source**: infer the engine the same way as before - if the source uses `fontspec` or loads font files by path, it requires `xelatex` or `lualatex`; tell the user this rather than letting them pick `pdflatex`. Render as `rm -f <file>.pdf && mkdir -p build && lualatex -interaction=nonstopmode -output-directory=build <file>.tex && mv build/<file>.pdf ./` (or the appropriate engine).
-   - **`.typ` source**: default to `typst compile <file>.typ <file>.pdf` - Typst has a single binary, no engine choice.
-   - **Anything else**: no built-in guidance; ask the user for the exact compile command.
-
-   **Build directory rule:** if the toolchain can redirect its intermediate files, the declared command sends them to a `build/` folder beside the source, and still leaves the PDF next to the source, where `/apply` reads it. For LaTeX, use `-output-directory=build`. It also moves the PDF, hence the `mv`. TeX Live does not create the directory, hence the `mkdir -p`. A failed compile skips the `mv`, hence the leading `rm -f`, so a failed LaTeX compile never leaves a stale PDF where `/apply` inspects it. After a failed compile, read the log in `build/`. If Step 4 fails only because of the redirect (e.g. `\include` from a subfolder), drop the redirect but keep the leading `rm -f`, and record why under "Known pitfalls". If the toolchain writes nothing but the PDF (`typst compile`) or has no redirect option, keep the command as it is - never block registration on this rule.
-4. **Fonts** - which font(s) the template uses and where they come from:
-   - **Bundled font files** (`.ttf`/`.otf` shipped with the template): copy them into the template folder in Step 3 and record the relative path used to load them (LaTeX `\fontspec` `Path`, Typst `#import`/font path, or equivalent).
-   - **System / distribution fonts**: record the font name and note that the user's machine must have it installed.
-5. **Style rules** - anything the drafter must preserve when filling the template: color scheme, section order, heading style, spacing conventions, bullet formatting, date format.
-6. **Page limit** - hard page count for the compiled PDF. Default: **2 pages** for a CV, **1 page** for a cover letter. `/apply`'s compile-and-inspect loop enforces this.
-7. **Known pitfalls** (optional) - macros/rules that break with certain content (like the stock template's `\lettercontent{}`/`itemize` interaction), characters that need escaping, sections that must not be reordered.
+Прочитай каждый переданный файл. Если шаблон подключает что-то, чего нет в стандартной поставке объявленного инструмента, — свой `.cls`/`.sty`, не входящий в стандартные дистрибутивы TeX, пакет Typst через локальный `#import` или аналог для другого инструмента, — уточни, что у пользователя есть этот файл, и попроси его, если нет: без него шаблон не соберётся.
 
 ---
 
-## Step 3: Store the Template
+## Шаг 2: Собери инструкции по шаблону
 
-Create the template folder:
+Расспроси пользователя о метаданных, которые нужны `/apply`, чтобы правильно пользоваться шаблоном. Сначала выведи как можно больше из исходника (LaTeX: documentclass, вызовы `\fontspec`, geometry, цвета; Typst: правила `#set`/`#show`, `#import`; другие инструменты: всё, что раскрывает формат) и показывай свои выводы на подтверждение, а не задавай вопросы вслепую.
 
-- CV: `templates/cv/<name>/`
-- Cover letter: `templates/cover_letters/<name>/`
+Собери:
 
-Write into it:
+1. **Имя** - короткий идентификатор в kebab-case (например `awesome-cv`, `classic-serif`). Не должен совпадать с существующей папкой в `templates/`.
+2. **Расширение исходника** - расширение главного файла (`.tex`, `.typ`, ...), выводится из переданного исходника.
+3. **Команда сборки** - полная команда, которую запустят `/apply` и тестовая сборка Шага 4, с `<file>` (без расширения) как плейсхолдером имени выходного файла:
+   - **Исходник `.tex`**: выбирай движок как раньше - если исходник использует `fontspec` или грузит шрифты по пути, нужен `xelatex` или `lualatex`; скажи об этом пользователю, а не давай выбрать `pdflatex`. (Для русского текста с системными шрифтами это и так обычно `xelatex`/`lualatex`.) Вид команды: `rm -f <file>.pdf && mkdir -p build && lualatex -interaction=nonstopmode -output-directory=build <file>.tex && mv build/<file>.pdf ./` (или с подходящим движком).
+   - **Исходник `.typ`**: по умолчанию `typst compile <file>.typ <file>.pdf` - у Typst один бинарник, выбора движка нет.
+   - **Что-то другое**: встроенных указаний нет; спроси у пользователя точную команду сборки.
 
-1. **`template<source-extension>`** (e.g. `template.tex`, `template.typ`) - the template skeleton. Replace all personal data in the source with `[PLACEHOLDER]` tokens (`[YOUR_NAME]`, `[YOUR_EMAIL]`, `[YOUR_PHONE]`, `[YOUR_LINKEDIN_URL]`, ...) so the template is shareable and profile-agnostic. Keep the structure, preamble, and styling exactly as provided.
-2. **Class/style/package files** - copy any companion files (`.cls`/`.sty` for LaTeX, local Typst packages, or equivalents) alongside the skeleton.
-3. **`fonts/`** - copy bundled font files here, preserving any directory layout the toolchain's font-loading mechanism expects (LaTeX `\fontspec` `Path`, Typst font path, ...). Adjust those path values in the skeleton to be relative to the template folder.
-4. **`TEMPLATE.md`** - the manifest. Use exactly this format:
+   **Правило папки сборки:** если инструмент умеет перенаправлять промежуточные файлы, объявленная команда отправляет их в папку `build/` рядом с исходником и всё равно оставляет PDF рядом с исходником, где его читает `/apply`. Для LaTeX используй `-output-directory=build`. Он переносит туда и PDF, отсюда `mv`. TeX Live не создаёт папку сам, отсюда `mkdir -p`. Неудачная сборка пропускает `mv`, отсюда `rm -f` в начале - так неудачная сборка LaTeX никогда не оставит устаревший PDF там, где его проверяет `/apply`. После неудачной сборки читай лог в `build/`. Если Шаг 4 падает только из-за перенаправления (например, `\include` из подпапки), убери перенаправление, но оставь `rm -f` в начале и запиши причину в «Known pitfalls». Если инструмент не пишет ничего, кроме PDF (`typst compile`), или не умеет перенаправлять, оставь команду как есть - никогда не блокируй регистрацию из-за этого правила.
+4. **Шрифты** - какие шрифты использует шаблон и откуда они берутся:
+   - **Шрифты в комплекте** (файлы `.ttf`/`.otf`, идущие с шаблоном): скопируй их в папку шаблона в Шаге 3 и запиши относительный путь, по которому они грузятся (`Path` в `\fontspec` LaTeX, `#import`/путь к шрифтам Typst или аналог).
+   - **Системные шрифты / шрифты дистрибутива**: запиши имя шрифта и отметь, что он должен быть установлен у пользователя. Проверь, что выбранный шрифт поддерживает кириллицу, если резюме будет на русском.
+5. **Правила оформления** - всё, что автор черновика должен сохранить при заполнении шаблона: цветовую схему, порядок разделов, стиль заголовков, интервалы, оформление пунктов списка, формат дат.
+6. **Лимит страниц** - жёсткое число страниц собранного PDF. По умолчанию: **2 страницы** для резюме, **1 страница** для сопроводительного письма. Цикл «собрать и проверить» в `/apply` следит за этим.
+7. **Известные подводные камни** (необязательно) - макросы/правила, которые ломаются на определённом содержимом (как взаимодействие `\lettercontent{}`/`itemize` в стандартном шаблоне), символы, которые нужно экранировать, разделы, которые нельзя переставлять.
+
+---
+
+## Шаг 3: Сохрани шаблон
+
+Создай папку шаблона:
+
+- Резюме: `templates/cv/<name>/`
+- Сопроводительное письмо: `templates/cover_letters/<name>/`
+
+Запиши в неё:
+
+1. **`template<source-extension>`** (например `template.tex`, `template.typ`) - скелет шаблона. Замени все личные данные в исходнике токенами `[PLACEHOLDER]` (`[YOUR_NAME]`, `[YOUR_EMAIL]`, `[YOUR_PHONE]`, `[YOUR_LINKEDIN_URL]`, ...), чтобы шаблоном можно было делиться и он не зависел от профиля. Структуру, преамбулу и оформление сохрани ровно такими, как дали.
+2. **Файлы классов/стилей/пакетов** - скопируй все сопутствующие файлы (`.cls`/`.sty` для LaTeX, локальные пакеты Typst или аналоги) рядом со скелетом.
+3. **`fonts/`** - скопируй сюда шрифты из комплекта, сохранив структуру папок, которую ожидает механизм загрузки шрифтов инструмента (`Path` в `\fontspec` LaTeX, путь к шрифтам Typst, ...). Поправь эти пути в скелете, чтобы они были относительными от папки шаблона.
+4. **`TEMPLATE.md`** - манифест. Используй ровно этот формат (ключи манифеста не переводи - их читает Режим переключения):
 
 ```markdown
 # Template: <name>
@@ -119,85 +119,85 @@ Write into it:
 
 ## Style rules
 
-- <rule 1: colors, section order, heading style, ...>
-- <rule 2>
+- <правило 1: цвета, порядок разделов, стиль заголовков, ...>
+- <правило 2>
 
 ## Known pitfalls
 
-- <pitfall and its fix, or "none recorded">
+- <подводный камень и как его обойти, или "none recorded">
 ```
 
 ---
 
-## Step 4: Verify the Template Compiles (MANDATORY)
+## Шаг 4: Проверь, что шаблон собирается (ОБЯЗАТЕЛЬНО)
 
-Never register a template without a successful test compile. Templates that "look fine" routinely fail on missing fonts, missing classes/packages, or a wrong compile command.
+Никогда не регистрируй шаблон без успешной тестовой сборки. Шаблоны, которые «выглядят нормально», регулярно падают из-за отсутствующих шрифтов, классов/пакетов или неверной команды сборки.
 
-1. Copy `template<source-extension>` to a scratch file in the same folder (e.g. `_compile_test.tex` or `_compile_test.typ`) and fill every `[PLACEHOLDER]` with realistic dummy data (name, contact line, one education entry, one job entry with 3 bullets — enough content to exercise the layout).
-2. Compile with the declared compile command, substituting `_compile_test` for `<file>`:
+1. Скопируй `template<source-extension>` во временный файл в той же папке (например `_compile_test.tex` или `_compile_test.typ`) и заполни каждый `[PLACEHOLDER]` правдоподобными тестовыми данными (имя, строка контактов, одна запись об образовании, одна запись об опыте работы с 3 пунктами — достаточно, чтобы проверить вёрстку; если резюме будет на русском, используй русский текст, чтобы проверить кириллицу).
+2. Собери объявленной командой сборки, подставив `_compile_test` вместо `<file>`:
    ```bash
    cd templates/<type>/<name> && <declared compile command with <file> -> _compile_test>
    ```
-3. If the compile fails: show the user the relevant error lines, diagnose (missing font file, wrong engine/command, missing class or package), fix what you can (e.g. font path values), and re-compile. If the fix needs input only the user has (a missing font file, a license-restricted class), ask for it and wait.
-4. On success, confirm a PDF was produced and Read it to check the layout renders sensibly (no overlapping text, fonts loaded, page count matches the declared page limit for the dummy content). Record any surprises in the manifest's "Known pitfalls".
-5. Delete the scratch source file, the scratch PDF, any `build/` folder a test compile created, and any other `_compile_test.*` byproduct left in the template folder.
+3. Если сборка упала: покажи пользователю нужные строки ошибки, найди причину (нет файла шрифта, неверный движок/команда, нет класса или пакета), исправь, что можешь (например пути к шрифтам), и собери заново. Если для исправления нужно то, что есть только у пользователя (отсутствующий файл шрифта, класс с ограниченной лицензией), попроси и подожди.
+4. При успехе убедись, что PDF появился, и прочитай его (Read), чтобы проверить, что вёрстка выглядит разумно (текст не налезает, шрифты загрузились, число страниц на тестовых данных соответствует объявленному лимиту). Любые сюрпризы запиши в «Known pitfalls» манифеста.
+5. Удали временный исходник, временный PDF, любую папку `build/`, созданную тестовой сборкой, и любые другие следы `_compile_test.*` в папке шаблона.
 
-Do not proceed to Step 5 until the test compile passes.
+Не переходи к Шагу 5, пока тестовая сборка не пройдёт.
 
 ---
 
-## Step 5: Activate the Template
+## Шаг 5: Активация шаблона
 
-Activation wires the template into `/apply` by adding a **managed block** to the top of the relevant guidance file — `05-cv-templates.md` for CVs, `06-cover-letter-templates.md` for cover letters. `/apply` reads these files in both its drafting step and its compile step, so the block is all it takes.
+Активация встраивает шаблон в `/apply`, добавляя **управляемый блок** в начало соответствующего файла указаний — `05-cv-templates.md` для резюме, `06-cover-letter-templates.md` для сопроводительных писем. `/apply` читает эти файлы и на шаге черновика, и на шаге сборки, так что блока достаточно.
 
-If Step 5 was reached from Switch Mode, use the template metadata resolved from `TEMPLATE.md`. If Step 5 was reached after registering a new template, use the metadata collected and verified in Steps 2-4.
+Если в Шаг 5 пришли из Режима переключения, используй метаданные из `TEMPLATE.md`. Если пришли после регистрации нового шаблона, используй метаданные, собранные и проверенные в Шагах 2-4.
 
-Insert (or replace, if one exists) this block immediately after the file's H1 title:
+Вставь (или замени, если уже есть) этот блок сразу после заголовка H1 файла:
 
 ```markdown
 <!-- BEGIN ACTIVE-TEMPLATE (managed by /add-template - do not edit by hand) -->
-> **Active template override: `<name>`**
+> **Активен свой шаблон: `<name>`**
 >
-> A custom template is active. Where this block conflicts with the stock guidance below, this block wins. Structural advice below (tailoring, page-budget, cutting rules) still applies.
+> Подключён свой шаблон. Где этот блок противоречит стандартным указаниям ниже, побеждает этот блок. Структурные советы ниже (подгонка под вакансию, бюджет страниц, правила сокращения) по-прежнему действуют.
 >
-> - **Template skeleton:** `templates/<type>/<name>/template<source-extension>` — use this as the structural reference instead of the stock template
-> - **Manifest:** `templates/<type>/<name>/TEMPLATE.md` — read this for style rules and known pitfalls before drafting
-> - **Source extension:** `<source-extension>` (not `.tex` unless the template's own toolchain is LaTeX)
-> - **Compile command:** `<the full declared command>` (not the command named in the stock guidance below — `/apply`'s compile step must use this instead). Run it from the output directory. If it redirects to `build/`, the log is in `build/`, and `/apply`'s Step 5e cleanup must delete that `build/` folder too
-> - **Fonts:** <font summary, including any path note for bundled fonts>
-> - **Page limit:** exactly <N> page(s)
-> - **Output file:** `cv/main_<company>_<role><source-extension>` / `cover_letters/cover_<company>_<role><source-extension>`; copy any class/package/font files the template needs into the output directory, or reference them by relative path
+> - **Скелет шаблона:** `templates/<type>/<name>/template<source-extension>` — используй его как структурный образец вместо стандартного шаблона
+> - **Манифест:** `templates/<type>/<name>/TEMPLATE.md` — прочитай правила оформления и подводные камни до написания черновика
+> - **Расширение исходника:** `<source-extension>` (не `.tex`, если сам инструмент шаблона не LaTeX)
+> - **Команда сборки:** `<the full declared command>` (а не команда из стандартных указаний ниже — шаг сборки `/apply` должен использовать эту). Запускай её из папки вывода. Если она перенаправляет в `build/`, лог лежит в `build/`, и очистка в Шаге 5e `/apply` должна удалить и эту папку `build/`
+> - **Шрифты:** <сводка по шрифтам, включая пометку о пути для шрифтов из комплекта>
+> - **Лимит страниц:** ровно <N> стр.
+> - **Выходной файл:** `cv/main_<company>_<role><source-extension>` / `cover_letters/cover_<company>_<role><source-extension>`; скопируй нужные шаблону файлы классов/пакетов/шрифтов в папку вывода или ссылайся на них по относительному пути
 <!-- END ACTIVE-TEMPLATE -->
 ```
 
-Rules:
+Правила:
 
-- Exactly **one** managed block per guidance file. Replace the whole block between the `BEGIN`/`END` markers when switching templates; never stack blocks.
-- **`--use default`**: remove the managed block entirely. The stock moderncv / cover.cls guidance below it is untouched and takes over again.
-- Do not modify anything outside the markers.
-
----
-
-## Step 6: Confirm
-
-Present a summary:
-
-> **Template `<name>` registered and activated.**
->
-> - Files: `templates/<type>/<name>/` (skeleton, manifest<, class/package files><, fonts>)
-> - Test compile: passed with `<compile command>` (<N> page(s))
-> - `/apply` will now draft <CVs | cover letters> from this template.
->
-> Useful follow-ups:
-> - `/add-template --list` — see all registered templates
-> - `/add-template --use <other-name>` — switch templates
-> - `/add-template --use default` — go back to the stock <moderncv | cover.cls> template
+- Ровно **один** управляемый блок на файл указаний. При смене шаблона заменяй весь блок между маркерами `BEGIN`/`END`; никогда не складывай блоки друг на друга.
+- **`--use default`**: удали управляемый блок целиком. Стандартные указания по moderncv / cover.cls под ним не тронуты и снова вступают в силу.
+- Ничего не меняй за пределами маркеров.
 
 ---
 
-## Design Principles
+## Шаг 6: Подтверждение
 
-- Registration is idempotent: re-running with the same name offers to update the existing template rather than duplicating it.
-- Templates are stored profile-agnostic (`[PLACEHOLDER]` tokens) so they can be shared or committed without leaking personal data.
-- The compile check in Step 4 is non-negotiable — a template that has never compiled will fail mid-`/apply`, which is the worst place to discover it.
-- Activation is a small managed block, not a rewrite of the guidance files: `/setup` and manual edits to `05`/`06` survive template switches, and `--use default` is a clean revert.
+Покажи сводку:
+
+> **Шаблон `<name>` зарегистрирован и активирован.**
+>
+> - Файлы: `templates/<type>/<name>/` (скелет, манифест<, файлы классов/пакетов><, шрифты>)
+> - Тестовая сборка: прошла с `<compile command>` (<N> стр.)
+> - `/apply` теперь будет делать <резюме | сопроводительные письма> по этому шаблону.
+>
+> Что дальше:
+> - `/add-template --list` — все зарегистрированные шаблоны
+> - `/add-template --use <other-name>` — переключить шаблон
+> - `/add-template --use default` — вернуться к стандартному шаблону <moderncv | cover.cls>
+
+---
+
+## Принципы
+
+- Регистрация идемпотентна: повторный запуск с тем же именем предлагает обновить существующий шаблон, а не плодит дубль.
+- Шаблоны хранятся независимыми от профиля (токены `[PLACEHOLDER]`), поэтому ими можно делиться и коммитить их без утечки личных данных.
+- Проверка сборки в Шаге 4 не обсуждается — шаблон, который ни разу не собирался, упадёт посреди `/apply`, а это худшее место, чтобы об этом узнать.
+- Активация - это маленький управляемый блок, а не переписывание файлов указаний: `/setup` и ручные правки в `05`/`06` переживают смену шаблонов, а `--use default` даёт чистый откат.

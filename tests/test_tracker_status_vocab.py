@@ -39,11 +39,10 @@ COMMANDS = REPO / ".claude" / "commands"
 OUTCOME = COMMANDS / "outcome.md"
 GMAIL_SYNC = COMMANDS / "gmail-sync.md"
 HTML_REPORT = COMMANDS / "html-report.md"
-NOTION_SYNC = COMMANDS / "notion-sync.md"
 APPLY = COMMANDS / "apply.md"
 INTERVIEW = COMMANDS / "interview.md"
 
-VOCAB_ANCHOR = "## Tracker status vocabulary"
+VOCAB_ANCHOR = "## Словарь статусов трекера"
 
 
 def section(path: Path, heading: str) -> str:
@@ -98,19 +97,19 @@ class VocabularyBlockExists(unittest.TestCase):
         instead of appending a fresh row - losing the earlier document trail."""
         vocab = section(OUTCOME, VOCAB_ANCHOR)
         self.assertIn(
-            "same values",
+            "это те же значения",
             vocab,
             "The vocabulary block must state that the space spellings are the same "
             "values as the canonical underscore forms",
         )
         self.assertIn(
-            "not separate statuses",
+            "а не отдельные статусы",
             vocab,
             "The vocabulary block must state that the space spellings are not "
             "separate statuses",
         )
         self.assertIn(
-            "equally",
+            "так же **финальные**",
             vocab,
             "The vocabulary block must state that the space spellings are equally "
             "Final, so finality decisions cover them",
@@ -122,7 +121,7 @@ class VocabularyBlockExists(unittest.TestCase):
         declared final."""
         vocab = section(OUTCOME, VOCAB_ANCHOR)
         self.assertIn(
-            "everything else",
+            "все остальные",
             vocab,
             "The vocabulary block must define Open as everything not in the Final "
             "list, not as a second explicit list that can drift",
@@ -133,8 +132,8 @@ class VocabularyBlockExists(unittest.TestCase):
         ---, not between Step 1's numbered items. A block inside the list truncates
         section-scoped reads of Step 1 to item 1, and a future test scoped to Step 1
         would pass against a stub."""
-        step1 = section(OUTCOME, "## Step 1: Load State and Identify the Application")
-        for needle in ("With an argument", "Without an argument", "Derive the archive"):
+        step1 = section(OUTCOME, "## Шаг 1: Загрузи состояние и найди отклик")
+        for needle in ("С аргументом", "Без аргумента", "Выведи имя папки архива"):
             self.assertIn(
                 needle,
                 step1,
@@ -144,7 +143,7 @@ class VocabularyBlockExists(unittest.TestCase):
 
     def test_outcome_step4_writes_underscore_forms(self):
         """The writer must use canonical underscore spellings, never space forms."""
-        step4 = section(OUTCOME, "## Step 4: Update the Tracker")
+        step4 = section(OUTCOME, "## Шаг 4: Обнови трекер")
         # The canonical forms must be present as the write target
         self.assertIn(
             "no_response",
@@ -167,7 +166,7 @@ class ReadersBucketMap(unittest.TestCase):
         # Scope to the bucket-map section, not the whole file, so the assertion
         # proves the mapping exists where stats are computed - a stray mention
         # anywhere else in the file would otherwise satisfy it.
-        step1 = section(HTML_REPORT, "## Step 1: Collect Data")
+        step1 = section(HTML_REPORT, "## Шаг 1: Сбор данных")
         self.assertIn(
             "no response",
             step1,
@@ -193,14 +192,14 @@ class ReadersBucketMap(unittest.TestCase):
     def test_html_report_bucket_map_has_catch_all(self):
         """No tracker value may drop out of the stats silently: unrecognised values
         fall to Rejected/Closed and are named once in the status breakdown."""
-        step1 = section(HTML_REPORT, "## Step 1: Collect Data")
+        step1 = section(HTML_REPORT, "## Шаг 1: Сбор данных")
         self.assertIn(
-            "anything else",
+            "всё остальное",
             step1,
             "The bucket map must have a catch-all line for unrecognised tracker values",
         )
         self.assertIn(
-            "unrecognised",
+            "нераспознанное значение",
             step1,
             "The catch-all must name the unrecognised value once so the drop is "
             "visible instead of silent",
@@ -213,7 +212,7 @@ class ReadersBucketMap(unittest.TestCase):
         that should not appear in the CSV."""
         # We only care about the bucket map section, not the whole file,
         # to avoid false positives from comments or this test file itself.
-        step1 = section(HTML_REPORT, "## Step 1: Collect Data")
+        step1 = section(HTML_REPORT, "## Шаг 1: Сбор данных")
         self.assertNotIn(
             "interview_only",
             step1,
@@ -225,9 +224,9 @@ class ReadersBucketMap(unittest.TestCase):
         """gmail-sync must defer to /outcome's vocabulary block for the
         open-application set, not hardcode the final-status set with
         space spellings that diverge from the writer."""
-        step2_text = section(GMAIL_SYNC, "## Step 2: Load State")
+        step2_text = section(GMAIL_SYNC, "## Шаг 2: Загрузи состояние")
         self.assertIn(
-            "Tracker status vocabulary",
+            "Словарю статусов трекера",
             step2_text,
             "/gmail-sync Step 2 must reference the /outcome vocabulary block "
             "instead of restating the final-status set with its own spellings",
@@ -240,46 +239,7 @@ class ReadersBucketMap(unittest.TestCase):
             "and a second local list is what drifted in #298",
         )
 
-    def test_notion_sync_normalises_status_before_write(self):
-        """Step 4 must map legacy space spellings to canonical before setting
-        Status. Notion auto-creates a select option per unique string, so pushing
-        a space form would give an existing database two options for one status
-        and split closed applications across two filter buckets."""
-        step4_text = section(NOTION_SYNC, "## Step 4: Upsert Database Rows")
-        self.assertIn(
-            "never push a space form",
-            step4_text,
-            "/notion-sync Step 4 must never write a space-form status to Notion",
-        )
-        self.assertIn(
-            "Tracker status vocabulary",
-            step4_text,
-            "/notion-sync Step 4 must map space forms per the /outcome vocabulary block",
-        )
-
-    def test_notion_sync_uses_underscore_status_spellings(self):
-        """Notion Status select options must match canonical tracker spellings
-        so that upserted values are consistent with what /outcome writes."""
-        step3_text = section(NOTION_SYNC, "## Step 3: Load Sync State and Locate the Database")
-        self.assertIn(
-            "no_response",
-            step3_text,
-            "/notion-sync Step 3 must list `no_response` (underscore) as a Status "
-            "option so it matches what /outcome writes to the tracker",
-        )
-        self.assertIn(
-            "offer_declined",
-            step3_text,
-            "/notion-sync Step 3 must list `offer_declined` (underscore) as a Status "
-            "option so it matches what /outcome writes to the tracker",
-        )
-        self.assertNotIn(
-            "no response",
-            step3_text,
-            "/notion-sync Step 3 must not list 'no response' (space) as the primary "
-            "option — Notion creates a distinct select value for each unique string, "
-            "so mixing spellings creates duplicate options in the database",
-        )
+    # Проверки /notion-sync удалены вместе с самой командой (в русской версии её нет).
 
 
 class ReaderCases(unittest.TestCase):
@@ -294,36 +254,36 @@ class ReaderCases(unittest.TestCase):
         (
             OUTCOME,
             VOCAB_ANCHOR,
-            "underscores, never spaces",
+            "через подчёркивание, никогда через пробел",
             "The vocabulary block must state that underscores are canonical and "
             "spaces are not to be written",
         ),
         (
             OUTCOME,
             VOCAB_ANCHOR,
-            "Final",
+            "**Финальные**",
             "The vocabulary block must define the final-status set explicitly",
         ),
         # /html-report Step 2 excludes drafted from stats
         (
             HTML_REPORT,
-            "## Step 2: Compute Summary Stats",
-            "excluded from every statistic below",
+            "## Шаг 2: Сводная статистика",
+            "исключаются из всей статистики ниже",
             "drafted rows must be excluded from every statistic, not counted as sent",
         ),
         # /gmail-sync staleness check skips drafted
         (
             GMAIL_SYNC,
-            "## Step 9: Staleness Check",
-            "Skip `drafted` rows here",
+            "## Шаг 9: Проверка на застой",
+            "Строки `drafted` здесь пропускай",
             "the staleness check must skip drafted rows — nothing was sent, "
             "so nobody is late replying",
         ),
         # /apply's append-vs-update decision anchors to the vocabulary
         (
             APPLY,
-            "### Step 6b: Record the Application",
-            "Tracker status vocabulary",
+            "### Шаг 6b: Запись отклика",
+            "Словарь статусов трекера (Tracker status vocabulary)",
             "apply.md Step 6b must anchor its final-status decision to the /outcome "
             "vocabulary block — a closed application must never be treated as open "
             "and get its row updated instead of appended",
@@ -331,8 +291,8 @@ class ReaderCases(unittest.TestCase):
         # /interview's live-process set anchors to the vocabulary
         (
             INTERVIEW,
-            "## Step 0: Parse Input",
-            "Tracker status vocabulary",
+            "## Шаг 0: Разбор ввода",
+            "Словарю статусов трекера (Tracker status vocabulary)",
             "interview.md Step 0 must anchor its live-process statuses to the "
             "/outcome vocabulary block instead of restating an ad-hoc set",
         ),

@@ -38,7 +38,7 @@ def page_count_invocations(text):
 
 class ApplyRunsThePageCountCheck(unittest.TestCase):
     def setUp(self):
-        self.step_5b = section(APPLY, "### 5b. Inspect layout")
+        self.step_5b = section(APPLY, "### 5b. Осмотр вёрстки")
 
     def test_step_5b_checks_both_documents_with_the_guides_page_limits(self):
         invocations = dict(page_count_invocations(self.step_5b))
@@ -63,9 +63,10 @@ class ApplyRunsThePageCountCheck(unittest.TestCase):
 
     def test_no_step_defers_the_check_to_a_step_that_does_not_run_it(self):
         text = APPLY.read_text(encoding="utf-8")
-        self.assertNotIn(
-            "Step 5d already runs it",
+        # Русская форма той же отсылки («Шаг 5d уже это запускает/выполняет»)
+        self.assertNotRegex(
             text,
+            r"(Step|Шаг\w*) 5d уже|Step 5d already runs it",
             "Step 5d's only verify_pdf call is --dump-text; the page-count "
             "invocation lives in 5b and the prose must point there",
         )

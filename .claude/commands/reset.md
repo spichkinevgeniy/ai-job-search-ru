@@ -1,261 +1,261 @@
-# /reset - Reset Candidate Profile Data
+# /reset — Сброс данных профиля кандидата
 
-You are resetting parts of the job search framework back to a blank state so the user can start fresh with `/setup`.
+Ты возвращаешь части фреймворка поиска работы в пустое состояние, чтобы пользователь мог начать заново с `/setup`. С пользователем общайся по-русски.
 
-**This command is destructive.** Nothing is deleted until the user explicitly confirms. Follow these steps exactly in order.
-
----
-
-## Step 0: Parse Scope from Arguments
-
-Check `$ARGUMENTS` for a scope keyword:
-
-- `profile` — clears candidate profile data from skill files only
-- `documents` — deletes user-provided files from the `documents/` folder only
-- `all` — both of the above
-
-If `$ARGUMENTS` is empty or does not contain a recognized scope keyword, ask:
-
-> **What would you like to reset?**
->
-> - **`profile`** — Clears candidate data from the skill files (profile, behavioral, STAR examples, profile statements, personalized evaluation criteria, search queries). The framework structure, scoring framework, and writing rules are preserved. Use this to re-run `/setup` from scratch.
->
-> - **`documents`** — Deletes all files you've placed in the `documents/` folder (CV PDFs, LinkedIn export, diplomas, references, project summaries, pasted job postings, past applications). The folder structure and `README.md` are preserved.
->
-> - **`all`** — Both of the above.
->
-> Reply with `profile`, `documents`, or `all`.
-
-Wait for the user's response before continuing.
+**Эта команда необратима.** Ничего не удаляется, пока пользователь явно не подтвердит. Выполняй шаги строго по порядку.
 
 ---
 
-## Step 1: Show Exactly What Will Be Cleared
+## Шаг 0: Определить область сброса по аргументам
 
-Before doing anything, show the user precisely what will be wiped.
+Проверь `$ARGUMENTS` на ключевое слово области:
 
-### If scope includes `profile`:
+- `profile` — очищает данные профиля кандидата только в файлах навыка
+- `documents` — удаляет только файлы пользователя из папки `documents/`
+- `all` — и то и другое
 
-Read the current state of these files and report whether each has content or is already empty:
+Если `$ARGUMENTS` пуст или не содержит распознанного ключевого слова, спроси:
+
+> **Что сбросить?**
+>
+> - **`profile`** — очищает данные кандидата в файлах навыка (профиль, поведенческий профиль, примеры STAR, тексты профиля для резюме, персональные критерии оценки, поисковые запросы). Структура фреймворка, система оценки и правила стиля сохраняются. Выбирай это, чтобы пройти `/setup` с нуля.
+>
+> - **`documents`** — удаляет все файлы, которые ты положил в папку `documents/` (PDF резюме, экспорт LinkedIn, дипломы, рекомендации, описания проектов, вставленные тексты вакансий, прошлые отклики). Структура папок и `README.md` сохраняются.
+>
+> - **`all`** — и то и другое.
+>
+> Ответь `profile`, `documents` или `all`.
+
+Дождись ответа пользователя, прежде чем продолжать.
+
+---
+
+## Шаг 1: Показать, что именно будет очищено
+
+Прежде чем что-либо делать, точно покажи пользователю, что будет стёрто.
+
+### Если область включает `profile`:
+
+Прочитай текущее состояние этих файлов и сообщи по каждому, есть ли в нём содержимое или он уже пуст:
 
 - `.claude/skills/job-application-assistant/01-candidate-profile.md`
 - `.claude/skills/job-application-assistant/02-behavioral-profile.md`
-- `.claude/skills/job-application-assistant/04-job-evaluation.md` *(personalized match areas, career goals, and life-situation constraints only — the scoring framework is preserved)*
-- `.claude/skills/job-application-assistant/05-cv-templates.md` *(profile statements section and the contact block inside the LaTeX template only — framework structure is preserved)*
-- `.claude/skills/job-application-assistant/06-cover-letter-templates.md` *(contact line and signature inside the LaTeX template only — framework structure is preserved)*
-- `.claude/skills/job-application-assistant/07-interview-prep.md` *(STAR examples and STAR candidates sections only — framework structure is preserved)*
-- `.claude/skills/job-scraper/search-queries.md` *(role titles, domain keywords, and location terms only — query structure is preserved)*
+- `.claude/skills/job-application-assistant/04-job-evaluation.md` *(только персональные области соответствия, карьерные цели и жизненные ограничения — система оценки сохраняется)*
+- `.claude/skills/job-application-assistant/05-cv-templates.md` *(только раздел текстов профиля и блок контактов внутри LaTeX-шаблона — структура фреймворка сохраняется)*
+- `.claude/skills/job-application-assistant/06-cover-letter-templates.md` *(только строка контактов и подпись внутри LaTeX-шаблона — структура фреймворка сохраняется)*
+- `.claude/skills/job-application-assistant/07-interview-prep.md` *(только разделы с примерами STAR и кандидатами в STAR — структура фреймворка сохраняется)*
+- `.claude/skills/job-scraper/search-queries.md` *(только названия должностей, ключевые слова предметной области и местоположение — структура запросов сохраняется)*
 
-This list must stay in step with what `/setup` Step 3 populates: every skill file it writes candidate data into is cleared here.
+Этот список должен совпадать с тем, что заполняет Шаг 3 `/setup`: каждый файл навыка, в который он пишет данные кандидата, очищается здесь.
 
-Present as:
+Покажи так:
 
 ```
-## Profile reset will clear:
+## Сброс профиля очистит:
 
-- 01-candidate-profile.md — [has content / already empty]
-  Full file will be replaced with a blank template.
+- 01-candidate-profile.md — [есть содержимое / уже пуст]
+  Файл целиком будет заменён пустым шаблоном.
 
-- 02-behavioral-profile.md — [has content / already empty]
-  Full file will be replaced with a blank template.
+- 02-behavioral-profile.md — [есть содержимое / уже пуст]
+  Файл целиком будет заменён пустым шаблоном.
 
-- 04-job-evaluation.md — [has personalized criteria / already blank]
-  Your match areas, career goals, energizing/draining tasks, and life-situation
-  constraints will be restored to placeholders. The scoring framework (dimensions,
-  score bands, weights, Language Gate, Company Research Checklist) is preserved.
+- 04-job-evaluation.md — [есть персональные критерии / уже пуст]
+  Твои области соответствия, карьерные цели, задачи, которые заряжают/выматывают,
+  и жизненные ограничения вернутся к заглушкам. Система оценки (критерии,
+  диапазоны баллов, веса, Языковой фильтр (Language Gate), Чек-лист исследования компании) сохраняется.
 
-- 05-cv-templates.md — [has profile statements or contact details / already blank]
-  Profile statement templates will be cleared and the contact block in the LaTeX template restored to placeholders. LaTeX structure and tailoring guidelines are preserved.
+- 05-cv-templates.md — [есть тексты профиля или контакты / уже пуст]
+  Шаблоны текстов профиля будут очищены, а блок контактов в LaTeX-шаблоне вернётся к заглушкам. Структура LaTeX и правила адаптации сохраняются.
 
-- 06-cover-letter-templates.md — [has contact details / already blank]
-  The contact line and signature in the LaTeX template will be restored to placeholders. Letter structure, opening patterns, and closing formulations are preserved.
+- 06-cover-letter-templates.md — [есть контакты / уже пуст]
+  Строка контактов и подпись в LaTeX-шаблоне вернутся к заглушкам. Структура письма, варианты вступлений и формулировки концовок сохраняются.
 
-- 07-interview-prep.md — [has STAR examples / already blank]
-  STAR examples and any STAR candidate stubs will be cleared. Framework, tough questions, and roleplay guidelines are preserved.
+- 07-interview-prep.md — [есть примеры STAR / уже пуст]
+  Примеры STAR и заготовки кандидатов в STAR будут очищены. Фреймворк, сложные вопросы и правила ролевой игры сохраняются.
 
-- job-scraper/search-queries.md — [has personalized queries / already blank]
-  Your job boards, role titles, domain keywords, city, and commute tiers will be
-  restored to placeholders. The query structure and filter sections are preserved.
+- job-scraper/search-queries.md — [есть персональные запросы / уже пуст]
+  Твои сайты вакансий, должности, ключевые слова предметной области, город и уровни
+  удалённости вернутся к заглушкам. Структура запросов и разделы фильтров сохраняются.
 
-The following files are NOT touched (they contain framework rules, not candidate data):
+Эти файлы НЕ трогаются (в них правила фреймворка, а не данные кандидата):
   - 03-writing-style.md
 
-Outside the profile scope, still holding your personal data: CLAUDE.md and
-cv/main_example.tex. This scope covers skill files only.
+Вне области profile и по-прежнему с твоими личными данными: CLAUDE.md и
+cv/main_example.tex. Эта область покрывает только файлы навыка.
 ```
 
-### If scope includes `documents`:
+### Если область включает `documents`:
 
-Use Glob to list all files present in `documents/cv/`, `documents/linkedin/`, `documents/diplomas/`, `documents/references/`, `documents/projects/`, `documents/postings/`, and `documents/applications/`.
+С помощью Glob выведи все файлы в `documents/cv/`, `documents/linkedin/`, `documents/diplomas/`, `documents/references/`, `documents/projects/`, `documents/postings/` и `documents/applications/`.
 
-Include nested and hidden user entries in the inventory. Each subfolder's tracked `.gitkeep` is a scaffold placeholder: exclude it from the deletion list and from the empty/non-empty decision, and preserve it.
+Включи в список вложенные и скрытые записи пользователя. Отслеживаемый `.gitkeep` в каждой подпапке — заглушка структуры: исключи его из списка на удаление и из решения «пусто/не пусто» и сохрани.
 
-Present as:
+Покажи так:
 
 ```
-## Documents reset will delete:
+## Сброс документов удалит:
 
 documents/cv/
-  - [filename] or "(empty)"
+  - [filename] или «(пусто)»
 
 documents/linkedin/
-  - [filename] or "(empty)"
+  - [filename] или «(пусто)»
 
 documents/diplomas/
-  - [filename] or "(empty)"
+  - [filename] или «(пусто)»
 
 documents/references/
-  - [filename] or "(empty)"
+  - [filename] или «(пусто)»
 
 documents/projects/
-  - [filename] or "(empty)"
+  - [filename] или «(пусто)»
 
 documents/postings/
-  - [filename] or "(empty)"
+  - [filename] или «(пусто)»
 
 documents/applications/
-  - [subfolder/filename] or "(empty)"
+  - [subfolder/filename] или «(пусто)»
 
-documents/README.md — NOT deleted (instructions file)
+documents/README.md — НЕ удаляется (файл с инструкциями)
 ```
 
-If all document subfolders are already empty, state "All document subfolders are already empty — nothing to delete." and skip the confirmation step for this scope.
+Если все подпапки документов уже пусты, напиши «Все подпапки документов уже пусты — удалять нечего.» и пропусти шаг подтверждения для этой области.
 
 ---
 
-## Step 2: Require Explicit Confirmation
+## Шаг 2: Потребовать явного подтверждения
 
-Present the confirmation prompt:
+Покажи запрос подтверждения:
 
-> **This cannot be undone.**
+> **Это нельзя отменить.**
 >
-> Type **`RESET`** (all caps) to confirm, or anything else to cancel.
+> Напиши **`RESET`** (заглавными латинскими буквами), чтобы подтвердить, или что угодно другое, чтобы отменить.
 
-Wait for the user's response.
+Дождись ответа пользователя.
 
-- If the user types exactly `RESET`: proceed to Step 3.
-- If the user types anything else: abort and tell them "Reset cancelled. Nothing was changed."
+- Если пользователь написал ровно `RESET`: переходи к Шагу 3.
+- Если пользователь написал что угодно другое (в том числе «да» или `reset` строчными): прерви и скажи ему «Сброс отменён. Ничего не изменено.»
 
 ---
 
-## Step 3: Execute the Reset
+## Шаг 3: Выполнить сброс
 
-### Profile reset
+### Сброс профиля
 
-Every skill file under `.claude/skills/job-application-assistant/` opens with a `---` frontmatter block carrying its `framework_version` marker. That marker is framework data, not candidate data: `tools/check_framework_version.py` fails a file without it, and `tools/check_upstream_updates.py` cannot compare the file against upstream. Never remove or rewrite it - the two full-file replacements below keep it and replace only what follows.
+Каждый файл навыка в `.claude/skills/job-application-assistant/` начинается с блока frontmatter `---`, в котором стоит маркер `framework_version`. Этот маркер — данные фреймворка, а не кандидата: `tools/check_framework_version.py` валит файл без него, а `tools/check_upstream_updates.py` не сможет сравнить файл с основным репозиторием (upstream). Никогда не удаляй и не переписывай его — две полные замены файлов ниже сохраняют его и заменяют только то, что идёт после.
 
-**For `01-candidate-profile.md`**, keep the file's `---` frontmatter block exactly as it is and replace everything below it with:
+**Для `01-candidate-profile.md`** оставь блок frontmatter `---` файла в точности как есть и замени всё, что ниже, на:
 
 ```markdown
-# Candidate Profile
+# Профиль кандидата
 
-<!-- Run /setup to populate this file -->
+<!-- Запусти /setup, чтобы заполнить этот файл -->
 
-## Identity
+## Личные данные
 
-### Languages
+### Языки
 
-| Language | Level | Notes |
+| Язык | Уровень | Примечание |
 |----------|-------|-------|
 
-## Education
+## Образование
 
-## Professional Experience
+## Опыт работы
 
-## Independent Projects
+## Собственные проекты
 
-## Technical Skills
+## Технические навыки
 
-## Publications
+## Публикации
 
-## Awards
+## Награды
 
-## References
+## Рекомендации
 ```
 
-**For `02-behavioral-profile.md`**, keep the file's `---` frontmatter block exactly as it is and replace everything below it with:
+**Для `02-behavioral-profile.md`** оставь блок frontmatter `---` файла в точности как есть и замени всё, что ниже, на:
 
 ```markdown
-# Behavioral Profile
+# Поведенческий профиль
 
-<!-- Run /setup to populate this file -->
+<!-- Запусти /setup, чтобы заполнить этот файл -->
 
-## Overview
+## Обзор
 
-## Core Behavioral Drives
+## Основные поведенческие мотивы
 
-## Strongest Behaviors
+## Самые сильные стороны поведения
 
-## How You Work Best
+## В каких условиях вы работаете лучше всего
 
-## Growth Areas (frame positively in applications)
+## Зоны роста (в откликах подавать позитивно)
 
-## Mapping to Job Posting Language
+## Сопоставление с формулировками вакансий
 
-## Management Style Preferences
+## Предпочтения по стилю управления
 
-## Using This in Applications
+## Как использовать в откликах
 ```
 
-**For `04-job-evaluation.md`**, restore the values `/setup` Step 3.4 personalized back to their placeholder tokens, leaving every surrounding line untouched:
+**Для `04-job-evaluation.md`** верни значения, которые персонализировал Шаг 3.4 `/setup`, к их токенам-заглушкам, не трогая окружающие строки:
 
-| Line to restore | Token |
+| Строка для восстановления | Токен |
 |---|---|
-| `**Strong match areas:**` | `[YOUR_PRIMARY_SKILLS]` |
-| `**Moderate match areas:**` | `[YOUR_SECONDARY_SKILLS]` |
-| `**Weak match areas:**` | `[SKILLS_YOU_LACK]` |
-| `**Strong:**` (Experience Match) | `[YOUR_DIRECT_EXPERIENCE_DOMAINS]` |
-| `**Moderate:**` (Experience Match) | `[YOUR_ADJACENT_EXPERIENCE]` |
-| `**Entry-level:**` (Experience Match) | `[ROLES_WITH_LIMITED_EXPERIENCE]` |
-| the three `**Career goals:**` bullets | `[YOUR_CAREER_GOAL_1]`, `[YOUR_CAREER_GOAL_2]`, `[YOUR_CAREER_GOAL_3]` |
-| `- Tasks that energize:` | `[YOUR_ENERGIZING_TASKS]` |
-| `- Tasks that drain:` | `[YOUR_DRAINING_TASKS]` |
-| `- **Security**:` | `[YOUR_FINANCIAL_SITUATION_CONTEXT]` |
-| `- **Flexibility**:` | `[YOUR_SCHEDULE_CONSTRAINTS]` |
-| `- **Professional development**:` | `[YOUR_GROWTH_PRIORITIES]` |
+| `**Сильные области:**` | `[YOUR_PRIMARY_SKILLS]` |
+| `**Средние области:**` | `[YOUR_SECONDARY_SKILLS]` |
+| `**Слабые области:**` | `[SKILLS_YOU_LACK]` |
+| `**Сильный:**` (Совпадение по опыту) | `[YOUR_DIRECT_EXPERIENCE_DOMAINS]` |
+| `**Средний:**` (Совпадение по опыту) | `[YOUR_ADJACENT_EXPERIENCE]` |
+| `**Начальный уровень:**` (Совпадение по опыту) | `[ROLES_WITH_LIMITED_EXPERIENCE]` |
+| три пункта `**Карьерные цели:**` | `[YOUR_CAREER_GOAL_1]`, `[YOUR_CAREER_GOAL_2]`, `[YOUR_CAREER_GOAL_3]` |
+| `- Задачи, которые заряжают:` | `[YOUR_ENERGIZING_TASKS]` |
+| `- Задачи, которые выматывают:` | `[YOUR_DRAINING_TASKS]` |
+| `- **Надёжность**:` | `[YOUR_FINANCIAL_SITUATION_CONTEXT]` |
+| `- **Гибкость**:` | `[YOUR_SCHEDULE_CONSTRAINTS]` |
+| `- **Профессиональное развитие**:` | `[YOUR_GROWTH_PRIORITIES]` |
 
-Also remove any `## Calibration from Past Applications` section, which `/setup` Path A writes from the user's own application outcomes.
+Также удали раздел `## Калибровка по прошлым откликам`, если он есть: его пишет Путь A `/setup` по результатам откликов самого пользователя.
 
-Leave the rest of `04-job-evaluation.md` intact: the five scoring dimensions and their score bands, the weighting, the Language Gate, the red-flag guidance, the Company Research Checklist and cache schema, and the salary benchmark section. If `/setup` Step 3.4 ever personalizes a value not in the table above, add it here too.
+Остальное в `04-job-evaluation.md` не трогай: Фильтр допуска (Eligibility Gate), `## Языковой фильтр (Language Gate) — запускай до оценки`, пять критериев оценки и их диапазоны баллов, веса и пороги, «Типичные стоп-факторы на российском рынке», «Чек-лист исследования компании» и схему кэша, раздел «Сравнение зарплаты». Если Шаг 3.4 `/setup` когда-нибудь начнёт персонализировать значение, которого нет в таблице выше, добавь его и сюда.
 
-**For `05-cv-templates.md`**, locate the section that begins with the line `**Create 2-3 profile statement templates for your main role types:**` and extends through the role-specific template blocks, including any statements labeled *[Used for: <company>_<role>]* that `/setup` Path A extracted from archived applications. Stop before the paragraph that begins "Statements labeled" - that is framework guidance, not candidate data. Replace only that section with:
-
-```markdown
-**Create 2-3 profile statement templates for your main role types:**
-
-<!-- SETUP: These are populated based on your background -->
-```
-
-Then restore the contact block inside the file's LaTeX template to its placeholder tokens: `\name{[FIRST_NAME]}{[LAST_NAME]}`, `\address{[YOUR_ADDRESS]}{}{}`, `\phone[mobile]{[YOUR_PHONE]}`, `\email{[YOUR_EMAIL]}`, the `\extrainfo{...}` line's `[YOUR_LINKEDIN_URL]` and `[YOUR_GITHUB_URL]`, and `[YOUR_NAME]` in the `pdftitle`. Leave all other content in `05-cv-templates.md` intact.
-
-**For `06-cover-letter-templates.md`**, restore the contact line and the signature inside the file's LaTeX template to their placeholder tokens: the `\namesection{}` line becomes `\namesection{}{\Huge{[YOUR_NAME]}}{  \href{mailto:[YOUR_EMAIL]}{[YOUR_EMAIL]} | [YOUR_PHONE] |  \urlstyle{same}\href{[YOUR_LINKEDIN_URL]}{LinkedIn}` and `\signature{...}` becomes `\signature{[YOUR_NAME]}`. Leave all other content in `06-cover-letter-templates.md` intact - the letter structure, opening patterns, and closing formulations are framework, not candidate data. If `/setup` Step 3.6 ever personalizes anything beyond these two lines, add it here too.
-
-**For `07-interview-prep.md`**, locate and remove:
-- The entire `## Ready-Made STAR Examples` section and all numbered STAR examples under it
-- Any `## STAR Candidates (Complete Manually)` section added by `/setup` Path A
-
-Replace with:
+**Для `05-cv-templates.md`** найди раздел, который начинается строкой `**Создай 2-3 шаблона блока «О себе» для основных типов ролей:**` и тянется через блоки шаблонов под конкретные роли, включая тексты с пометкой *[Used for: <company>_<role>]*, которые Путь A `/setup` извлёк из архивных откликов. Остановись перед абзацем, начинающимся с «Блоки с пометкой», — это рекомендации фреймворка, а не данные кандидата. Замени только этот раздел на:
 
 ```markdown
-## Ready-Made STAR Examples
+**Создай 2-3 шаблона блока «О себе» для основных типов ролей:**
 
-<!-- Run /setup to populate STAR examples from your actual experience -->
+<!-- SETUP: Заполняются на основе вашего опыта -->
 ```
 
-Leave all other content in `07-interview-prep.md` intact (STAR format explanation, tough questions, questions to ask interviewers, phone/video tips, follow-up etiquette, roleplay guidelines).
+Затем верни блок контактов внутри LaTeX-шаблона файла к токенам-заглушкам: `\name{[FIRST_NAME]}{[LAST_NAME]}`, `\address{[YOUR_ADDRESS]}{}{}`, `\phone[mobile]{[YOUR_PHONE]}`, `\email{[YOUR_EMAIL]}`, `[YOUR_LINKEDIN_URL]` и `[YOUR_GITHUB_URL]` в строке `\extrainfo{...}`, а также `[YOUR_NAME]` в `pdftitle`. Всё остальное в `05-cv-templates.md` оставь как есть.
 
-**For `.claude/skills/job-scraper/search-queries.md`**, restore the values `/setup` Step 3.9 personalized back to their placeholder tokens:
+**Для `06-cover-letter-templates.md`** верни строку контактов и подпись внутри LaTeX-шаблона файла к токенам-заглушкам: строка `\namesection{}` становится `\namesection{}{\Huge{[YOUR_NAME]}}{  \href{mailto:[YOUR_EMAIL]}{[YOUR_EMAIL]} | [YOUR_PHONE] |  \urlstyle{same}\href{[YOUR_LINKEDIN_URL]}{LinkedIn}`, а `\signature{...}` становится `\signature{[YOUR_NAME]}`. Всё остальное в `06-cover-letter-templates.md` оставь как есть — структура письма, варианты вступлений и формулировки концовок относятся к фреймворку, а не к данным кандидата. Если Шаг 3.6 `/setup` когда-нибудь начнёт персонализировать что-то кроме этих двух строк, добавь это и сюда.
 
-- **Search Sites**: the board names back to `[YOUR_JOB_BOARD]`, `[YOUR_INDUSTRY_JOB_BOARD]`, `[YOUR_ADDITIONAL_JOB_BOARD]`, and the LinkedIn filter back to `[YOUR_COUNTRY]` / `[YOUR_CITY]`.
-- **Query Categories**: the four priority headings back to `[YOUR_PRIMARY_ROLE_TYPE]`, `[YOUR_DOMAIN_EXPERTISE]`, `[YOUR_ADJACENT_ROLE_TYPE]`, and `Broader Technical / Consulting`; inside the query blocks, the titles, skills, and domain terms back to `[YOUR_PRIMARY_JOB_TITLE_1]`, `[YOUR_PRIMARY_JOB_TITLE_2]`, `[YOUR_ADJACENT_TITLE_1]`, `[YOUR_ADJACENT_TITLE_2]`, `[YOUR_KEY_SKILL]`, `[YOUR_DOMAIN_KEYWORD_1]`, `[YOUR_DOMAIN_KEYWORD_2]`, `[YOUR_DOMAIN]`, and the location terms back to `[YOUR_CITY]`, `[YOUR_COUNTRY]`, `[YOUR_REGION]`.
-- **Location Filter**: the commute tiers back to `[YOUR_CITY]`, `[ACCEPTABLE_AREA_1]`, `[ACCEPTABLE_AREA_2]`, `[BORDERLINE_AREA]`, `[TOO_FAR_AREA]`.
-- Remove any extra priority categories or translated query duplicates `/setup` added beyond the four shipped tiers.
+**Для `07-interview-prep.md`** найди и удали:
+- Весь раздел `## Готовые примеры STAR` со всеми пронумерованными примерами STAR в нём
+- Раздел `## Кандидаты в STAR (дописать вручную)`, если его добавил Путь A `/setup`
 
-Leave the rest of the file intact: the portal-CLI and WebSearch-fallback explanation, the Language scope note, the "organize by function, not job title" guidance, and the Language, Date, and Adapting Queries sections.
+Замени на:
 
-### Documents reset
+```markdown
+## Готовые примеры STAR
 
-For each non-empty document subfolder, delete all user entries, including nested folders and hidden files. Preserve the seven top-level subfolders, their `.gitkeep` placeholders, and `documents/README.md`. Run the following Bash block only after the confirmation above; its glob settings stay inside the subshell. If `documents/` or any of its seven roots is a symbolic link, stop before deleting anything and ask the user to replace that linked root with a local document folder.
+<!-- Запусти /setup, чтобы заполнить примеры STAR из твоего реального опыта -->
+```
+
+Остальное в `07-interview-prep.md` не трогай (объяснение формата STAR, сложные вопросы, вопросы интервьюерам, советы по телефонным/видеособеседованиям, этикет напоминаний работодателю (follow-up), правила ролевой игры).
+
+**Для `.claude/skills/job-scraper/search-queries.md`** верни значения, которые персонализировал Шаг 3.9 `/setup`, к их токенам-заглушкам:
+
+- **Сайты для поиска**: названия сайтов вакансий — обратно в `[YOUR_JOB_BOARD]`, `[YOUR_INDUSTRY_JOB_BOARD]`, `[YOUR_ADDITIONAL_JOB_BOARD]`, а фильтр по региону (если он есть в этом разделе) — обратно в `[YOUR_COUNTRY]` / `[YOUR_CITY]`.
+- **Категории запросов**: четыре заголовка приоритетов — обратно в `[YOUR_PRIMARY_ROLE_TYPE]`, `[YOUR_DOMAIN_EXPERTISE]`, `[YOUR_ADJACENT_ROLE_TYPE]` и `Шире — технические роли / консалтинг`; внутри блоков запросов должности, навыки и термины предметной области — обратно в `[YOUR_PRIMARY_JOB_TITLE_1]`, `[YOUR_PRIMARY_JOB_TITLE_2]`, `[YOUR_ADJACENT_TITLE_1]`, `[YOUR_ADJACENT_TITLE_2]`, `[YOUR_KEY_SKILL]`, `[YOUR_DOMAIN_KEYWORD_1]`, `[YOUR_DOMAIN_KEYWORD_2]`, `[YOUR_DOMAIN]`, а местоположение — обратно в `[YOUR_CITY]`, `[YOUR_COUNTRY]`, `[YOUR_REGION]`.
+- **Фильтр по локации**: уровни удалённости — обратно в `[YOUR_CITY]`, `[ACCEPTABLE_AREA_1]`, `[ACCEPTABLE_AREA_2]`, `[BORDERLINE_AREA]`, `[TOO_FAR_AREA]`.
+- Удали дополнительные категории приоритетов или переведённые дубли запросов, которые `/setup` добавил сверх четырёх поставляемых уровней.
+
+Остальную часть файла не трогай: объяснение про CLI порталов и запасной вариант через WebSearch, примечание о языковом охвате, рекомендацию «Группируй по функции, а не по названию должности» и разделы «Языковой фильтр», «Фильтр по дате» и «Адаптация запросов».
+
+### Сброс документов
+
+В каждой непустой подпапке документов удали все записи пользователя, включая вложенные папки и скрытые файлы. Сохрани семь подпапок верхнего уровня, их заглушки `.gitkeep` и `documents/README.md`. Запускай блок Bash ниже только после подтверждения выше; его настройки glob остаются внутри subshell. Если `documents/` или любой из семи корней — символическая ссылка, остановись до удаления чего-либо и попроси пользователя заменить этот корень-ссылку обычной локальной папкой.
 
 ```bash
 (
@@ -280,29 +280,29 @@ For each non-empty document subfolder, delete all user entries, including nested
 
 ---
 
-## Step 4: Confirm What Was Done and Next Steps
+## Шаг 4: Подтвердить, что сделано, и следующие шаги
 
-After the reset is complete, report:
+После сброса сообщи:
 
 ```
-## Reset complete
+## Сброс завершён
 
-### Cleared
-[List each file/folder that was actually modified or cleared]
+### Очищено
+[Перечисли каждый файл/папку, которые реально изменены или очищены]
 
-### Unchanged
-[List anything that was already empty or was intentionally preserved]
+### Без изменений
+[Перечисли то, что уже было пустым или сохранено намеренно]
 ```
 
-Then tell the user what to do next based on what was reset:
+Затем скажи пользователю, что делать дальше, в зависимости от того, что сброшено:
 
-**If profile was reset:**
-> The skill files are now blank. Run `/setup` to repopulate them. The command auto-detects any files in your `documents/` folder and offers to read from there; otherwise it walks you through a CV import or interactive interview.
+**Если сброшен профиль:**
+> Файлы навыка теперь пусты. Запусти `/setup`, чтобы заполнить их заново. Команда сама найдёт файлы в папке `documents/` и предложит прочитать их; иначе проведёт тебя через импорт резюме или интервью.
 >
-> Note that `CLAUDE.md` and `cv/main_example.tex` are outside the `profile` scope and still hold your personal data. If you are handing this fork over or making it public, clear them by hand.
+> Учти, что `CLAUDE.md` и `cv/main_example.tex` не входят в область `profile` и по-прежнему содержат твои личные данные. Если ты передаёшь этот форк кому-то или делаешь его публичным, очисти их вручную.
 
-**If documents were reset:**
-> Your user documents are now cleared. The folder structure, `.gitkeep` placeholders, and `documents/README.md` are preserved. Add your career documents and run `/setup` to populate your profile.
+**Если сброшены документы:**
+> Твои документы удалены. Структура папок, заглушки `.gitkeep` и `documents/README.md` сохранены. Добавь свои карьерные документы и запусти `/setup`, чтобы заполнить профиль.
 
-**If both were reset:**
-> Your profile data and user documents are now cleared; the document folders, `.gitkeep` placeholders, and `documents/README.md` are preserved. Add documents to `documents/` (or skip and use the CV import / interview path), then run `/setup`.
+**Если сброшено и то и другое:**
+> Данные профиля и твои документы удалены; папки документов, заглушки `.gitkeep` и `documents/README.md` сохранены. Добавь документы в `documents/` (или пропусти это и используй импорт резюме / интервью), затем запусти `/setup`.

@@ -30,7 +30,11 @@ SKILLS_DIR = REPO / ".agents" / "skills"
 HOST_LITERAL = re.compile(r"https?://([A-Za-z0-9.-]+\.[A-Za-z]{2,})")
 # Hosts a source file may name that are not the portal: schema vocabularies,
 # RFC example domains, loopback. Extend if a CLI ever embeds another one.
-NON_PORTAL_HOSTS = {"schema.org", "www.w3.org", "example.com", "localhost"}
+# github.com - ссылка на проект в User-Agent CLI (freehire-search, habr-search), не сайт вакансий.
+NON_PORTAL_HOSTS = {"schema.org", "www.w3.org", "example.com", "localhost", "github.com"}
+# Доверенные площадки категории 1 без CLI-модуля в .agents/skills/: hh.ru закрыл публичный
+# API поиска, но apply.md Шаг 1 прямо называет hh.ru и *.hh.ru установленным порталом.
+TRUSTED_PORTAL_HOSTS_WITHOUT_CLI = {"hh.ru"}
 
 
 def installed_portal_skills() -> list[Path]:
@@ -58,7 +62,7 @@ def portal_hosts(skill_dir: Path) -> set[str]:
     """The board hosts a portal CLI fetches from, as registrable names.
 
     A leading `www.` is dropped so the classifier's exact-or-subdomain rule
-    accepts both `jobindex.dk` and `www.jobindex.dk` (the CLI builds its URLs
+    accepts both `career.habr.com` and `www.career.habr.com` (a CLI may build its URLs
     with the latter; postings link to both).
     """
     hosts: set[str] = set()
@@ -75,7 +79,7 @@ def discover_installed_portal_hosts() -> set[str]:
     return set().union(*(portal_hosts(d) for d in installed_portal_skills()))
 
 
-INSTALLED_PORTAL_HOSTS = discover_installed_portal_hosts()
+INSTALLED_PORTAL_HOSTS = discover_installed_portal_hosts() | TRUSTED_PORTAL_HOSTS_WITHOUT_CLI
 
 KNOWN_ATS_APEXES = {
     "greenhouse.io",
@@ -147,22 +151,22 @@ class ApplyPostingGateWiringTests(unittest.TestCase):
 
     def setUp(self):
         self.text = APPLY_COMMAND_FILE.read_text(encoding="utf-8")
-        self.step0 = re.search(r"## Step 0: Parse Input(.*?)(?=## Step 1:)", self.text, re.DOTALL).group(1)
-        self.step1 = re.search(r"## Step 1: DRAFTER - Evaluate Fit(.*?)(?=## Step 2:)", self.text, re.DOTALL).group(1)
-        self.step3 = re.search(r"## Step 3: REVIEWER - Research & Critique(.*?)(?=## Step 4:)", self.text, re.DOTALL).group(1)
-        self.step4 = re.search(r"## Step 4: DRAFTER - Revise Based on Feedback(.*?)(?=## Step 5:)", self.text, re.DOTALL).group(1)
+        self.step0 = re.search(r"## Шаг 0: Разбор ввода(.*?)(?=## Шаг 1:)", self.text, re.DOTALL).group(1)
+        self.step1 = re.search(r"## Шаг 1: АВТОР ЧЕРНОВИКА — оценка соответствия(.*?)(?=## Шаг 2:)", self.text, re.DOTALL).group(1)
+        self.step3 = re.search(r"## Шаг 3: АГЕНТ-РЕВЬЮЕР — исследование и критика(.*?)(?=## Шаг 4:)", self.text, re.DOTALL).group(1)
+        self.step4 = re.search(r"## Шаг 4: АВТОР ЧЕРНОВИКА — правка по обратной связи(.*?)(?=## Шаг 5:)", self.text, re.DOTALL).group(1)
 
     def test_step0_dispatches_posting_fetcher_and_runs_guard(self):
         self.assertIn("posting-fetcher", self.step0, "a URL posting is fetched by the least-privilege agent")
         self.assertIn("posting_guard", self.step0, "Step 0 must name the integrity gate")
         self.assertIn("--text", self.step0, "pasted text is gated too, in text mode")
-        self.assertIn("Portal CLI first", self.step0)  # the escalation order is unchanged
+        self.assertIn("Сначала CLI портала", self.step0)  # the escalation order is unchanged
 
     def test_step1_prints_posting_integrity_line(self):
-        self.assertIn("Posting integrity", self.step1)
-        self.assertIn("Continue with this posting?", self.step1)
+        self.assertIn("Целостность вакансии", self.step1)
+        self.assertIn("Продолжаем с этой вакансией?", self.step1)
         self.assertLess(
-            self.step1.index("Posting integrity"), self.step1.index("Source host verification"),
+            self.step1.index("Целостность вакансии"), self.step1.index("**Проверка хоста источника**"),
             "the integrity verdict is the first line of the evaluation",
         )
 
@@ -177,25 +181,25 @@ class ApplyPostingGateWiringTests(unittest.TestCase):
 class ApplyHostVerificationSpecTests(unittest.TestCase):
     def setUp(self):
         self.text = APPLY_COMMAND_FILE.read_text(encoding="utf-8")
-        step0_match = re.search(r"## Step 0: Parse Input(.*?)(?=## Step 1:)", self.text, re.DOTALL)
+        step0_match = re.search(r"## Шаг 0: Разбор ввода(.*?)(?=## Шаг 1:)", self.text, re.DOTALL)
         self.assertTrue(step0_match, "Step 0 must exist in apply.md")
         self.step0_text = step0_match.group(1)
-        step1_match = re.search(r"## Step 1: DRAFTER - Evaluate Fit(.*?)(?=## Step 2:)", self.text, re.DOTALL)
+        step1_match = re.search(r"## Шаг 1: АВТОР ЧЕРНОВИКА — оценка соответствия(.*?)(?=## Шаг 2:)", self.text, re.DOTALL)
         self.assertTrue(step1_match, "Step 1 must exist in apply.md")
         self.step1_text = step1_match.group(1)
 
     def test_step0_documents_portal_cli_detail_before_webfetch(self):
-        self.assertIn("Portal CLI first", self.step0_text)
+        self.assertIn("Сначала CLI портала", self.step0_text)
         self.assertIn("detail", self.step0_text)
-        self.assertIn("WebFetch fallback", self.step0_text)
-        cli_pos = self.step0_text.find("Portal CLI first")
-        webfetch_pos = self.step0_text.find("WebFetch fallback")
+        self.assertIn("Запасной вариант — WebFetch", self.step0_text)
+        cli_pos = self.step0_text.find("Сначала CLI портала")
+        webfetch_pos = self.step0_text.find("Запасной вариант — WebFetch")
         self.assertNotEqual(cli_pos, -1)
         self.assertNotEqual(webfetch_pos, -1)
         self.assertLess(cli_pos, webfetch_pos, "Portal CLI detail must precede WebFetch in apply.md Step 0")
 
     def test_step1_contains_source_host_verification_heading(self):
-        self.assertIn("Source Host Verification", self.step1_text)
+        self.assertIn("### Проверка хоста источника", self.step1_text)
 
     def test_step1_documents_all_six_ats_apexes(self):
         for apex in ["greenhouse.io", "lever.co", "myworkdayjobs.com", "ashbyhq.com", "smartrecruiters.com", "workable.com"]:
@@ -203,10 +207,18 @@ class ApplyHostVerificationSpecTests(unittest.TestCase):
 
     def test_step1_documents_look_alike_fail_closed_rules(self):
         self.assertIn("evil-greenhouse.io", self.step1_text)
-        self.assertIn("fail closed", self.step1_text)
+        self.assertIn("по умолчанию отклоняются", self.step1_text)
+
+    def test_step1_names_every_installed_portal_host(self):
+        # Вместо датских порталов/linkedin.com: список категории 1 в apply.md должен
+        # совпадать с тем, что реально установлено, плюс hh.ru и *.hh.ru без CLI.
+        for host in sorted(INSTALLED_PORTAL_HOSTS):
+            with self.subTest(host=host):
+                self.assertIn(f"`{host}`", self.step1_text)
+        self.assertIn("`*.hh.ru`", self.step1_text)
 
     def test_step1_requires_unverified_hosts_to_be_named_plainly(self):
-        self.assertIn("Unverified source host", self.step1_text)
+        self.assertIn("Непроверенный хост источника", self.step1_text)
 
     def test_classifier_identifies_official_ats_subdomains(self):
         urls = [
@@ -226,9 +238,9 @@ class ApplyHostVerificationSpecTests(unittest.TestCase):
         # A regional subdomain and the bare apex must both pass for every portal;
         # the derived set is what makes this hold for a portal added by /add-portal.
         urls = [
-            "https://www.jobindex.dk/jobannonce/12345",
-            "https://dk.linkedin.com/jobs/view/999999",
-            "https://jobnet.dk/find-job/8888",
+            "https://career.habr.com/vacancies/1000123456",
+            "https://hh.ru/vacancy/123456789",
+            "https://spb.hh.ru/vacancy/123456789",
             "https://freehire.me/jobs/golang-zensar-2bxu6dxm",
         ]
         for url in urls:
@@ -291,6 +303,9 @@ class InstalledPortalsAreVerifiedTests(unittest.TestCase):
             "https://boards.greenhouse.io@evil-domain.com/job/1",
             "https://myworkdayjobs.com.phishing.net/login",
             "https://lever.co.attacker.org/apply",
+            "https://evil-hh.ru/vacancy/1",
+            "https://hh.ru.evil.com/vacancy/1",
+            "https://career.habr.com.evil.com/vacancies/1",
             "https://unknown-board.example.com/posting/123",
         ]
         for url in suspicious:
@@ -327,14 +342,14 @@ class WebResearchEscalationOrderTests(unittest.TestCase):
     def setUp(self):
         self.research_file = REPO / ".claude" / "skills" / "job-application-assistant" / "09-web-research.md"
         self.text = self.research_file.read_text(encoding="utf-8")
-        match = re.search(r"## Escalation order(.*?)(?=## |\Z)", self.text, re.DOTALL)
+        match = re.search(r"## Порядок эскалации(.*?)(?=## |\Z)", self.text, re.DOTALL)
         self.assertTrue(match, "Escalation order section must exist in 09-web-research.md")
         self.order_text = match.group(1)
 
     def test_escalation_order_lists_portal_cli_first(self):
-        self.assertIn("Installed portal CLI `detail` command", self.order_text)
+        self.assertIn("Команда `detail` установленного CLI портала", self.order_text)
         self.assertIn("WebFetch", self.order_text)
-        portal_pos = self.order_text.find("Installed portal CLI `detail` command")
+        portal_pos = self.order_text.find("Команда `detail` установленного CLI портала")
         webfetch_pos = self.order_text.find("`WebFetch`")
         self.assertNotEqual(portal_pos, -1)
         self.assertNotEqual(webfetch_pos, -1)
@@ -345,7 +360,7 @@ class RankBatchFetchSpecTests(unittest.TestCase):
     def setUp(self):
         self.rank_file = REPO / ".claude" / "commands" / "rank.md"
         self.text = self.rank_file.read_text(encoding="utf-8")
-        match = re.search(r"## Step 2: Batch-Fetch and Score(.*?)(?=## Step 3:)", self.text, re.DOTALL)
+        match = re.search(r"## Шаг 2: Пакетная загрузка и оценка(.*?)(?=## Шаг 3:)", self.text, re.DOTALL)
         self.assertTrue(match, "Step 2 must exist in rank.md")
         self.step2_text = match.group(1)
 

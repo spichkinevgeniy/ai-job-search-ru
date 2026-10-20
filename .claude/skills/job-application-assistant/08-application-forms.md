@@ -2,86 +2,86 @@
 framework_version: 1.0.0
 ---
 
-# Application Form Fields
+# Поля анкет отклика
 
-`/apply` produces two artifacts: a CV and a cover letter. Many applications need a **third** — free-text fields typed directly into an application portal. Graduate programs, large-employer ATS systems and startup forms routinely ask for things neither document covers, under a character or word limit, in a box with no formatting.
+`/apply` создаёт два артефакта: резюме и сопроводительное письмо. Многим откликам нужен **третий** — текстовые поля, которые вводятся прямо в форму на портале. Стажёрские и выпускные программы, ATS (система автоматического отбора резюме) крупных работодателей и формы стартапов регулярно спрашивают то, чего нет ни в одном из документов, с лимитом символов или слов, в поле без форматирования.
 
-This file governs that third artifact. It is not a document you compile; it is text the candidate pastes.
+Этот файл регулирует третий артефакт. Это не документ, который компилируется, а текст, который кандидат вставляет в форму.
 
-## When this applies
+## Когда это применяется
 
-Trigger it whenever a posting or portal asks for any of:
+Включай этот режим, когда вакансия или портал просит что-либо из списка:
 
-- A self-introduction / personal statement / "tell us about yourself" paragraph
-- Structured project entries (project name, role, start and end date, description)
-- A short pitch under a hard character limit ("stand out in 140 characters", "why you, in one sentence")
-- Motivation questions ("why this company", "why this program")
-- Competency questions with a word cap ("describe a time you…", 200 words)
+- Абзац о себе / личное заявление / «расскажите о себе»
+- Структурированные записи о проектах (название проекта, роль, даты начала и окончания, описание)
+- Короткий питч с жёстким лимитом символов («выделитесь в 140 символах», «почему вы — одним предложением»)
+- Вопросы о мотивации («почему эта компания», «почему эта программа»)
+- Вопросы на компетенции с лимитом слов («опишите случай, когда вы…», 200 слов)
 
-## The rule that governs everything here
+## Правило, которое определяет всё остальное
 
-**Every claim in a form field must already be defensible from the same sources the CV and cover letter are grounded against** — the union of `01-candidate-profile.md`, the master CV (`cv/main_example.tex`), and `CLAUDE.md`'s Candidate Profile section, with a claim grounded if ANY of the three supports it. The interviewer reads the form alongside the CV. A form field is not a place to introduce new claims, inflate scope, or fill space — it is a place to *select* from what is already true and arrange it for the question asked.
+**Каждое утверждение в поле формы должно уже подтверждаться теми же источниками, с которыми сверяются резюме и сопроводительное письмо** — объединением `01-candidate-profile.md`, основного резюме (`cv/main_example.tex`) и раздела Candidate Profile в `CLAUDE.md`; утверждение считается подтверждённым, если его поддерживает ЛЮБОЙ из трёх. Интервьюер читает форму вместе с резюме. Поле формы — не место для новых утверждений, раздувания масштаба или заполнения пустоты. Это место, где из уже правдивого *выбирают* нужное и выстраивают под заданный вопрос.
 
-All accuracy rules from `05-cv-templates.md` and `03-writing-style.md` apply unchanged.
+Все правила точности из `05-cv-templates.md` и `03-writing-style.md` действуют без изменений.
 
-## Field type: self-introduction paragraph
+## Тип поля: абзац о себе
 
-Usually 100–200 words, one paragraph, no formatting.
+Обычно 100–200 слов, один абзац, без форматирования.
 
-**Structure that works:**
-1. Current status — what they are doing or completing now
-2. The single strongest piece of evidence, with its number and scale
-3. One line of trajectory: how they got here, if a pivot or specialisation is genuinely interesting
-4. What they want next, connected to this employer's actual work
+**Рабочая структура:**
+1. Текущий статус — чем кандидат занят или что завершает сейчас
+2. Одно самое сильное доказательство, с цифрой и масштабом
+3. Одна строка о траектории: как он к этому пришёл, если смена направления или специализация действительно интересны
+4. Чего он хочет дальше — в связке с реальной работой этого работодателя
 
-**Rules:**
-- **Lead with the strongest evidence, not chronology.** A career history told in order buries the best material when the strongest work is recent.
-- **Write one version per role type, not one for all applications.** The same history framed for a backend role and a data role are different paragraphs. Produce both, label them, and say which goes where.
-- **Tie it to this employer in the final sentence.** Generic self-introductions are the default and read as such.
-- **Count the words and state the count.** Portals truncate silently. Supply a trimmed variant and name which sentence to cut first.
+**Правила:**
+- **Начинай с самого сильного доказательства, а не с хронологии.** Карьера, рассказанная по порядку, хоронит лучший материал, если самая сильная работа — недавняя.
+- **Пиши по версии на каждый тип роли, а не одну на все отклики.** Одна и та же история под бэкенд-роль и под роль в данных — это разные абзацы. Сделай обе, подпиши их и скажи, какая куда.
+- **Привяжи последнее предложение к этому работодателю.** Шаблонные абзацы о себе — норма, и так они и читаются.
+- **Посчитай слова и укажи число.** Порталы обрезают текст молча. Дай укороченный вариант и назови, какое предложение вырезать первым.
 
-## Field type: structured project entries
+## Тип поля: структурированные записи о проектах
 
-Typically **project name, role, start date, end date, description.**
+Обычно **название проекта, роль, дата начала, дата окончания, описание.**
 
-**Project name.** Give the project a descriptive name, not the employer's name — "Warehouse Inventory Forecasting Platform" is a project, "Acme Corp" is an employer. Where a client is more recognisable than the employer, name the client only if the relationship is truthful (placed on-site with, delivered to).
+**Название проекта.** Дай проекту описательное название, а не имя работодателя: «Платформа прогнозирования складских остатков» — это проект, «ООО Ромашка» — работодатель. Если клиент узнаваемее работодателя, называй клиента, только если связь правдива (работал на площадке клиента, поставлял решение клиенту).
 
-**Role.** The candidate's role *on that project*, which may be narrower than their job title. Do not upgrade it.
+**Роль.** Роль кандидата *в этом проекте*, она может быть уже его должности. Не повышай её.
 
-**Dates.** The dates they worked on **that project**, which are not automatically the employment dates. If a role spanned two years but the named project occupied the later part, saying so is both more accurate and avoids the low-output reading described in `05-cv-templates.md` ("Check tenure against visible output"). Only narrow the dates when the candidate can say when the project actually started — never invent a boundary to improve the ratio.
+**Даты.** Даты работы именно **над этим проектом**, они не обязательно совпадают с датами трудоустройства. Если работа длилась два года, а названный проект занял вторую половину, сказать так — и точнее, и снимает впечатление низкой отдачи, описанное в `05-cv-templates.md` ("Check tenure against visible output"). Сужай даты, только если кандидат может сказать, когда проект на самом деле начался — никогда не выдумывай границу, чтобы улучшить соотношение.
 
-**Description.** 100–150 words: what the system did and who used it, then the hardest technical problem and how it was solved, then the outcome with its number. Supply a **~60-word short version** as well; portals vary and the candidate should not have to improvise a cut.
+**Описание.** 100–150 слов: что делала система и кто ею пользовался, затем самая сложная техническая проблема и как её решили, затем результат с цифрой. Дай также **короткую версию на ~60 слов**: порталы разные, и кандидату не придётся сокращать на ходу.
 
-**Scope discipline is stricter here than on a CV.** A CV bullet can be terse enough to be ambiguous about ownership. A project entry with the candidate's name and role attached reads as ownership of the whole thing. Where they contributed rather than owned, say so inside the description.
+**Дисциплина масштаба здесь строже, чем в резюме.** Пункт резюме может быть настолько кратким, что авторство остаётся неочевидным. Запись о проекте с именем и ролью кандидата читается как владение всем проектом. Если кандидат участвовал, а не владел, скажи это прямо в описании.
 
-## Field type: hard character limits
+## Тип поля: жёсткий лимит символов
 
-These reward **a specific situation over an adjective**. Most applicants submit adjectives — "passionate", "fast learner", "team player" — so a concrete situation stands out by contrast.
+Здесь выигрывает **конкретная ситуация, а не прилагательное**. Большинство кандидатов пишут прилагательные — «увлечённый», «быстро учусь», «командный игрок», — поэтому конкретная ситуация выделяется на контрасте.
 
-**Method:**
-1. Pick the single most distinctive true thing: usually a number, an unusual combination of backgrounds, or a problem shape that maps onto the employer's own work.
-2. Draft 4–6 candidates at different angles.
-3. **Count characters programmatically. Do not estimate.** Over-limit text is truncated mid-word.
-4. Present all candidates with counts, recommend one, and say why.
+**Метод:**
+1. Выбери одну самую отличительную правдивую вещь: обычно это цифра, необычное сочетание бэкграундов или форма задачи, которая совпадает с работой самого работодателя.
+2. Набросай 4–6 вариантов с разных углов.
+3. **Считай символы программно. Не прикидывай на глаз.** Текст сверх лимита обрезается посреди слова.
+4. Покажи все варианты с подсчётом, порекомендуй один и объясни почему.
 
-Prefer the version that **maps the candidate's problem onto the employer's problem**, where a truthful mapping exists. That is what "stand out" is actually asking for.
+Предпочитай версию, которая **накладывает задачу кандидата на задачу работодателя**, если такое правдивое соответствие есть. Именно это и означает просьба «выделитесь».
 
-## Output format
+## Формат результата
 
-Save to a plain `.txt` file the candidate can copy from, alongside their other application material for that employer. One file per employer, containing every field that employer asked for.
+Сохрани в обычный `.txt`-файл, из которого кандидат будет копировать, рядом с остальными материалами отклика этому работодателю. Один файл на работодателя, со всеми полями, которые он запросил.
 
-Include:
-- A header naming the employer and the roles it covers
-- Each field, labelled, with word or character counts stated
-- Short variants where limits may be tighter than expected
-- **`NOTE TO SELF` blocks** for scope reminders and prepared answers to questions the content invites — clearly marked as *not for pasting into the form*
-- A dates quick-reference, so date fields stay consistent without re-deriving them
+Включи:
+- Заголовок с названием работодателя и ролями, которые покрывает файл
+- Каждое поле с подписью и указанным числом слов или символов
+- Короткие варианты на случай, если лимиты окажутся жёстче ожидаемого
+- **Блоки `NOTE TO SELF`** с напоминаниями о масштабе и заготовками ответов на вопросы, которые провоцирует текст, — с явной пометкой *не для вставки в форму*
+- Шпаргалку по датам, чтобы поля с датами были согласованы без повторного вычисления
 
-## Verification before handing it over
+## Проверка перед передачей
 
-- [ ] Every factual claim traces to the union of `01-candidate-profile.md`, the master CV (`cv/main_example.tex`), and `CLAUDE.md`'s Candidate Profile section
-- [ ] No claim contradicts the CV or cover letter submitted for the same role
-- [ ] Ownership scoped correctly on contributory work
-- [ ] Word and character counts measured, not estimated
-- [ ] In-progress qualifications described as in progress
-- [ ] `NOTE TO SELF` blocks clearly marked as internal
+- [ ] Каждое фактическое утверждение прослеживается до объединения `01-candidate-profile.md`, основного резюме (`cv/main_example.tex`) и раздела Candidate Profile в `CLAUDE.md`
+- [ ] Ни одно утверждение не противоречит резюме или сопроводительному письму, отправленным на ту же роль
+- [ ] Авторство в работе, где кандидат лишь участвовал, указано корректно
+- [ ] Число слов и символов измерено, а не прикинуто
+- [ ] Незавершённые квалификации описаны как незавершённые
+- [ ] Блоки `NOTE TO SELF` явно помечены как внутренние

@@ -2,27 +2,38 @@
 framework_version: 1.4.7
 ---
 
-# CV Templates and Tailoring Guide
+# Шаблоны резюме и правила адаптации
 
-<!-- SETUP: Profile statements and section ordering are personalized by running /setup -->
+<!-- SETUP: Блоки «О себе» и порядок разделов персонализируются командой /setup -->
 
-## Template: LaTeX moderncv (Banking Style)
+## Шаблон: LaTeX moderncv (стиль banking)
 
-All CVs use the moderncv LaTeX package with the "banking" style and "blue" color scheme.
+Все резюме используют LaTeX-пакет moderncv со стилем «banking» и цветовой схемой «blue».
 
-**Output file:** `cv/main_<company>_<role>.tex`
-**Compile with:** **lualatex** on MiKTeX/TeX Live. pdflatex often fails on modern MiKTeX installs with `fontawesome5` font-expansion errors; lualatex handles the same sources cleanly.
-**Master reference:** `cv/main_example.tex` (comprehensive CV with all competencies, experience, and achievements - use as source when building targeted CVs)
+**Выходной файл:** `cv/main_<company>_<role>.tex`
+**Компиляция:** **lualatex** в MiKTeX/TeX Live. pdflatex на современных установках MiKTeX часто падает с ошибками font expansion у `fontawesome5`; lualatex собирает те же исходники без проблем.
+**Эталон:** `cv/main_example.tex` (полное резюме со всеми компетенциями, опытом и достижениями — используй как источник при сборке адаптированных резюме)
 
-### Compile command
+### Команда компиляции
 
 ```bash
 cd cv && lualatex -interaction=nonstopmode main_<company>_<role>.tex
 ```
 
-Expected output: `Output written on main_<company>_<role>.pdf (2 pages, ...)`. Any page count other than 2 is a failure that must be fixed before presenting to the user.
+Ожидаемый вывод: `Output written on main_<company>_<role>.pdf (2 pages, ...)`. Любое число страниц, кроме 2, — ошибка, которую нужно исправить до показа пользователю.
 
-## Document Structure
+### Резюме на русском: шрифт с кириллицей (важно)
+
+Резюме по умолчанию пишется по-русски (если вакансия на английском — по-английски, см. `03-writing-style.md`). Шрифт moderncv по умолчанию под lualatex (Latin Modern) **не содержит кириллицы**: компиляция проходит, но русские буквы пропадают из PDF (в логе — `Missing character`). Поэтому для русского резюме:
+
+- компилируй только **lualatex** (pdflatex с кириллицей в этом шаблоне не поддерживаем);
+- в преамбуле после `\moderncvcolor{blue}` подключи `\usepackage{fontspec}` и задай шрифт с кириллицей, например `\setsansfont{CMU Sans Serif}` (пакет cm-unicode есть в TeX Live и MiKTeX) или `\setsansfont{PT Sans}`; для правильных переносов добавь `\usepackage[russian]{babel}` (или `english,russian`, если в резюме есть английские фрагменты);
+- если в резюме есть знак рубля `₽`, проверь, что он есть в выбранном шрифте (в PT Sans и CMU он есть), иначе пиши «руб.»;
+- после компиляции проверь в логе отсутствие `Missing character`, а в текстовом слое (раздел ATS ниже) — что кириллица извлекается читаемо.
+
+Сам шаблон ниже не меняй: это правки в адаптированном файле `cv/main_<company>_<role>.tex`.
+
+## Структура документа
 
 ```latex
 \documentclass[11pt,a4paper,sans]{moderncv}
@@ -91,13 +102,15 @@ Expected output: `Output written on main_<company>_<role>.pdf (2 pages, ...)`. A
 \end{document}
 ```
 
-### Color overrides
+Порядок блоков в комментариях шаблона по-русски: 1. О себе (1-3 предложения под роль), 2. Навыки, 3. Образование, 4. Опыт работы, 5. Избранные публикации (если есть), 6. Награды (если есть), 7. Рекомендации. Ссылку на LinkedIn в `\extrainfo` оставляй, только если у кандидата есть профиль и он хочет его показывать; для российских работодателей полезнее ссылка на резюме на hh.ru, профиль на Хабр Карьере или GitHub.
 
-The `\renewcommand*` on `\namefont` and the three `\colorlet` lines in the preamble are required on lualatex+MiKTeX. Without them the name and section headings render in black even though `\moderncvcolor{blue}` is set, which looks inconsistent with the rest of the blue accent scheme (links, bullet markers, contact icons). The cause: `moderncvstylebanking.sty` defines the name colours with `\colorlet`, which *copies* the accent colour as it is before the scheme is applied, so the name colours are frozen to the pre-scheme value; re-assigning them with `\colorlet` after `\moderncvcolor{blue}` (as the preamble does) re-pins them to `color1`. `\namefont` is the shared hook every name-style macro routes through, so the block is version-agnostic - including moderncv 2.3.1 from Debian/Ubuntu apt, which has no `\firstnamestyle`/`\lastnamestyle` at all. Both names render bold; if you prefer regular weight, change `\bfseries` to `\mdseries` in the `\namefont` line (the weight now lives there, so it applies to the whole name). Don't drop the overrides - on most modern installs the defaults render visibly wrong.
+### Переопределение цветов
 
-### Spacing inside itemize lists (important)
+`\renewcommand*` для `\namefont` и три строки `\colorlet` в преамбуле обязательны на lualatex+MiKTeX. Без них имя и заголовки разделов выводятся чёрным, хотя задан `\moderncvcolor{blue}`, и это выбивается из остальной синей схемы (ссылки, маркеры списков, иконки контактов). Причина: `moderncvstylebanking.sty` задаёт цвета имени через `\colorlet`, который *копирует* акцентный цвет в том виде, в каком он был до применения схемы, так что цвета имени замораживаются на значении до схемы; повторное присваивание через `\colorlet` после `\moderncvcolor{blue}` (как в преамбуле) снова привязывает их к `color1`. `\namefont` — общая точка, через которую проходят все макросы стиля имени, поэтому блок не зависит от версии — включая moderncv 2.3.1 из apt Debian/Ubuntu, где `\firstnamestyle`/`\lastnamestyle` вообще нет. Обе части имени выводятся жирным; если нужен обычный вес, замени `\bfseries` на `\mdseries` в строке `\namefont` (вес теперь задаётся там и применяется ко всему имени). Не удаляй переопределения — на большинстве современных установок значения по умолчанию выглядят заметно неправильно.
 
-**Do not place `\vspace{...}` between `\item` entries in an `itemize` list.** Even though the source looks symmetric, this pattern occasionally produces a noticeably oversized gap before a single item: the inter-item `\vspace` creates a paragraph break that interacts unpredictably with the list's internal `\itemsep`, so LaTeX renders one of the gaps wider than the rest. Remove the inter-item `\vspace` and let `itemize` use its native uniform spacing.
+### Отступы внутри списков itemize (важно)
+
+**Не ставь `\vspace{...}` между пунктами `\item` в списке `itemize`.** Хотя исходник выглядит симметрично, такой приём иногда даёт заметно увеличенный отступ перед одним пунктом: `\vspace` между пунктами создаёт разрыв абзаца, который непредсказуемо взаимодействует с внутренним `\itemsep` списка, и LaTeX рисует один из промежутков шире остальных. Убери `\vspace` между пунктами и оставь `itemize` его родной равномерный интервал.
 
 ```latex
 % WRONG - intermittently produces an oversized gap before one bullet
@@ -117,51 +130,53 @@ The `\renewcommand*` on `\namefont` and the three `\colorlet` lines in the pream
 \end{itemize}
 ```
 
-Two related patterns are fine and should be kept:
-- `\vspace{1pt}` immediately after `\section{...}` (between section heading and first item) - this is between the heading and the list, not between list items.
-- `\vspace{3pt}` between top-level `\cventry` blocks in Professional Experience or Education - this gives breathing room between roles and renders consistently.
+Два похожих приёма допустимы, их надо сохранить:
+- `\vspace{1pt}` сразу после `\section{...}` (между заголовком раздела и первым пунктом) — это между заголовком и списком, а не между пунктами.
+- `\vspace{3pt}` между верхнеуровневыми блоками `\cventry` в опыте работы или образовании — это даёт воздух между позициями и выводится стабильно.
 
-### Section headings must match the CV's language (important)
+### Заголовки разделов должны быть на языке резюме (важно)
 
-Section headings such as `\section{Core Competencies}`, `Professional Experience`, `Education`, `Languages`, `Publications`, `Honors and Awards`, `References` (and any others your template defines), plus the `Available upon request.` line under References, are all **literal English text baked into the template** - they do not translate themselves. Whenever the CV language (see `CV language` in the candidate profile) is not English, translate every one of these too, whatever they are, not just the body prose - a CV with a fully localized profile statement and bullets sitting under untouched English section headers reads as sloppy and inconsistent, and it's an easy thing to forget precisely because the prose translation is the obvious, visible part of the job. Worked example for Spanish: `Competencias Clave`, `Experiencia Profesional`, `Educaci\'on`, `Idiomas`, `Publicaciones`, `Distinciones y Premios`, `Referencias`, `Disponibles a solicitud.` The same rule applies for any other target language - check this explicitly during the verification pass.
+Заголовки разделов вроде `\section{Core Competencies}`, `Professional Experience`, `Education`, `Languages`, `Publications`, `Honors and Awards`, `References` (и любые другие, которые задаёт твой шаблон), а также строка `Available upon request.` под рекомендациями — это **буквальный английский текст, зашитый в шаблон**, сам он не переводится. Если язык резюме (см. `CV language` в профиле кандидата) не английский, переведи их все, какими бы они ни были, а не только основной текст: резюме с полностью локализованным блоком «О себе» и пунктами под нетронутыми английскими заголовками выглядит небрежно и непоследовательно, а забыть об этом легко именно потому, что перевод текста — очевидная и заметная часть работы. Пример для русского: `\section{Ключевые компетенции}`, `\section{Опыт работы}`, `\section{Образование}`, `\section{Навыки}`, `\section{Языки}`, `\section{Проекты}`, `\section{Публикации}`, `\section{Награды и достижения}`, `\section{Рекомендации}` и строка `Рекомендации предоставлю по запросу.` Пример для испанского: `Competencias Clave`, `Experiencia Profesional`, `Educaci\'on`, `Idiomas`, `Publicaciones`, `Distinciones y Premios`, `Referencias`, `Disponibles a solicitud.` То же правило действует для любого другого языка — явно проверяй это на этапе проверки.
 
-## Section-by-Section Tailoring
+## Адаптация по разделам
 
-### Profile Statement / Elevator Pitch (Best Practice)
-This is the most important section to customize. It appears right after `\makecvtitle`.
+### Блок «О себе» / питч в лифте (лучшая практика)
+Это самый важный раздел для адаптации. Он идёт сразу после `\makecvtitle`.
 
-Write 5-7 lines that function as an "elevator pitch": a concise, compelling introduction explaining why you're qualified for *this specific role*. Focus on what the employer gains from hiring you.
+Напиши 5-7 строк, которые работают как «питч в лифте»: сжатое и убедительное представление, объясняющее, почему ты подходишь *именно на эту роль*. Делай упор на то, что получит работодатель, наняв тебя.
 
-When the role sits outside your home domain, **lead with the domain-transfer argument** - the one or two sentences connecting your background to their problem (e.g. wave physics to radar signal processing) belong in the profile statement's opening, not buried in the cover letter. It is the strongest card a domain-changer holds; play it first.
+В российских резюме принято указывать **желаемую должность** (можно первой строкой блока или в заголовке резюме, с грейдом, если он известен: «Python-разработчик (middle+)») и, по желанию кандидата, **зарплатные ожидания** в ₽ в месяц с пометкой «на руки» или «до вычета НДФЛ». Зарплату пиши, только если кандидат явно этого хочет и сумма есть в профиле; никогда не придумывай её.
 
-**Create 2-3 profile statement templates for your main role types:**
+Если роль вне твоей основной области, **начни с аргумента о переносе опыта**: одно-два предложения, связывающие твой бэкграунд с их задачей (например, волновая физика → обработка радарных сигналов), должны открывать блок «О себе», а не прятаться в сопроводительном письме. Это сильнейшая карта того, кто меняет область; выкладывай её первой.
 
-<!-- SETUP: These are populated based on your background -->
-**For [YOUR_PRIMARY_ROLE_TYPE] roles:**
+**Создай 2-3 шаблона блока «О себе» для основных типов ролей:**
+
+<!-- SETUP: Заполняются на основе вашего опыта -->
+**Для ролей [YOUR_PRIMARY_ROLE_TYPE]:**
 > [YOUR_PROFILE_STATEMENT_TEMPLATE_1]
 
-**For [YOUR_SECONDARY_ROLE_TYPE] roles:**
+**Для ролей [YOUR_SECONDARY_ROLE_TYPE]:**
 > [YOUR_PROFILE_STATEMENT_TEMPLATE_2]
 
-Statements labeled *[Used for: <company>_<role>]* were extracted from archived application drafts by `/setup` Path A. They are **phrasing references, never fact sources**: when drafting from one, every factual claim still comes from `01-candidate-profile.md` - a past tailored draft does not vouch for its own accuracy.
+Блоки с пометкой *[Used for: <company>_<role>]* извлечены из архивных черновиков откликов командой `/setup` Path A. Это **образцы формулировок, а не источник фактов**: при работе с ними каждое фактическое утверждение всё равно берётся из `01-candidate-profile.md` — прошлый адаптированный черновик не подтверждает собственную точность.
 
-### Core Competencies / Skills Section (Best Practice)
-Reorder and emphasize based on the role. Use bold category labels.
+### Ключевые компетенции / навыки (лучшая практика)
+Меняй порядок и акценты под роль. Используй жирные метки категорий.
 
-List **5-7 key competencies** in bullet format, tailored to the specific job. For each competency, briefly explain how it adds value to the position.
+Перечисли **5-7 ключевых компетенций** списком, адаптированным под конкретную вакансию. Для каждой кратко объясни, какую ценность она даёт на этой позиции.
 
-Use the posting's own core term in the matching bullet's bold label when it truthfully applies - ATS and skim-reading hiring managers match literally, and "MLOps" in a heading outperforms a paraphrase like "ML Deployment".
+Используй ключевой термин из вакансии в жирной метке соответствующего пункта, когда он правдиво применим: ATS и бегло читающие нанимающие менеджеры сравнивают буквально, и «MLOps» в заголовке работает лучше пересказа вроде «развёртывание ML».
 
-### Education
-- Always include your highest degrees
-- For senior roles, keep education brief (dates and titles only)
-- Include thesis topics when relevant to the target role
+### Образование
+- Всегда указывай высшие ступени образования
+- Для senior-ролей держи образование кратким (только даты и названия)
+- Указывай темы дипломов/диссертаций, если они относятся к целевой роли
 
-#### In-progress qualifications must say so explicitly
+#### Незавершённое обучение должно быть явно помечено
 
-**A bare year range is not enough.** An entry reading `2025–2026`, seen partway through 2026, looks like a *finished* degree, because a reader skimming a CV treats a closed range as closed. A profile statement that says "currently completing…" does not fix it: the education entry is where a reader checks the credential, so it has to stand on its own.
+**Одного диапазона лет недостаточно.** Запись `2025–2026`, увиденная в середине 2026 года, выглядит как *законченное* образование: читатель, пробегающий резюме глазами, считает закрытый диапазон закрытым. Фраза «сейчас завершаю…» в блоке «О себе» это не исправляет: запись об образовании — то место, где читатель проверяет квалификацию, поэтому она должна быть понятна сама по себе.
 
-State completion inside the entry itself:
+Указывай статус внутри самой записи:
 
 ```latex
 \item{\cventry{2025-2026}{[Degree], [Field]}{[Institution]}{[Location]}{}{\vspace{1pt}
@@ -169,211 +184,213 @@ In progress, expected [Month Year]. [Relevant topics]
 }}
 ```
 
-Any consistent form works: `In progress, expected <Month Year>.` / `Expected completion <Month Year>.` / a date field of `2025-present`.
+Подойдёт любая последовательная форма: `In progress, expected <Month Year>.` / `Expected completion <Month Year>.` / поле даты `2025-present`; в русском резюме — `Обучаюсь, окончание в <месяц год>.` / `Ожидаемое окончание: <месяц год>.` / `2025-н.в.`
 
-Claiming a credential not yet held is a factual misstatement, and it is the kind discovered at transcript or reference check rather than at interview. It costs nothing to prevent. The same applies to in-progress certifications and courses.
+Указать квалификацию, которой ещё нет, — фактическая ошибка, и такие вещи вскрываются при проверке диплома или рекомендаций, а не на собеседовании. Предотвратить это ничего не стоит. То же относится к незавершённым сертификациям и курсам.
 
-**Check for agreement:** for a current student, the profile statement, the education entry, and any availability or work-permit note must all give the same completion date. Contradiction between them is worse than any single version.
+**Проверь согласованность:** для текущего студента блок «О себе», запись об образовании и любая пометка о доступности или разрешении на работу должны указывать одну и ту же дату окончания. Противоречие между ними хуже любой отдельной версии.
 
-### Professional Experience
-- Rewrite bullet points to emphasize aspects most relevant to the target role
-- Use 4-6 bullets for most recent role, 3-4 for previous, 2-3 for older
-- **Emphasize measurable results** where possible: "Reduced processing time by X%", "Model adopted by the team"
+### Опыт работы
+- Перепиши пункты, чтобы выделить аспекты, наиболее важные для целевой роли
+- 4-6 пунктов для последнего места работы, 3-4 для предыдущего, 2-3 для более ранних
+- **Делай упор на измеримые результаты**, где возможно: «Сократил время обработки на X%», «Модель взята в работу командой»
 
-#### Check tenure against visible output
+#### Сверь стаж с видимым результатом
 
-Before finalizing, look at each role the way a stranger will: **date span versus how much work is shown.** A two-year role represented by a single project reads as low output, whether or not that is fair. The reader cannot know what filled the time, so they guess, and the guess is unflattering.
+Перед финализацией посмотри на каждую позицию глазами постороннего: **длительность против объёма показанной работы.** Двухлетняя позиция, представленная одним проектом, выглядит как низкая продуктивность, справедливо это или нет. Читатель не знает, чем было занято время, поэтому додумывает, и додумывает не в твою пользу.
 
-This bites hardest on **career changers** (part of the tenure went into learning the new field), on **long-cycle work** (industrial deployment, clinical or regulatory projects, research — one delivery genuinely takes quarters), and on anyone whose employer kept them on a single account or product.
+Сильнее всего это бьёт по **тем, кто меняет профессию** (часть стажа ушла на освоение новой области), по **работе с длинным циклом** (промышленное внедрение, клинические или регуляторные проекты, исследования — одна поставка действительно занимает кварталы) и по всем, кого работодатель держал на одном клиенте или продукте.
 
-Three honest fixes, in order of preference:
+Три честных способа исправить, в порядке предпочтения:
 
-1. **Surface more real work.** Ask what else the period contained. There are often real secondary projects, internal tooling, or support work that never reached the CV because it felt minor. Best fix when the material exists.
-2. **Make the phases within the role explicit.** If the span genuinely had stages, say so — an initial period learning the domain or supporting the team, then ownership of the named work through to delivery. A phased arc reads as a growth curve; an undifferentiated multi-year block reads as stagnation.
-3. **Name what made the cycle long.** Data collection from a live environment, validation with domain experts, deployment and iteration against real output. Reviewers who know the domain accept this immediately.
+1. **Покажи больше реальной работы.** Спроси, что ещё было в этот период. Часто есть настоящие второстепенные проекты, внутренние инструменты или поддержка, которые не попали в резюме, потому что казались мелкими. Лучший вариант, если материал есть.
+2. **Покажи этапы внутри позиции.** Если у периода действительно были стадии, скажи об этом: сначала освоение области или помощь команде, затем ответственность за названную работу вплоть до поставки. Поэтапная дуга читается как рост; сплошной многолетний блок — как застой.
+3. **Назови, что сделало цикл длинным.** Сбор данных с живой среды, валидация с экспертами предметной области, внедрение и доработка по реальным результатам. Ревьюеры, знающие область, принимают это сразу.
 
-**Never** pad with invented projects, and **never** quietly shorten the employment dates so the ratio looks better. Both are discoverable, and both are worse than the perception problem being solved.
+**Никогда** не добавляй выдуманные проекты и **никогда** тихо не сокращай даты работы, чтобы соотношение выглядело лучше. И то и другое обнаруживается, и то и другое хуже проблемы восприятия, которую пытаешься решить.
 
-**Prepare the interview answer too.** If a long span against little visible output survives these fixes, the question is coming. The candidate needs a ready two-part answer — what actually filled the time, and what the outcome was — recorded in their interview prep rather than improvised in the room.
+**Подготовь и ответ для собеседования.** Если длинный срок при малом видимом результате остаётся после этих исправлений, вопрос будет задан. Кандидату нужен готовый ответ из двух частей — чем на самом деле было занято время и каким был результат, — записанный в материалах подготовки к собеседованию, а не импровизированный на месте.
 
-### Handling Employment Gaps (Best Practice)
-If there is a gap in your employment history:
-- The gap should be explained matter-of-factly if needed
-- Describe how professional development continued during the gap
-- Frame as deliberate skill-building and career repositioning
+### Перерывы в работе (лучшая практика)
+Если в истории работы есть перерыв:
+- При необходимости объясни перерыв по-деловому, без оправданий
+- Опиши, как продолжалось профессиональное развитие в это время
+- Подавай его как осознанное развитие навыков и смену карьерного направления
 
-### Publications
-- Include Google Scholar link if applicable
-- Select 3-4 most relevant publications (not always all of them)
-- For non-academic roles, keep brief
+### Публикации
+- Добавь ссылку на Google Scholar (или eLIBRARY), если есть
+- Выбери 3-4 самые релевантные публикации (не всегда все)
+- Для неакадемических ролей — кратко
 
-### Evidence Links
-Wherever the CV names a verifiable artifact - a public project, a hackathon entry, a publication - carry its link (`\href`) so a reader can verify the claim in one click. A CV whose strongest claims are checkable reads as more credible everywhere else too.
+### Ссылки-доказательства
+Везде, где резюме называет проверяемый артефакт — публичный проект, участие в хакатоне, публикацию, — давай ссылку (`\href`), чтобы читатель мог проверить утверждение в один клик. Резюме, где самые сильные утверждения проверяемы, выглядит убедительнее и во всём остальном.
 
-### Honors and Awards
-- Keep format brief, one line each
+### Награды
+- Кратко, по одной строке на каждую
 
-### References
-- List 2-4 references with name, title, company, and contact
-- End with: "More references are available upon request."
-- **Do not attach reference letters** - employers typically contact references directly
+### Рекомендации
+- Укажи 2-4 рекомендателя: имя, должность, компания и контакт
+- Заверши строкой: «Другие рекомендации предоставлю по запросу.» (в английском резюме: "More references are available upon request.")
+- **Не прикладывай рекомендательные письма** — работодатели обычно связываются с рекомендателями напрямую
 
-### LaTeX Special Characters (important)
+### Спецсимволы LaTeX (важно)
 
-Postings and profile data arrive as plain text; the CV is LaTeX. Escape these wherever they land in body text - company names, achievement bullets, skill lists:
+Вакансии и данные профиля приходят обычным текстом, а резюме — это LaTeX. Экранируй эти символы везде, где они попадают в основной текст: названия компаний, пункты достижений, списки навыков:
 
-| Character | Write | Typical trigger |
+| Символ | Пиши | Типичный случай |
 |---|---|---|
-| `&` | `\&` | company names: Bang \& Olufsen, Brüel \& Kjær, H\&M |
-| `%` | `\%` | quantified achievements: "cut latency by 40\%" |
-| `$` | `\$` | salary and cost figures |
-| `#` | `\#` | "ranked \#1", C\# |
-| `_` | `\_` | file names, code identifiers |
-| `~` | `\textasciitilde{}` | URLs, "approx. 5 years" tildes |
-| `^` | `\textasciicircum{}` | version strings, math |
+| `&` | `\&` | названия компаний: Procter \& Gamble, Johnson \& Johnson, H\&M |
+| `%` | `\%` | измеримые достижения: «сократил задержку на 40\%» |
+| `$` | `\$` | суммы в долларах (зарплата, затраты) |
+| `#` | `\#` | «место \#1», C\# |
+| `_` | `\_` | имена файлов, идентификаторы в коде |
+| `~` | `\textasciitilde{}` | URL, тильды вроде «~5 лет» |
+| `^` | `\textasciicircum{}` | строки версий, математика |
 
-Two failure modes deserve special care:
+Два режима отказа требуют особого внимания:
 
-- **`%` fails silently.** An unescaped `%` starts a LaTeX comment: the compile succeeds with zero errors, and everything after the `%` on that line vanishes from the PDF. `Cut inference latency by 40% and saved DKK 2M annually` renders as "Cut inference latency by 40" - the bullet keeps its impressive-looking fragment and loses the actual result. Quantified achievement bullets are exactly where the guidance steers you ("use numbers where possible"), so check every `%` in every bullet before compiling.
-- **`&` fails loudly** inside `\cventry` (alignment-tab errors, `Missing } inserted`). The compile loop catches it, but escape employer names up front rather than debugging the compile.
+- **`%` ломается молча.** Неэкранированный `%` начинает комментарий LaTeX: компиляция проходит без единой ошибки, а всё после `%` в этой строке исчезает из PDF. `Сократил задержку инференса на 40% и сэкономил 2 млн ₽ в год` выводится как «Сократил задержку инференса на 40» — пункт сохраняет эффектно выглядящий обрывок и теряет сам результат. Именно в пунктах с цифрами правила подталкивают тебя к числам («используй цифры, где возможно»), поэтому проверяй каждый `%` в каждом пункте до компиляции.
+- **`&` ломается громко** внутри `\cventry` (ошибки alignment tab, `Missing } inserted`). Цикл компиляции это поймает, но экранируй названия работодателей сразу, а не отлаживай компиляцию.
 
-Related trap: a bullet whose text begins with a literal `[` must be braced - `\item {[text]}` - or LaTeX parses the bracketed text as `\item`'s optional label and renders it clipped off the left page edge with a clean compile. The example CV's placeholder bullets are braced for exactly this reason.
+Связанная ловушка: пункт, текст которого начинается с буквального `[`, надо взять в фигурные скобки — `\item {[text]}`, — иначе LaTeX разберёт текст в скобках как необязательную метку `\item` и выведет его обрезанным за левым краем страницы при чистой компиляции. Пункты-плейсхолдеры в примере резюме взяты в скобки именно поэтому.
 
-## Compile-and-Inspect Loop (MANDATORY)
+## Цикл «компиляция и проверка» (ОБЯЗАТЕЛЬНО)
 
-After writing the CV and before presenting to the user, always compile and visually inspect the PDF. Iterate until the layout is clean. Workflow:
+После написания резюме и до показа пользователю всегда компилируй и визуально проверяй PDF. Повторяй, пока вёрстка не станет чистой. Порядок:
 
-1. Run `lualatex -interaction=nonstopmode main_<company>_<role>.tex`
-2. Check the output page count: must be exactly 2
-3. Read the PDF via the Read tool and visually inspect both pages
-4. Check for **orphaned entries**: a `\cventry` title line must never sit alone at the bottom of page 1 with its bullets on page 2
+1. Запусти `lualatex -interaction=nonstopmode main_<company>_<role>.tex`
+2. Проверь число страниц в выводе: должно быть ровно 2
+3. Прочитай PDF через инструмент Read и визуально проверь обе страницы
+4. Проверь **висячие записи**: строка заголовка `\cventry` никогда не должна оставаться одна внизу первой страницы, а её пункты — на второй
 
-### Fixing common page-break problems
+### Исправление типичных проблем с переносом страниц
 
-**Problem: entry title on page 1, bullets orphaned to page 2**
-Add `\needspace{5\baselineskip}` immediately before the problematic `\cventry`:
+**Проблема: заголовок записи на странице 1, пункты оторваны на страницу 2**
+Добавь `\needspace{5\baselineskip}` прямо перед проблемным `\cventry`:
 ```latex
 \needspace{5\baselineskip}
 \item{\cventry{YEAR-YEAR}{Role Title}{Organization}{Location}{}{...}}
 ```
-Include `\usepackage{needspace}` in the preamble.
+Подключи `\usepackage{needspace}` в преамбуле.
 
-**Caveat - use `\needspace` before entries, never before `\section` headings.** A section-level `\needspace` pushes the entire section (heading plus content) to the next page whenever the request does not fit, stranding empty space above and typically *adding* a page instead of saving one. Apply it only to the individual `\cventry` that actually orphans, and only after a compile shows the orphan.
+**Оговорка — используй `\needspace` перед записями, никогда перед заголовками `\section`.** `\needspace` на уровне раздела переносит весь раздел (заголовок вместе с содержимым) на следующую страницу всякий раз, когда запрос не помещается, оставляя пустое место сверху и обычно *добавляя* страницу вместо экономии. Применяй его только к конкретному `\cventry`, который действительно отрывается, и только после того, как компиляция показала отрыв.
 
-**Problem: one trailing section spills to page 3 (e.g., References alone on page 3)**
-Add `\enlargethispage{2-3\baselineskip}` before a late section (e.g., before `\section{Honors and Awards}`) to stretch page 2 by a few lines. This is the standard LaTeX rescue for near-miss overflows.
+**Проблема: один последний раздел уезжает на страницу 3 (например, только рекомендации на странице 3)**
+Добавь `\enlargethispage{2-3\baselineskip}` перед одним из последних разделов (например, перед `\section{Honors and Awards}` / `\section{Награды и достижения}`), чтобы растянуть страницу 2 на несколько строк. Это стандартное спасение в LaTeX для почти поместившегося текста.
 
-**Problem: 3 pages with significant content on page 3**
-Cut content — do not compress geometry or `\vspace`. See "Relevance-weighted cutting" below for the rule.
+**Проблема: 3 страницы, на третьей много содержимого**
+Сокращай содержимое — не сжимай поля и `\vspace`. Правило см. в разделе «Сокращение по релевантности» ниже.
 
-**Problem: content finishes early on page 2 (feels thin)**
-Restore the highest-relevance item that was previously cut — a CV that ends mid-page 2 looks incomplete.
+**Проблема: текст заканчивается рано на странице 2 (выглядит жидко)**
+Верни самый релевантный из ранее вырезанных пунктов — резюме, обрывающееся на середине второй страницы, выглядит незаконченным.
 
-## ATS Parseability
+## Читаемость для ATS
 
-Most employers run CVs through an ATS before a human sees them, and the ATS reads the PDF's embedded **text layer**, not the rendered page. A CV can pass visual inspection and still extract as garbage. After the layout passes the compile-and-inspect loop, verify the text layer:
+Большинство работодателей прогоняют резюме через ATS (систему автоматического отбора резюме) до того, как его увидит человек, и ATS читает встроенный **текстовый слой** PDF, а не отрисованную страницу. Резюме может пройти визуальную проверку и всё равно извлекаться как мусор. После того как вёрстка прошла цикл «компиляция и проверка», проверь текстовый слой:
 
 ```bash
 python tools/verify_pdf.py cv/main_<company>_<role>.pdf --dump-text cv/main_<company>_<role>.txt
 ```
 
-Extraction tries **pypdf** first (`pip install pypdf`, BSD license), then Poppler `pdftotext`. If a fallback still uses `pdftotext -layout`, it must also pass `-enc UTF-8`: Xpdf-based builds default to Latin-1, which makes every non-ASCII character in a perfectly good CV read back as a replacement character. If neither extractor is available, skip the mechanical check with a warning and rely on the visual PDF read for keyword coverage.
+Извлечение сначала пробует **pypdf** (`pip install pypdf`, лицензия BSD), затем Poppler `pdftotext`. Если запасной вариант всё же использует `pdftotext -layout`, ему нужно также передать `-enc UTF-8`: сборки на основе Xpdf по умолчанию используют Latin-1, и каждый не-ASCII символ (включая всю кириллицу) в вполне нормальном резюме читается как символ замены. Если ни один экстрактор недоступен, пропусти механическую проверку с предупреждением и опирайся на визуальное чтение PDF для покрытия ключевых слов.
 
-What to check in the extraction:
+Что проверить в извлечённом тексте:
 
-- **Contact details as literal text.** The stock template's fontawesome contact icons extract as glyph names (`MOBILE-ALT`, `Envelope`) - harmless noise, because the actual address and number are printed beside them. The failure mode is a contact detail carried *only* by an icon or a hyperlink (like the `LinkedIn` link text, whose URL is not in the text layer): invisible to an ATS. The email address must always appear as printed text.
-- **No garbled output.** `(cid:NNN)` markers or `�` characters mean a font is embedded without a Unicode mapping - an ATS sees the same garbage. This shows up with unusual fonts in custom templates, not with the stock moderncv setup under lualatex.
-- **Reading order.** The stock banking style is single-column, so extraction order matches visual order. Custom templates (via `/add-template`) with sidebars or multi-column layouts can interleave unrelated lines; if extraction order is scrambled, the user is trading ATS compatibility for looks and should be told.
-- **Keyword coverage.** Match the posting's required/preferred terms against the extracted text, in the posting's language. Prefer the posting's exact term over a synonym when it is truthfully applicable - ATS matching is often literal. Never add a keyword the profile does not support. `verify_pdf.py --contains` folds both sides for whitespace, Unicode normalization (NFC) and LaTeX's typographic substitutions before comparing - `'` reaches the text layer as U+2019 and `--` as U+2013, so `--contains "Master's degree"` and `--contains "2016-2024"` match what the template actually renders. The dumped `.txt` is never folded: it is the raw layer the ATS sees, which is why the date-range check below reads the dump, not `--contains`.
-- **Accents intact (pdflatex fallback).** Under pdflatex without T1 font encoding the text layer stores accented letters decomposed (`e` + combining grave instead of `è`); pypdf reads that as `Gen` `eve` with a stray spacing accent, and neither form matches a typed keyword. The stock template guards this with `\ifpdftex\usepackage[T1]{fontenc}\fi`; keep the line in tailored CVs and custom templates that may be compiled with pdflatex. It is a no-op under lualatex.
+- **Контакты как буквальный текст.** Иконки контактов fontawesome в стандартном шаблоне извлекаются как имена глифов (`MOBILE-ALT`, `Envelope`) — безобидный шум, потому что сами адрес и номер напечатаны рядом. Отказ — это контакт, переданный *только* иконкой или гиперссылкой (как текст ссылки `LinkedIn`, URL которой не попадает в текстовый слой): для ATS он невидим. Адрес email всегда должен быть напечатан текстом.
+- **Нет мусора.** Маркеры `(cid:NNN)` или символы `�` означают, что шрифт встроен без Unicode-таблицы, — ATS видит тот же мусор. Это бывает с необычными шрифтами в пользовательских шаблонах, а не со стандартной связкой moderncv под lualatex. Для русского резюме убедись, что кириллица извлекается читаемыми буквами: шрифты OpenType, подключённые через fontspec, обычно дают правильное отображение.
+- **Порядок чтения.** Стандартный стиль banking одноколоночный, поэтому порядок извлечения совпадает с визуальным. Пользовательские шаблоны (через `/add-template`) с боковыми панелями или несколькими колонками могут перемешивать несвязанные строки; если порядок извлечения нарушен, пользователь жертвует совместимостью с ATS ради внешнего вида, и ему нужно об этом сказать.
+- **Покрытие ключевых слов.** Сопоставь обязательные и желательные термины вакансии с извлечённым текстом на языке вакансии. Предпочитай точный термин вакансии синониму, когда он правдиво применим: сравнение в ATS часто буквальное. Никогда не добавляй ключевое слово, которое не подтверждается профилем. `verify_pdf.py --contains` перед сравнением нормализует обе стороны по пробелам, Unicode-нормализации (NFC) и типографским заменам LaTeX — `'` попадает в текстовый слой как U+2019, а `--` как U+2013, поэтому `--contains "Master's degree"` и `--contains "2016-2024"` совпадают с тем, что реально выводит шаблон. Выгруженный `.txt` никогда не нормализуется: это сырой слой, который видит ATS, поэтому проверка диапазонов дат ниже читает выгрузку, а не `--contains`.
+- **Диакритика цела (запасной вариант pdflatex).** Под pdflatex без кодировки шрифта T1 текстовый слой хранит буквы с диакритикой в разложенном виде (`e` + комбинируемый гравис вместо `è`); pypdf читает это как `Gen` `eve` с отдельным знаком акцента, и ни одна форма не совпадает с набранным ключевым словом. Стандартный шаблон защищается строкой `\ifpdftex\usepackage[T1]{fontenc}\fi`; сохраняй её в адаптированных резюме и пользовательских шаблонах, которые могут компилироваться pdflatex. Под lualatex она ничего не делает.
 
-### Date fields must be ASCII ranges (confirmed ATS import failure)
+### Поля дат должны быть ASCII-диапазонами (подтверждённый сбой импорта в ATS)
 
-This one is worth knowing about because it fails **silently**. A CV that passes every other check in this section - clean extraction, no `(cid:)` markers, contact details intact, correct reading order - can still have its dates dropped on import. In a real Workday resume import, a CV built from this template lost the end date of a short contract role and failed to import **any** education entry at all, forcing manual re-entry. Nothing about the PDF or its text layer looked wrong.
+Об этом стоит знать, потому что сбой **молчаливый**. Резюме, прошедшее все остальные проверки этого раздела — чистое извлечение, нет маркеров `(cid:)`, контакты на месте, правильный порядок чтения, — всё равно может потерять даты при импорте. В реальном импорте резюме в Workday резюме по этому шаблону потеряло дату окончания короткого контракта и не смогло импортировать **ни одной** записи об образовании, пришлось вводить вручную. При этом ни PDF, ни его текстовый слой не выглядели неправильно.
 
-Two independent causes, both easy to avoid:
+Две независимые причины, обе легко избежать:
 
-1. **`--` in a `\cventry` date renders as an en-dash (U+2013), not a hyphen.** LaTeX ligatures `--` (two ASCII hyphens, U+002D) into a single en-dash glyph, so `2016--2024` reaches the PDF text layer as `2016<U+2013>2024`. Many parsers split date ranges only on an ASCII hyphen and see no range at all. Write the date argument with a **single hyphen**:
+1. **`--` в дате `\cventry` выводится как короткое тире (U+2013), а не дефис.** LaTeX превращает `--` (два ASCII-дефиса, U+002D) в один глиф короткого тире, так что `2016--2024` попадает в текстовый слой PDF как `2016<U+2013>2024`. Многие парсеры делят диапазоны дат только по ASCII-дефису и вообще не видят диапазона. Пиши аргумент даты с **одним дефисом**:
 
    ```latex
    \item{\cventry{2016-2024}{Role Title}{Organization}{Location}{}{...}}   % parses
    \item{\cventry{2016--2024}{Role Title}{Organization}{Location}{}{...}}  % en-dash, may not
    ```
 
-   This applies to the **date argument only**. Keep `--` everywhere it is typographically correct in prose, for example a numeric range like `EUR 600k--1M`.
+   Это относится **только к аргументу даты**. Оставляй `--` везде, где он типографски уместен в тексте, например в числовом диапазоне вроде `EUR 600k--1M` или `300--400 тыс. ₽`.
 
-2. **A bare single year gives the parser no end date.** A short contract, mandate or internship written as `\cventry{2016}` imports as a start date with nothing to close it. Use an explicit range, with months where the role ran under a year:
+2. **Одиночный год не даёт парсеру даты окончания.** Короткий контракт, проект или стажировка, записанные как `\cventry{2016}`, импортируются как дата начала без закрытия. Используй явный диапазон, с месяцами, если позиция длилась меньше года:
 
    ```latex
    \item{\cventry{Mar 2016 - Jul 2016}{Contract Role}{Client}{Location}{}{...}}
    ```
 
-   Where a genuine range exists, use it even when a single year would be factually accurate - a degree written `1995` is true but imports worse than `1992-1995`. Do not invent a start date you do not have; a lone graduation year is fine, just expect it to be typed in by hand.
+   В русском резюме — так же через один дефис: `03.2016 - 07.2016` или `Март 2016 - Июль 2016`.
 
-**Cause 1 is mechanical in step 5d**: `python tools/verify_pdf.py cv/main_<company>_<role>.pdf --ascii-dates` scans the raw text layer for a year joined to a Unicode dash and exits 1 naming each hit with its code point (`U+2013 in 'Role Title 2016–2024'`). It deliberately reads the raw layer: the fold that lets `--contains "2016-2024"` match what the template renders maps that same en-dash back to `-`, so `--contains` can never see this. A year on either side of the dash is enough, so `Mar 2016 – Jul 2016` and `2016 – Present` are caught too; a numeric range with no year (`EUR 600k–1M`) is left alone. **Cause 2 stays a read-through check**: after extracting the text layer, confirm every experience entry shows a start *and* an end. Because both failures are silent and invisible in the PDF, the candidate otherwise discovers them only while filling in the application form.
+   Если настоящий диапазон есть, используй его, даже когда одиночный год фактически верен: образование, записанное как `1995`, верно, но импортируется хуже, чем `1992-1995`. Не выдумывай дату начала, которой у тебя нет; одиночный год выпуска допустим, просто ожидай, что его придётся вводить вручную.
 
-## Page Budget - Hard 2-Page Limit
+**Причина 1 проверяется механически в Шаге 5d**: `python tools/verify_pdf.py cv/main_<company>_<role>.pdf --ascii-dates` сканирует сырой текстовый слой на год, соединённый с Unicode-тире, и завершается с кодом 1, называя каждое попадание с его кодовой точкой (`U+2013 in 'Role Title 2016–2024'`). Он намеренно читает сырой слой: нормализация, благодаря которой `--contains "2016-2024"` совпадает с выводом шаблона, превращает то же короткое тире обратно в `-`, поэтому `--contains` этого никогда не увидит. Достаточно года с любой стороны тире, так что `Mar 2016 – Jul 2016` и `2016 – Present` тоже ловятся; числовой диапазон без года (`EUR 600k–1M`) не трогается. **Причина 2 остаётся проверкой при чтении**: после извлечения текстового слоя убедись, что у каждой записи об опыте есть дата начала *и* окончания. Поскольку оба сбоя молчаливые и невидимые в PDF, иначе кандидат обнаружит их только при заполнении формы отклика.
 
-The CV **must** fit on exactly 2 pages when compiled. Use these content limits as a guide:
+## Бюджет страниц — жёсткий лимит в 2 страницы
 
-| Section | Max budget |
+Резюме **обязано** помещаться ровно на 2 страницы после компиляции. Ориентируйся на эти лимиты:
+
+| Раздел | Максимум |
 |---------|-----------|
-| Profile statement | 3-4 lines |
-| Skills | 5 items, each 1-2 lines |
-| Most recent role | 4-5 bullets |
-| Previous role | 2-3 bullets |
-| Older roles | 2 bullets (1 line each) |
-| Education | 2-3 entries |
-| Publications | 2-3 entries |
-| Awards | 3 entries, single line each |
-| References | "Available upon request." (single line) |
+| О себе | 3-4 строки |
+| Навыки | 5 пунктов, по 1-2 строки |
+| Последнее место работы | 4-5 пунктов |
+| Предыдущее место | 2-3 пункта |
+| Более ранние места | 2 пункта (по 1 строке) |
+| Образование | 2-3 записи |
+| Публикации | 2-3 записи |
+| Награды | 3 записи, по одной строке |
+| Рекомендации | «Рекомендации предоставлю по запросу.» (одна строка; по-английски "Available upon request.") |
 
-**If in doubt, cut rather than squeeze.** Reducing `\vspace` or geometry scale to force-fit content makes the CV look cramped.
+**Сомневаешься — сокращай, а не втискивай.** Уменьшение `\vspace` или масштаба полей ради того, чтобы всё влезло, делает резюме тесным.
 
-## Relevance-weighted cutting (the right way to shrink a CV)
+## Сокращение по релевантности (правильный способ ужать резюме)
 
-**Cut by signal, not by section.** Static priority lists ("remove oldest education first, then shorten the earliest role...") are wrong when a relevant "lower-priority" item is competing with an irrelevant "higher-priority" item. An older-role bullet that speaks directly to the posting is worth more than a recent-role bullet that does not.
+**Режь по сигналу, а не по разделу.** Статичные списки приоритетов («сначала убери самое старое образование, потом сократи самую раннюю позицию…») ошибочны, когда релевантный пункт «низкого приоритета» конкурирует с нерелевантным пунктом «высокого приоритета». Пункт из старой позиции, который прямо отвечает на вакансию, ценнее пункта из последней позиции, который не отвечает.
 
-For every candidate line, score three things:
+Для каждой строки-кандидата оцени три вещи:
 
-1. **Relevance to THIS posting** — does the line hit a named tool, keyword, or stated responsibility in the job ad?
-2. **Uniqueness** — is it the only place this claim appears, or is it duplicated elsewhere in the CV?
-3. **Narrative load** — does the cover letter depend on it? If cutting the line would force you to rewrite a cover-letter paragraph, it is load-bearing.
+1. **Релевантность ЭТОЙ вакансии** — попадает ли строка в названный инструмент, ключевое слово или обязанность из объявления?
+2. **Уникальность** — это единственное место, где есть это утверждение, или оно дублируется в резюме?
+3. **Нагрузка на историю** — зависит ли от неё сопроводительное письмо? Если удаление строки заставит переписать абзац письма, она несущая.
 
-Cut the lowest-total-score line first, regardless of which section it sits in.
+Сначала режь строку с наименьшей суммой, независимо от раздела.
 
-### Practical order of cuts (easiest → last resort)
+### Практический порядок сокращений (от простого к крайнему)
 
-1. **Redundancy.** If an achievement appears in both Core Competencies AND a role bullet, the Core Competencies version is usually the cleaner cut (the experience bullet is more concrete evidence).
-2. **Profile-statement fluff.** A sentence that just restates what Publications or Skills will show. ("Peer-reviewed publications on X..." is already a Publications entry — profile can claim it once and stop.)
-3. **Low-relevance experience bullets.** A bullet about work that does not touch posting keywords, wherever it sits. This cuts across sections before touching the structural list.
-4. **Low-relevance supporting content.** An older-role bullet that does not speak to the target role. A certification that does not touch the posting's stack. A language entry that can be condensed to one line.
-5. **Low-relevance publications.** Keep 1-2 publications that best match the posting. Cut the rest before touching experience bullets.
-6. **Last-resort structural cuts.** Oldest education entry, tightening an older role to 2 bullets, collapsing Certifications into a single line. These only happen if the relevance-weighted cuts above have already been exhausted.
+1. **Повторы.** Если достижение есть и в ключевых компетенциях, И в пункте опыта, обычно чище убрать версию из ключевых компетенций (пункт опыта — более конкретное доказательство).
+2. **Вода в блоке «О себе».** Предложение, которое просто повторяет то, что покажут публикации или навыки. («Рецензируемые публикации по X…» уже есть в публикациях — «О себе» может сказать об этом один раз и остановиться.)
+3. **Малорелевантные пункты опыта.** Пункт о работе, которая не касается ключевых слов вакансии, где бы он ни стоял. Это режется поперёк разделов до структурного списка.
+4. **Малорелевантное вспомогательное содержимое.** Пункт старой позиции, который не относится к целевой роли. Сертификат, который не касается стека вакансии. Строка о языке, которую можно сжать в одну.
+5. **Малорелевантные публикации.** Оставь 1-2 публикации, лучше всего совпадающие с вакансией. Остальные режь до пунктов опыта.
+6. **Крайние структурные сокращения.** Самая старая запись об образовании, сокращение старой позиции до 2 пунктов, сворачивание сертификатов в одну строку. Только если сокращения по релевантности выше уже исчерпаны.
 
-### Pitfalls to avoid
+### Ловушки
 
-- Do not mechanically cut from the bottom of a static section list without checking relevance. "Cut the oldest role first" is wrong if that role is literally about the skill the posting asks for.
-- Do not cut the one concrete example the cover letter leans on. Relevance is measured against the cover letter you wrote, not just the job posting — interviewers will have read both.
-- Do not cut to fit if the fit is borderline (2.02 pages). Prefer `\enlargethispage{2-3\baselineskip}` on a late section for near-misses; reserve content cuts for genuine overflow (content on page 3 that is more than a single trailing section).
+- Не режь механически снизу статичного списка разделов, не проверив релевантность. «Сначала убери самую старую позицию» — ошибка, если эта позиция буквально про навык, который просит вакансия.
+- Не вырезай единственный конкретный пример, на который опирается сопроводительное письмо. Релевантность меряется по написанному письму, а не только по вакансии — интервьюеры прочитают оба документа.
+- Не режь ради помещения, если перебор пограничный (2,02 страницы). Для почти поместившегося текста предпочитай `\enlargethispage{2-3\baselineskip}` на одном из последних разделов; сокращение содержимого оставь для настоящего переполнения (содержимое на странице 3, которое больше одного последнего раздела).
 
-## Recommended Section Order
+## Рекомендуемый порядок разделов
 
-The section order varies by role type:
+Порядок разделов зависит от типа роли:
 
-**For technical / data science / ML roles:**
-1. Profile statement / elevator pitch
-2. Core competencies / Skills
-3. Professional Experience (reverse chronological)
-4. Education (reverse chronological)
-5. Languages
-6. Publications & Awards
-7. References
+**Для технических ролей / data science / ML:**
+1. О себе / питч в лифте (с желаемой должностью)
+2. Ключевые компетенции / навыки
+3. Опыт работы (в обратном хронологическом порядке)
+4. Образование (в обратном хронологическом порядке)
+5. Языки
+6. Публикации и награды
+7. Рекомендации
 
-**For domain-specific / specialist roles:**
-1. Profile statement / elevator pitch
-2. Core competencies / Skills
-3. Education (reverse chronological) - credentials are a key qualifier
-4. Professional Experience (reverse chronological)
-5. Publications & Awards
-6. References
+**Для предметных / экспертных ролей:**
+1. О себе / питч в лифте (с желаемой должностью)
+2. Ключевые компетенции / навыки
+3. Образование (в обратном хронологическом порядке) — квалификация здесь ключевой критерий
+4. Опыт работы (в обратном хронологическом порядке)
+5. Публикации и награды
+6. Рекомендации

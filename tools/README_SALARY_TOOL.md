@@ -1,71 +1,75 @@
-# Salary Benchmark Tool
+# Инструмент сравнения зарплат
 
-## What is this?
+## Что это?
 
-The salary lookup tool (`salary_lookup.py`) lets you benchmark company salaries against a baseline from your own data. It's used during the `/apply` workflow to show how a company's compensation compares to market rates.
+Инструмент `salary_lookup.py` сравнивает зарплаты в компании с базовым уровнем по вашим собственным данным. Он используется в процессе `/apply`, чтобы показать, как вознаграждение в компании соотносится с рынком.
 
-**This tool is optional.** If you don't have salary data, the salary step is simply skipped during `/apply`.
+**Инструмент необязательный.** Если данных о зарплатах нет, шаг с зарплатой в `/apply` просто пропускается.
 
-## How it works
+## Как это работает
 
-The tool reads a `salary_data.json` file in the repo root containing company salary benchmarks. It uses fuzzy matching to find companies by name, handling Danish/Nordic characters, legal suffixes (A/S, ApS), and common spelling variations.
+Инструмент читает файл `salary_data.json` в корне репозитория с зарплатными данными по компаниям. Компании ищутся по названию с нечётким сопоставлением: учитываются диакритика, юридические суффиксы и типичные варианты написания.
 
-The data format supports any index-based or absolute salary data. For example:
-- Index 100 = median salary, higher is better
-- Absolute salary values in your currency
-- Any custom metric you want to track
+Про российские названия: при сравнении `salary_lookup.py` отбрасывает организационно-правовые формы (ООО, АО, ПАО, ЗАО, ОАО, НАО, ИП, ФГУП и др., а также LLC, JSC, Ltd, Inc), «ГК»/«группа компаний», кавычки, всё в скобках и всё после запятой. Поэтому `ООО «Яндекс»`, `Яндекс (ООО)` и `Яндекс, ООО` находятся по запросу `"Яндекс"`. Форма отрезается только целым словом: название вроде «Аорта» не пострадает.
 
-## Data format
+Формат поддерживает любые данные — индексные или абсолютные. Например:
+- Индекс 100 = медианная зарплата, выше — лучше
+- Абсолютные значения зарплаты в рублях (или другой валюте)
+- Любая своя метрика, которую вы хотите отслеживать
 
-The tool expects `salary_data.json` with this structure:
+Зарплаты в России обычно указывают в месяц; укажите в `baseline_description`, что именно у вас в данных — «на руки» или «до вычета НДФЛ», чтобы не сравнивать разные величины.
+
+## Формат данных
+
+Инструмент ожидает `salary_data.json` такой структуры:
 
 ```json
 {
   "metadata": {
-    "source": "My Union Statistics 2025",
+    "source": "Зарплатный отчёт Хабр Карьеры, 2-е полугодие 2025",
     "index_baseline": 100,
-    "index_label": "Index",
-    "baseline_description": "Index 100 = median salary for private sector"
+    "index_label": "Индекс",
+    "baseline_description": "Индекс 100 = медианная зарплата по IT-рынку, в месяц до вычета НДФЛ"
   },
   "companies": [
     {
-      "company": "Novo Nordisk A/S",
-      "city": "Bagsværd",
+      "company": "Яндекс (ООО)",
+      "city": "Москва",
       "categories": {
-        "all_employees": { "count": 500, "index": 108.5 },
-        "engineering": { "count": 120, "index": 112.3 }
+        "all_employees": { "count": 500, "index": 128.5 },
+        "engineering": { "count": 120, "index": 135.3 }
       }
     },
     {
-      "company": "Ørsted A/S",
-      "city": "Fredericia",
+      "company": "Т-Банк (АО)",
+      "city": "Москва",
       "categories": {
-        "all_employees": { "count": 200, "index": 105.2 }
+        "all_employees": { "count": 200, "index": 121.2 }
       }
     }
   ]
 }
 ```
 
-### Fields
+### Поля
 
-- **metadata.source**: Where the data comes from (for reference)
-- **metadata.index_baseline**: The baseline value (e.g., 100 for index-based data)
-- **metadata.index_label**: Label for the index column in output
-- **metadata.baseline_description**: Human-readable explanation of the baseline
-- **companies[].company**: Company name (required)
-- **companies[].city**: City/location (optional, used for filtering)
-- **companies[].categories**: Named salary categories, each with `count` and/or `index`
+- **metadata.source**: откуда данные (для справки)
+- **metadata.index_baseline**: базовое значение (например, 100 для индексных данных)
+- **metadata.index_label**: подпись столбца индекса в выводе
+- **metadata.baseline_description**: понятное человеку объяснение базового уровня
+- **companies[].company**: название компании (обязательно)
+- **companies[].city**: город/локация (необязательно, используется для фильтрации)
+- **companies[].categories**: именованные зарплатные категории, у каждой `count` и/или `index`
 
-## Setup options
+## Варианты настройки
 
-### Option A: Create salary_data.json manually
+### Вариант A: создать salary_data.json вручную
 
-Create the file by hand with data from any source: union statistics, Glassdoor, salary surveys, networking, or personal research.
+Создайте файл вручную по данным из любого источника: зарплатные отчёты Хабр Карьеры, исследования hh.ru, опросы, разговоры с коллегами или собственные данные (например, суммы из полученных офферов).
 
-### Option B: Convert from Excel
+### Вариант B: сконвертировать из Excel
 
-If you have salary data in an Excel file:
+Если данные о зарплатах лежат в Excel:
 
 ```bash
 pip install openpyxl
@@ -75,50 +79,52 @@ python3 tools/convert_salary_excel.py path/to/salary-data.xlsx \
   --baseline-desc "Index 100 = median salary"
 ```
 
-On Windows, use `py` if that is how Python is exposed on your PATH. If your system uses `python` instead of `python3`, substitute that in the examples.
+На Windows используйте `py`, если Python доступен в PATH под этим именем. Если в системе он называется `python`, а не `python3`, подставьте его в примеры.
 
-The converter auto-detects the Excel layout:
-- Looks for a "Company"/"Firma" column and an optional "City"/"By" column
-- Treats remaining columns as salary data (auto-pairs count/index columns)
+Конвертер сам определяет раскладку Excel:
+- Ищет столбец «Company»/«Firma» и необязательный столбец «City»/«By». Заголовки распознаются на английском (и датском), поэтому назовите столбцы `Company` и `City`, даже если сами данные на русском
+- Остальные столбцы считает зарплатными данными (автоматически объединяет пары count/index)
 
-### Option C: Build from research
+### Вариант C: собирать по ходу исследования
 
-Start with an empty template and add companies as you research them:
+Начните с пустого шаблона и добавляйте компании по мере изучения:
 
 ```json
 {
   "metadata": {
-    "source": "Personal research",
+    "source": "Собственные данные",
     "index_baseline": 0,
-    "index_label": "Monthly salary (DKK)",
-    "baseline_description": "Approximate monthly salary before tax"
+    "index_label": "Зарплата в месяц (₽)",
+    "baseline_description": "Примерная зарплата в месяц на руки, ₽"
   },
   "companies": [
     {
-      "company": "Example Corp",
-      "city": "Copenhagen",
+      "company": "Ozon (ООО)",
+      "city": "Москва",
       "categories": {
-        "entry_level": { "index": 42000 },
-        "senior": { "index": 55000 }
+        "entry_level": { "index": 180000 },
+        "senior": { "index": 400000 }
       }
     }
   ]
 }
 ```
 
-## Usage
+## Использование
 
 ```bash
-python3 salary_lookup.py "Novo Nordisk"
-python3 salary_lookup.py "Ørsted" --city "Fredericia"
-python3 salary_lookup.py "COWI" --json
+python3 salary_lookup.py "Яндекс"
+python3 salary_lookup.py "Т-Банк" --city "Москва"
+python3 salary_lookup.py "Авито" --json
 python3 salary_lookup.py --list-all
 python3 salary_lookup.py --validate      # pre-flight check your salary_data.json
 ```
 
-## Important notes
+На Windows для вывода кириллицы в консоль может понадобиться `PYTHONIOENCODING=utf-8` (в PowerShell: `$env:PYTHONIOENCODING = "utf-8"`).
 
-- The data file (`salary_data.json`) is **excluded from git** (see `.gitignore`). Your salary data may be proprietary or confidential.
-- If the data file is missing, `salary_lookup.py` exits with a helpful error message and the `/apply` workflow skips the salary benchmark step.
-- The fuzzy matcher handles Danish company name variations: legal suffixes, Nordic characters, anglicized spellings, and partial matches.
-- `--validate` checks your data file for malformed category values and duplicate company names and prints a report, without performing a lookup.
+## Важно
+
+- Файл данных (`salary_data.json`) **исключён из git** (см. `.gitignore`). Ваши зарплатные данные могут быть закрытыми или конфиденциальными.
+- Если файла данных нет, `salary_lookup.py` завершается с понятным сообщением об ошибке, а процесс `/apply` пропускает шаг сравнения зарплат.
+- Нечёткое сопоставление учитывает варианты названий компаний: юридические суффиксы, диакритику, варианты написания латиницей и частичные совпадения.
+- `--validate` проверяет файл данных на некорректные значения категорий и повторяющиеся названия компаний и печатает отчёт, не выполняя поиск.

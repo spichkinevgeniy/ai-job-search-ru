@@ -2,53 +2,53 @@
 framework_version: 1.0.0
 ---
 
-# Behavioral Profile
+# Поведенческий профиль
 
-<!-- SETUP: This file is populated by running /setup -->
-<!-- You can use results from PI, DISC, Myers-Briggs, StrengthsFinder, or a self-assessment -->
+<!-- SETUP: Этот файл заполняется командой /setup -->
+<!-- Можно использовать результаты PI, DISC, Myers-Briggs (MBTI), StrengthsFinder или самооценку -->
 
-## Overview
-[YOUR_NAME]'s behavioral assessment identifies them as a **[PROFILE_TYPE]** pattern. [1-2 SENTENCE_SUMMARY].
+## Обзор
+По результатам поведенческой оценки [YOUR_NAME] относится к типу **[PROFILE_TYPE]**. [1-2 SENTENCE_SUMMARY].
 
-## Core Behavioral Drives
+## Основные поведенческие мотивы
 
-| Drive | Level | Meaning |
+| Мотив | Уровень | Что это значит |
 |-------|-------|---------|
 | [DRIVE_1] | [LEVEL] | [DESCRIPTION] |
 | [DRIVE_2] | [LEVEL] | [DESCRIPTION] |
 | [DRIVE_3] | [LEVEL] | [DESCRIPTION] |
 | [DRIVE_4] | [LEVEL] | [DESCRIPTION] |
 
-## Strongest Behaviors
+## Самые сильные стороны поведения
 - **[BEHAVIOR_1]:** [DESCRIPTION]
 - **[BEHAVIOR_2]:** [DESCRIPTION]
 - **[BEHAVIOR_3]:** [DESCRIPTION]
 
-## How You Work Best
+## В каких условиях вы работаете лучше всего
 - [ENVIRONMENT_PREFERENCE_1]
 - [ENVIRONMENT_PREFERENCE_2]
 - [ENVIRONMENT_PREFERENCE_3]
 
-## Growth Areas (frame positively in applications)
+## Зоны роста (в откликах подавать позитивно)
 - **[AREA_1]:** [HOW_TO_FRAME_IT_POSITIVELY]
 - **[AREA_2]:** [HOW_TO_FRAME_IT_POSITIVELY]
 
-## Mapping to Job Posting Language
+## Сопоставление с формулировками вакансий
 
-When a job posting mentions these keywords, it's a **strong behavioral fit**:
+Если в вакансии встречаются эти слова, это **сильное поведенческое совпадение**:
 - [KEYWORD_OR_PHRASE_THAT_MATCHES_YOUR_STYLE]
 - [ANOTHER_KEYWORD]
 
-When a job posting mentions these, flag as **potential friction** (not deal-breaker):
+Если встречаются эти, отметь как **возможное трение** (не стоп-фактор):
 - [KEYWORD_OR_PHRASE_THAT_MIGHT_CLASH]
 - [ANOTHER_KEYWORD]
 
-## Management Style Preferences
+## Предпочтения по стилю управления
 - [WHAT_MANAGEMENT_STYLE_WORKS_FOR_YOU]
 - [WHAT_DOESN'T_WORK]
 
-## Using This in Applications
-- **Cover letters:** [HOW_TO_WEAVE_IN_BEHAVIORAL_STRENGTHS]
-- **CV:** [WHAT_TO_EMPHASIZE]
-- **Interviews:** [WHAT_STAR_EXAMPLES_TO_USE]
-- **Don't overstate:** [WHAT_NOT_TO_CLAIM]
+## Как использовать в откликах
+- **Сопроводительные письма:** [HOW_TO_WEAVE_IN_BEHAVIORAL_STRENGTHS]
+- **Резюме:** [WHAT_TO_EMPHASIZE]
+- **Собеседования:** [WHAT_STAR_EXAMPLES_TO_USE]
+- **Не преувеличивай:** [WHAT_NOT_TO_CLAIM]

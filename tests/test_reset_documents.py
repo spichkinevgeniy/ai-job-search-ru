@@ -38,7 +38,7 @@ SYMLINKS = bool(BASH) and symlinks_available()
 @unittest.skipUnless(BASH, "requires Bash to replay the documented /reset command")
 class ResetDocuments(unittest.TestCase):
     def reset_script(self):
-        section = COMMAND.read_text(encoding="utf-8").split("### Documents reset", 1)[1]
+        section = COMMAND.read_text(encoding="utf-8").split("### Сброс документов", 1)[1]
         return re.search(r"```bash\n(.*?)```", section, re.S).group(1)
 
     def run_reset(self, populated):

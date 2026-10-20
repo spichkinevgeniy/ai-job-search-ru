@@ -65,7 +65,7 @@ class HtmlReportTrackerFieldTests(unittest.TestCase):
     def test_step1_parses_every_canonical_tracker_column(self):
         text = COMMAND_FILE.read_text(encoding="utf-8")
         match = re.search(
-            r"Parse every row into a record with fields:\n\s+((?:`[^`]+`,?\s*)+)",
+            r"Разбери каждую строку в запись с полями:\n\s+((?:`[^`]+`,?\s*)+)",
             text,
         )
         self.assertIsNotNone(match, "Step 1 field enumeration not found")
@@ -79,7 +79,7 @@ class HtmlReportTrackerFieldTests(unittest.TestCase):
         tell a swapped order from the correct one, and the order is what the
         table shows the reader."""
         text = COMMAND_FILE.read_text(encoding="utf-8")
-        match = re.search(r"### Table: columns to include\n\n(.+)\n", text)
+        match = re.search(r"### Таблица: какие колонки включить\n\n(.+)\n", text)
         self.assertIsNotNone(match, "Step 3 table column list not found")
         line = match.group(1)
         self.assertIn(
@@ -103,13 +103,13 @@ class HtmlReportGitignoreTests(unittest.TestCase):
         history; the funnel must be told to use them."""
         text = COMMAND_FILE.read_text(encoding="utf-8")
         self.assertIn(
-            "stage checkboxes",
-            text.split("## Step 3")[0].split("## Step 2")[1],
+            "чекбоксы этапов",
+            text.split("## Шаг 3")[0].split("## Шаг 2")[1],
             "Step 2's funnel definition must derive stage-reached from the "
             "merged outcome.md stage checkboxes",
         )
         self.assertIn(
-            "not current status",
+            "а не по текущему статусу",
             text,
             "the funnel rule must say explicitly that current status alone undercounts",
         )
@@ -122,11 +122,11 @@ class HtmlReportGitignoreTests(unittest.TestCase):
         text = COMMAND_FILE.read_text(encoding="utf-8")
         self.assertIn(
             "`offer_declined`",
-            text.split("## Step 3")[0].split("## Step 2")[1],
+            text.split("## Шаг 3")[0].split("## Шаг 2")[1],
             "the rejection-rate definition must address offer_declined",
         )
         self.assertIn(
-            "not rejections",
+            "не отказы",
             text,
             "the rate must exclude candidate-initiated outcomes explicitly",
         )

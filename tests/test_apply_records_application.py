@@ -31,7 +31,6 @@ OUTCOME = COMMANDS / "outcome.md"
 GMAIL_SYNC = COMMANDS / "gmail-sync.md"
 HTML_REPORT = COMMANDS / "html-report.md"
 INTERVIEW = COMMANDS / "interview.md"
-NOTION_SYNC = COMMANDS / "notion-sync.md"
 SKILL = REPO / ".claude" / "skills" / "job-application-assistant" / "SKILL.md"
 SCRAPER = REPO / ".claude" / "skills" / "job-scraper" / "SKILL.md"
 DOCS_README = REPO / "documents" / "README.md"
@@ -51,16 +50,29 @@ def section(path, heading):
     return rest[: end.start()] if end else rest
 
 
+# После перевода на русский одно и то же правило в разных файлах иногда
+# сформулировано чуть по-разному (в/из, маски/шаблоны) - такие проверки
+# заданы регуляркой.
+SUBFOLDER_RULE = re.compile(r"по правилу \*\*Subfolder naming\*\* (?:в|из) `documents/README\.md`")
+
+
+def assert_has(case, needle, haystack, msg):
+    if isinstance(needle, re.Pattern):
+        case.assertRegex(haystack, needle, msg)
+    else:
+        case.assertIn(needle, haystack, msg)
+
+
 class ApplyRecordsApplication(unittest.TestCase):
     """/apply Step 6b writes the row that six other commands read."""
 
     def setUp(self):
-        self.step_6b = section(APPLY, "### Step 6b: Record the Application")
+        self.step_6b = section(APPLY, "### Шаг 6b: Запись отклика")
 
     def test_step_writes_a_drafted_row_with_both_document_paths(self):
         for fragment in (
             "| `status` | `drafted` |",
-            '| `cv_file`, `cover_letter_file` | the two paths listed under "Files Created"',
+            "| `cv_file`, `cover_letter_file` | два пути из раздела «Созданные файлы»",
         ):
             self.assertIn(
                 fragment,
@@ -124,13 +136,13 @@ class ApplyRecordsApplication(unittest.TestCase):
         divergence the shared-header rule exists to prevent.
         """
         last_column = TRACKER_HEADER.rsplit(",", 1)[1]
-        outcome_step_1 = section(OUTCOME, "## Step 1: Load State and Identify the Application")
+        outcome_step_1 = section(OUTCOME, "## Шаг 1: Загрузи состояние и найди отклик")
         for name, text in (
-            ("apply.md Step 6b", section(APPLY, "### Step 6b: Record the Application")),
+            ("apply.md Step 6b", section(APPLY, "### Шаг 6b: Запись отклика")),
             ("outcome.md Step 1", outcome_step_1),
         ):
             self.assertIn(
-                f"append `,{last_column}` to the header line",
+                f"допиши `,{last_column}` только в строку заголовка",
                 text,
                 f"{name}'s migration does not append the header's own last column "
                 f"({last_column!r}) - a tracker migrated by this command would not "
@@ -145,8 +157,8 @@ class ApplyRecordsApplication(unittest.TestCase):
         """
         text = APPLY.read_text(encoding="utf-8")
         self.assertLess(
-            text.index("### Step 6b: Record the Application"),
-            text.index("### Application-Form Fields"),
+            text.index("### Шаг 6b: Запись отклика"),
+            text.index("### Поля формы отклика"),
             "Step 6b moved after the optional-artifact offer, which ends the turn "
             "on a question - the tracker row would be skipped whenever the user "
             "never answers",
@@ -154,7 +166,7 @@ class ApplyRecordsApplication(unittest.TestCase):
 
     def test_matched_row_is_never_moved_backwards(self):
         self.assertIn(
-            "never move it backwards",
+            "никогда не двигай её назад",
             self.step_6b,
             "Step 6b lost the rule protecting a submitted row - re-running /apply "
             "to refresh a CV would reset a live interview back to drafted",
@@ -163,7 +175,7 @@ class ApplyRecordsApplication(unittest.TestCase):
     def test_redraft_marker_is_undated(self):
         """/outcome reads the latest dated note as the last activity."""
         self.assertIn(
-            "undated `redrafted` marker",
+            "маркер `redrafted` без даты",
             self.step_6b,
             "a dated redraft marker resets /outcome's days-quiet clock, hiding a "
             "genuinely quiet application from the follow-up offer",
@@ -171,16 +183,16 @@ class ApplyRecordsApplication(unittest.TestCase):
 
     def test_seen_jobs_is_left_alone(self):
         self.assertIn(
-            "Do not modify `job_scraper/seen_jobs.json`",
+            "Не меняй `job_scraper/seen_jobs.json`",
             self.step_6b,
             "drafting is not applying, and that file has no honest value for either",
         )
 
     def test_skill_defers_to_apply_rather_than_restating(self):
         """/scrape Step 5 routes into the skill, bypassing /apply entirely."""
-        step_3b = section(SKILL, "### Step 3b: Record the Application")
+        step_3b = section(SKILL, "### Шаг 3b: Зафиксируй отклик")
         self.assertIn(
-            "`/apply` Step 6b",
+            "`/apply` Шаг 6b",
             step_3b,
             "the skill's recording step no longer points at the canonical rule, so "
             "the two copies can drift",
@@ -200,34 +212,29 @@ class DraftedMeansDraftedToEveryReader(unittest.TestCase):
     CASES = [
         (HTML_REPORT, None, "`drafted` → **Drafted**",
          "a status with no bucket is dropped from every statistic"),
-        (HTML_REPORT, "## Step 2: Compute Summary Stats",
-         "excluded from every statistic below",
+        (HTML_REPORT, "## Шаг 2: Сводная статистика",
+         "исключаются из всей статистики ниже",
          "the headline count would include applications that were never sent"),
-        (OUTCOME, "## Step 2b: Follow-Up Branch", "neither final nor `drafted`",
+        (OUTCOME, "## Шаг 2b: Ветка напоминаний", "ни финальный, ни `drafted`",
          "it would chase an employer who received nothing"),
-        (OUTCOME, "## Step 4: Update the Tracker",
-         "overwrite its `date` column with the actual submission date",
+        (OUTCOME, "## Шаг 4: Обнови трекер",
+         "перезапиши колонку `date` реальной датой отправки",
          "the drafting date would be reported as the application date"),
-        (GMAIL_SYNC, None, "`drafted` rows stay in this set",
+        (GMAIL_SYNC, None, "Строки `drafted` остаются в этом множестве",
          "excluding them discards the row that identifies a submitted-but-"
          "unrecorded application, which is the recovery #269 asks for"),
-        (GMAIL_SYNC, "## Step 5", "`drafted` -> `applied`, otherwise",
+        (GMAIL_SYNC, "## Шаг 5", "`drafted` -> `applied`, иначе",
          "the acknowledgement is the one email that proves a hand-submitted "
          "application was sent; classified as noise, the recovery never fires"),
-        (GMAIL_SYNC, "### Step 7a", "also set `date` to the email's date",
+        (GMAIL_SYNC, "### Шаг 7a", "поставь также `date` равной дате письма",
          "the row would keep the drafting date after being proved submitted"),
-        (GMAIL_SYNC, "## Step 9: Staleness Check", "Skip `drafted` rows here",
+        (GMAIL_SYNC, "## Шаг 9: Проверка на застой", "Строки `drafted` здесь пропускай",
          "an unsent draft reported as a forgotten application"),
-        (NOTION_SYNC, None, "omit when the status is `drafted`",
-         "an 'Applied on' date for a job never applied to"),
-        (NOTION_SYNC, None, "not yet submitted",
-         "page bodies are write-once, so calling drafts 'submitted documents' "
-         "is permanent even after /outcome records the real submission"),
-        (SCRAPER, None, "do not add a second row",
+        (SCRAPER, None, "не добавляй здесь вторую строку",
          "/scrape would duplicate the row Step 3b just wrote"),
-        (APPLY, "### Step 6b: Record the Application", "bare number, 0-100",
+        (APPLY, "### Шаг 6b: Запись отклика", "голым числом, 0–100",
          "/upskill divides by fit_rating, so `72/100` or a verdict word breaks it"),
-        (APPLY, "### Step 6b: Record the Application", "append a new row",
+        (APPLY, "### Шаг 6b: Запись отклика", "добавь новую строку",
          "re-applying after a rejection would overwrite the old application"),
     ]
 
@@ -235,7 +242,7 @@ class DraftedMeansDraftedToEveryReader(unittest.TestCase):
         for path, heading, needle, why in self.CASES:
             with self.subTest(file=path.name, rule=needle):
                 haystack = section(path, heading) if heading else path.read_text(encoding="utf-8")
-                self.assertIn(needle, haystack, why)
+                assert_has(self, needle, haystack, why)
 
     @unittest.skipUnless(
         _HAVE_YAML,
@@ -255,52 +262,52 @@ class ApplyArchivesThePosting(unittest.TestCase):
     """Step 6b must also write the posting text it is holding to the archive."""
 
     CASES = [
-        (APPLY, "## Step 0: Parse Input",
-         "full posting text verbatim",
+        (APPLY, "## Шаг 0: Разбор ввода",
+         "полный текст вакансии дословно",
          "by Step 6b the model may hold only a summary, so the archive gets a "
          "paraphrase - what /outcome Step 3.2 forbids"),
-        (APPLY, "### Step 6b: Record the Application",
+        (APPLY, "### Шаг 6b: Запись отклика",
          "`documents/applications/<company>_<role>/job_posting.md`",
          "the one moment /apply provably holds the posting is spent again, and "
          "a pasted posting has no recovery path at all"),
-        (APPLY, "### Step 6b: Record the Application",
-         "never a fresh fetch",
+        (APPLY, "### Шаг 6b: Запись отклика",
+         "никогда не свежая загрузка",
          "a model that no longer holds the text would re-fetch to comply, the "
          "dead-URL path this whole item exists to avoid"),
-        (APPLY, "### Step 6b: Record the Application",
-         "`/outcome` Step 1.4",
+        (APPLY, "### Шаг 6b: Запись отклика",
+         "`/outcome` на Шаге 1.4",
          "the derivation is no longer pinned to /outcome's, so a later edit to "
          "either can silently orphan the archive"),
-        (OUTCOME, "## Step 1: Load State and Identify the Application",
-         "4. Derive the archive folder name",
+        (OUTCOME, "## Шаг 1: Загрузи состояние и найди отклик",
+         "4. Выведи имя папки архива",
          "apply.md item 7 defers its folder derivation to /outcome Step 1.4 by "
          "number; renumbering Step 1 leaves that citation dangling"),
-        (APPLY, "### Step 6b: Record the Application",
-         "**If the file already exists, leave it**",
+        (APPLY, "### Шаг 6b: Запись отклика",
+         "**Если файл уже есть, не трогай его**",
          "re-running /apply to refresh a CV would overwrite the posting that "
          "was actually applied against"),
-        (APPLY, "### Step 6b: Record the Application",
-         "keeps the older posting",
+        (APPLY, "### Шаг 6b: Запись отклика",
+         "сохраняет более старую вакансию",
          "the leave-it rule would read as if the folder is always fresh, hiding "
          "that a re-application to the same role collides with the old archive"),
-        (APPLY, "### Step 6b: Record the Application",
-         "left in place rather than written",
+        (APPLY, "### Шаг 6b: Запись отклика",
+         "был оставлен на месте, а не записан",
          "the skip discards the current posting silently, and /interview preps "
          "against the earlier application's posting"),
-        (APPLY, "### Step 6b: Record the Application",
-         "never reconstruct it from memory",
+        (APPLY, "### Шаг 6b: Запись отклика",
+         "никогда не восстанавливай его по памяти",
          "a model that reached Step 6b without the text could satisfy none of "
          "item 7's constraints, and would write a remembered posting instead"),
-        (SKILL, "### Step 1: Research & Evaluate Fit",
-         "full posting text verbatim",
+        (SKILL, "### Шаг 1: Исследуй вакансию и оцени соответствие",
+         "полный текст вакансии дословно",
          "the /scrape path never runs /apply Step 0, so nothing stops it "
          "compressing the posting before Step 3b archives it"),
-        (SKILL, "### Step 3b: Record the Application",
-         "same posting archive",
+        (SKILL, "### Шаг 3b: Зафиксируй отклик",
+         "тот же архив вакансии",
          "the /scrape path reaches Step 3b without running /apply, and its "
          "closed enumeration of Step 6b's rules would omit the archive write"),
-        (OUTCOME, "## Step 3: Archive the Application Materials",
-         "if it already exists, leave it",
+        (OUTCOME, "## Шаг 3: Заархивируй материалы отклика",
+         "если уже есть, не трогай",
          "/outcome would overwrite /apply's archived posting with a re-fetch, "
          "the dead-URL branch the /apply write exists to avoid"),
     ]
@@ -308,7 +315,7 @@ class ApplyArchivesThePosting(unittest.TestCase):
     def test_posting_is_archived_where_every_reader_looks(self):
         for path, heading, needle, why in self.CASES:
             with self.subTest(file=path.name, rule=needle):
-                self.assertIn(needle, section(path, heading), why)
+                assert_has(self, needle, section(path, heading), why)
 
 
 class DeadlineSurvivesEveryWrite(unittest.TestCase):
@@ -321,69 +328,60 @@ class DeadlineSurvivesEveryWrite(unittest.TestCase):
     """
 
     CASES = [
-        (APPLY, "### Step 6b: Record the Application", "append `,deadline` to the header line only",
+        (APPLY, "### Шаг 6b: Запись отклика", "допиши `,deadline` только в строку заголовка",
          "a mid-header insert shifts every existing row's values by one position"),
-        (OUTCOME, "## Step 1: Load State and Identify the Application",
-         "append `,deadline` to the header line only",
+        (OUTCOME, "## Шаг 1: Загрузи состояние и найди отклик",
+         "допиши `,deadline` только в строку заголовка",
          "the two commands must migrate identically, or whichever runs first sets the schema"),
-        (APPLY, "## Step 0: Parse Input", "application deadline",
+        (APPLY, "## Шаг 0: Разбор ввода", "дедлайн отклика",
          "Step 6b's value is supposed to come from Step 0's extraction, so the extraction "
          "must be stated where the posting text is still held in full"),
-        (APPLY, "### Step 6b: Record the Application", "Never guess one",
+        (APPLY, "### Шаг 6b: Запись отклика", "Никогда не угадывай его",
          "the deadline must stay empty when the posting states none - a guessed date is "
          "the urgency clock firing on a date nobody set"),
-        (APPLY, "### Step 6b: Record the Application", "leave an existing deadline alone",
+        (APPLY, "### Шаг 6b: Запись отклика", "не трогай существующий дедлайн",
          "absence is not a correction: a run that extracted no deadline must not blank "
          "the one /apply already wrote"),
-        (OUTCOME, "## Step 1: Load State and Identify the Application", "Deadline urgency",
+        (OUTCOME, "## Шаг 1: Загрузи состояние и найди отклик", "Срочность по дедлайну",
          "a drafted row has nothing applied so the quiet clock must not run on it - the "
          "deadline is the only clock that applies, and it must not be omitted"),
-        (OUTCOME, "## Step 1: Load State and Identify the Application", "never chased",
+        (OUTCOME, "## Шаг 1: Загрузи состояние и найди отклик", "по `drafted` напоминание всё равно никогда не пишется",
          "surfacing the deadline must not drag drafted rows into the follow-up offer"),
-        (OUTCOME, "## Step 4: Update the Tracker", "preserve every other field of the row",
+        (OUTCOME, "## Шаг 4: Обнови трекер", "сохраняй все остальные поля строки",
          "a status update that rewrites the row would blank the deadline column"),
-        (GMAIL_SYNC, "### Step 7a: Write Approved Updates", "preserve every other field",
+        (GMAIL_SYNC, "### Шаг 7a: Запиши одобренные обновления", "сохраняй все остальные поля строки",
          "the sync path rewrites the row too - it must carry the same preservation rule"),
-        (NOTION_SYNC, None, "**Deadline precedence: the tracker wins too**",
-         "the tracker's deadline (written from the posting the application was actually "
-         "built on) must override the scraper's stored value"),
-        (NOTION_SYNC, None, "tracker `deadline` column",
-         "the Deadine property must name the tracker column as its source"),
-        (SKILL, "### Step 3b: Record the Application", "`deadline` is the application deadline",
+        (SKILL, "### Шаг 3b: Зафиксируй отклик", "`deadline` — срок подачи из текста вакансии",
          "the /scrape path reaches Step 3b without running /apply Step 0, so it must "
          "still be told what the field is and where it comes from"),
         # The two properties the migration has to hold. Both are stated in the
         # prose of either file and neither was pinned, so either could be edited
         # away with a green suite - turning an agreed header-line append into a
         # row rewrite, which is a different and far riskier change.
-        (APPLY, "### Step 6b: Record the Application", "no data row is touched",
+        (APPLY, "### Шаг 6b: Запись отклика", re.compile(r"ни одна строка данных не (?:трогается|меняется)"),
          "a migration that rewrites rows is a different and far riskier change than "
          "one that appends to the header line, and only the second was agreed"),
-        (OUTCOME, "## Step 1: Load State and Identify the Application", "no data row is touched",
+        (OUTCOME, "## Шаг 1: Загрузи состояние и найди отклик", re.compile(r"ни одна строка данных не (?:трогается|меняется)"),
          "same rule, stated in both files, because either command may be the one that "
          "meets a legacy tracker first"),
-        (APPLY, "### Step 6b: Record the Application", "read as an empty deadline",
+        (APPLY, "### Шаг 6b: Запись отклика", "читаются с пустым дедлайном",
          "rows written before the migration have no fourteenth field; if that is not "
          "stated, a reader may treat the short row as malformed and drop it"),
-        (OUTCOME, "## Step 1: Load State and Identify the Application",
-         "read as an empty deadline",
+        (OUTCOME, "## Шаг 1: Загрузи состояние и найди отклик",
+         "читаются с пустым дедлайном",
          "same rule, stated in both files"),
-        (OUTCOME, "## Step 1: Load State and Identify the Application",
-         "one edit to an existing tracker",
+        (OUTCOME, "## Шаг 1: Загрузи состояние и найди отклик",
+         "единственная правка существующего трекера",
          "Step 4 forbids restructuring the CSV, so without this the header append reads "
          "as a violation of the same command's own rule and an implementer has a "
          "documented reason to skip the migration"),
-        (NOTION_SYNC, None, "never reconcile the two by picking the earlier or later date",
-         "the tracker-wins rule says which source to prefer but does not forbid the "
-         "plausible-looking min() of the two, which syncs a date the user never "
-         "applied against"),
     ]
 
     def test_deadline_survives_every_write(self):
         for path, heading, needle, why in self.CASES:
             with self.subTest(file=path.name, rule=needle):
                 haystack = section(path, heading) if heading else path.read_text(encoding="utf-8")
-                self.assertIn(needle, haystack, why)
+                assert_has(self, needle, haystack, why)
 
 
 class FallbackGlobFindsOneRolesDocuments(unittest.TestCase):
@@ -406,26 +404,26 @@ class FallbackGlobFindsOneRolesDocuments(unittest.TestCase):
     ROLES = ("Data Scientist", "ML Engineer", "ML Engineer II")
 
     CASES = [
-        (OUTCOME, "## Step 3: Archive the Application Materials",
-         "by the **Subfolder naming** rule in `documents/README.md`",
+        (OUTCOME, "## Шаг 3: Заархивируй материалы отклика",
+         SUBFOLDER_RULE,
          "the archive locator must derive the stem by the one documented rule, "
          "not invent a second derivation that drifts from it"),
-        (OUTCOME, "## Step 3: Archive the Application Materials",
-         "Never widen those globs to the company alone",
+        (OUTCOME, "## Шаг 3: Заархивируй материалы отклика",
+         re.compile(r"Никогда не расширяй эти (?:маски|шаблоны) до одной компании"),
          "without the prohibition the next edit relaxes the glob when it finds "
          "no match, which is exactly the wrong-file-recorded-as-submitted case"),
-        (INTERVIEW, "## Step 1: Load the Application Context",
-         "by the **Subfolder naming** rule in `documents/README.md`",
+        (INTERVIEW, "## Шаг 1: Загрузка контекста отклика",
+         SUBFOLDER_RULE,
          "interview's fallback must resolve the same stem /apply wrote"),
-        (INTERVIEW, "## Step 1: Load the Application Context",
-         "Never widen those globs to the company alone",
+        (INTERVIEW, "## Шаг 1: Загрузка контекста отклика",
+         re.compile(r"Никогда не расширяй эти (?:маски|шаблоны) до одной компании"),
          "prep built from the sibling role's CV is a live-conversation failure"),
     ]
 
     def test_both_readers_glob_the_full_stem(self):
         for path, heading, needle, why in self.CASES:
             with self.subTest(file=path.name, rule=needle):
-                self.assertIn(needle, section(path, heading), why)
+                assert_has(self, needle, section(path, heading), why)
 
     @staticmethod
     def globs(path, heading):
@@ -449,8 +447,8 @@ class FallbackGlobFindsOneRolesDocuments(unittest.TestCase):
 
     def test_the_cv_glob_selects_the_row_s_own_role(self):
         on_disk = self.drafted_files()
-        for path, heading in ((OUTCOME, "## Step 3: Archive the Application Materials"),
-                              (INTERVIEW, "## Step 1: Load the Application Context")):
+        for path, heading in ((OUTCOME, "## Шаг 3: Заархивируй материалы отклика"),
+                              (INTERVIEW, "## Шаг 1: Загрузка контекста отклика")):
             cv_glob = next(g for g in self.globs(path, heading) if g.startswith("cv/"))
             for role, expected in zip(self.ROLES, on_disk):
                 with self.subTest(file=path.name, role=role):
@@ -467,7 +465,7 @@ class FallbackGlobFindsOneRolesDocuments(unittest.TestCase):
         """`/add-template` makes `.typ` a real output; a hardcoded `.tex` misses it."""
         on_disk = self.drafted_files(ext=".typ")
         cv_glob = next(
-            g for g in self.globs(OUTCOME, "## Step 3: Archive the Application Materials")
+            g for g in self.globs(OUTCOME, "## Шаг 3: Заархивируй материалы отклика")
             if g.startswith("cv/")
         )
         hits = fnmatch.filter(on_disk, self.resolve(cv_glob, self.ROLES[0]))
@@ -492,41 +490,38 @@ class ArchiveNameIsOnePathComponent(unittest.TestCase):
 
     CASES = [
         (DOCS_README, "## applications/",
-         "not a letter, digit or underscore is dropped",
+         "Все символы, кроме букв, цифр и подчёркивания, удаляются",
          "the character rule is stated nowhere else; without it the naming "
          "convention leaves `/` untouched and the archive nests"),
         (DOCS_README, "## applications/",
-         "single path component",
+         "один компонент пути",
          "the sentence that says why the rule exists; without it the next "
          "edit simplifies the rule back to spaces-only"),
-        (OUTCOME, "## Step 1: Load State and Identify the Application",
-         "by the **Subfolder naming** rule in `documents/README.md`",
+        (OUTCOME, "## Шаг 1: Загрузи состояние и найди отклик",
+         SUBFOLDER_RULE,
          "Step 1.4 is the derivation every other writer cites; paraphrasing "
          "the rule here is how the two copies drifted apart originally"),
-        (APPLY, "### Requirement coverage (both documents)",
-         "the same rule `/outcome` Step 1.4 uses",
+        (APPLY, "### Покрытие требований (оба документа)",
+         "тому же, по которому `/outcome` на Шаге 1.4 называет папку архива",
          "CV and cover-letter filenames use the same unsanitised values; a "
          "`/` there sends the draft to a path lualatex never writes a PDF "
          "back to, and the Step 4 compile check fails on a phantom path"),
-        (SKILL, "### Step 2: Tailor CV",
-         "by the **Subfolder naming** rule in `documents/README.md`",
+        (SKILL, "### Шаг 2: Адаптируй резюме",
+         SUBFOLDER_RULE,
          "the /scrape path writes its documents before Step 3b consults /apply, "
          "so /apply's filename rule cannot protect it"),
-        (GMAIL_SYNC, "## Step 2: Load State",
-         "by the **Subfolder naming** rule in `documents/README.md`",
+        (GMAIL_SYNC, "## Шаг 2: Загрузи состояние",
+         SUBFOLDER_RULE,
          "gmail-sync both locates and creates archives; its old spaces-only "
          "paraphrase would split state across two folders"),
-        (INTERVIEW, "## Step 1: Load the Application Context",
-         "by the **Subfolder naming** rule in `documents/README.md`",
+        (INTERVIEW, "## Шаг 1: Загрузка контекста отклика",
+         SUBFOLDER_RULE,
          "interview must read the same archive /apply and /outcome wrote"),
-        (INTERVIEW, "### 6. Logistics",
-         "archive folder derived in Step 1",
+        (INTERVIEW, "### 6. Организационные моменты",
+         "папке архива, полученной на Шаге 1",
          "interview must reuse its canonical read path when writing the prep pack"),
-        (NOTION_SYNC, "## Step 5: Write the Detail Page",
-         "by the **Subfolder naming** rule in `documents/README.md`",
-         "notion-sync otherwise reports that the sanitized local archive is absent"),
         (DOCS_README, "## applications/",
-         "If the derived name is empty",
+         "Если получилось пустое имя",
          "dropping untrusted punctuation can produce no component at all, which "
          "would write files directly under documents/applications"),
     ]
@@ -534,7 +529,7 @@ class ArchiveNameIsOnePathComponent(unittest.TestCase):
     def test_the_rule_has_one_home_and_every_deriver_cites_it(self):
         for path, heading, needle, why in self.CASES:
             with self.subTest(file=path.name, rule=needle):
-                self.assertIn(needle, section(path, heading), why)
+                assert_has(self, needle, section(path, heading), why)
 
     @staticmethod
     def derive(company, role):
@@ -551,6 +546,9 @@ class ArchiveNameIsOnePathComponent(unittest.TestCase):
         ("Novo Nordisk A/S", "Data Scientist", "novo_nordisk_as_data_scientist"),
         ("Acme", "Data Scientist / ML Engineer", "acme_data_scientist_ml_engineer"),
         ("Ørsted A/S", "ML Engineer", "ørsted_as_ml_engineer"),
+        # пример из documents/README.md и кириллица (\w в Python 3 - Unicode)
+        ("Kaspersky Lab, JSC", "", "kaspersky_lab_jsc"),
+        ("Яндекс", "Data Scientist", "яндекс_data_scientist"),
         # company/role reach the derivation from untrusted posting text
         # (apply.md Step 0), so `..` must not survive either
         ("../..", "Data Scientist", "data_scientist"),

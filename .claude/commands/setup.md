@@ -1,102 +1,102 @@
-# /setup - Profile Onboarding
+# /setup — Заполнение профиля
 
-You are running the onboarding setup for the AI Job Search framework. Your goal is to collect the user's professional information and populate all profile files so the `/apply` workflow works out of the box.
+Ты проводишь первичную настройку фреймворка AI Job Search. Твоя цель — собрать профессиональную информацию о пользователе и заполнить все файлы профиля, чтобы процесс `/apply` заработал сразу. С пользователем общайся по-русски: приветствие, вопросы интервью, подтверждения и итоговый отчёт — всё на русском.
 
-There are three paths into setup. Step 0 picks the right one; all three converge on Step 3 (file generation) and Step 4 (confirmation).
-
----
-
-## Step 0: Welcome & Choose Path
-
-If `$ARGUMENTS` contains `--section <name>`, skip directly to that section in Path C for an update-only flow. Do not run the path-selection prompt below.
-
-Otherwise, first check where this working copy would publish to — **before anything is
-written, not after** (the Step 4 privacy note fires only once every file is already on
-disk, which is too late to inform the decision). Run `git remote get-url origin`; if the
-command fails (no remote, or not a git checkout), skip this check silently. If there is
-a GitHub `origin`, check it with `gh repo view <owner/repo> --json visibility,isFork`
-when `gh` is available. If the origin is a **public fork** of the template — or its
-visibility cannot be determined — warn now and wait:
-
-> **Heads-up before we start:** your `origin` points at `<owner/repo>`, which is a
-> public GitHub fork. This setup writes your personal data (name, contact details,
-> employment history, salary expectations) into **tracked** files, and anything you
-> commit *and push* to that fork is visible to anyone. Two safe options: keep your
-> profile commits local and never push them, or push to a **private** repository
-> instead — SETUP.md section 8 has the two-minute private-remote recipe. Want to
-> continue with the setup?
-
-Wait for the user's confirmation before showing the path prompt. A private origin, no
-origin, or a non-fork remote needs no warning — continue silently.
-
-Then, before greeting the user, scan the `documents/` folder. Use Glob with `documents/**/*` and count files per subfolder (`cv/`, `linkedin/`, `diplomas/`, `references/`, `projects/`, `applications/`).
-
-Then welcome the user with a single message that lists three paths. The wording changes based on what was found.
-
-**If `documents/` has files** in one or more subfolders, lead with Path A:
-
-> **Welcome to the AI Job Search setup!**
->
-> I'll help you build your professional profile so Claude can evaluate job postings, tailor CVs, write cover letters, and prepare you for interviews.
->
-> I see files in your `documents/` folder: [list per subfolder, e.g. "2 in cv/, 1 in linkedin/, 3 in references/"]. Three ways to start:
->
-> **Path A: Read my documents folder** (recommended for what you have) - I'll read everything in `documents/`, cross-reference for consistency, and build your profile from real source materials. Idempotent and safe to re-run as you add more documents.
->
-> **Path B: Single CV import** - Paste or @-mention a single CV/resume here. I'll extract it and ask follow-up questions for what's missing.
->
-> **Path C: Interview mode** - I'll walk you through structured questions section by section.
->
-> Which would you like?
-
-**If `documents/` is empty or missing**, surface Path A as a "do this if you have materials" option:
-
-> **Welcome to the AI Job Search setup!**
->
-> I'll help you build your professional profile so Claude can evaluate job postings, tailor CVs, write cover letters, and prepare you for interviews.
->
-> Three ways to start:
->
-> **Path A: Documents folder** (best signal if you have several materials) - Drop your CV / LinkedIn export / diplomas / reference letters / project summaries in the `documents/` folder, then say "go". I'll read everything and build your profile from it. See `documents/README.md` for the folder layout.
->
-> **Path B: Single CV import** - Paste or @-mention a single CV/resume here. I'll extract it and ask follow-up questions for what's missing.
->
-> **Path C: Interview mode** - I'll walk you through structured questions section by section. Good if you're starting from scratch.
->
-> Which would you like?
-
-Wait for the user's choice. If they pick A but the folder is still empty, tell them what to add (point at `documents/README.md`) and stop.
+В настройку ведут три пути. Шаг 0 выбирает подходящий; все три сходятся на Шаге 3 (генерация файлов) и Шаге 4 (подтверждение).
 
 ---
 
-## Path A: Documents Folder
+## Шаг 0: Приветствие и выбор пути
 
-Reads structured documents in `documents/`, cross-references them for consistency, and merges extracted data into the seven profile skill files. Read-before-write and idempotent: changes already present will not be proposed again.
+Если `$ARGUMENTS` содержит `--section <name>`, сразу переходи к этому разделу Пути C в режиме «только обновление». Не показывай выбор пути, описанный ниже.
 
-Follow these steps **exactly in order**.
+Иначе сначала проверь, куда будет публиковаться эта рабочая копия, — **до того, как что-либо
+записано, а не после** (напоминание о приватности на Шаге 4 появляется, когда все файлы уже
+на диске, а это слишком поздно, чтобы повлиять на решение). Выполни `git remote get-url origin`; если
+команда падает (нет remote или это не git-репозиторий), молча пропусти эту проверку. Если есть
+`origin` на GitHub, проверь его через `gh repo view <owner/repo> --json visibility,isFork`,
+если `gh` доступен. Если origin — **публичный форк** шаблона или его
+видимость определить не удалось, предупреди сразу и жди ответа:
 
-### Step A1: Inventory
+> **Прежде чем начнём:** твой `origin` указывает на `<owner/repo>`, а это
+> публичный форк на GitHub. Настройка записывает твои личные данные (имя, контакты,
+> историю работы, зарплатные ожидания) в **отслеживаемые git** файлы, и всё, что ты
+> закоммитишь *и запушишь* в этот форк, увидит любой. Есть два безопасных варианта: держать
+> коммиты с профилем локально и никогда их не пушить или пушить в **приватный** репозиторий —
+> в разделе 8 SETUP.md есть рецепт приватного remote на две минуты. Продолжаем
+> настройку?
 
-Use Glob with `documents/**/*` to scan the full tree. Print:
+Дождись подтверждения пользователя и только потом показывай выбор пути. Приватный origin, отсутствие
+origin или remote, который не является форком, предупреждения не требуют — продолжай молча.
+
+Затем, ещё до приветствия, просмотри папку `documents/`. Используй Glob с `documents/**/*` и посчитай файлы в каждой подпапке (`cv/`, `linkedin/`, `diplomas/`, `references/`, `projects/`, `applications/`).
+
+Потом поприветствуй пользователя одним сообщением со списком трёх путей. Формулировка зависит от того, что нашлось.
+
+**Если в `documents/` есть файлы** в одной или нескольких подпапках, начни с Пути A:
+
+> **Добро пожаловать в настройку AI Job Search!**
+>
+> Я помогу собрать твой профессиональный профиль, чтобы Claude мог оценивать вакансии, адаптировать резюме, писать сопроводительные письма и готовить тебя к собеседованиям.
+>
+> Вижу файлы в папке `documents/`: [список по подпапкам, например «2 в cv/, 1 в linkedin/, 3 в references/»]. Начать можно тремя способами:
+>
+> **Путь A: Прочитать папку documents** (рекомендую, раз материалы уже есть) — я прочитаю всё в `documents/`, сверю документы между собой и соберу профиль из реальных исходников. Повторный запуск безопасен и ничего не задублирует — можно перезапускать по мере добавления документов.
+>
+> **Путь B: Импорт одного резюме** — вставь сюда резюме или упомяни файл через @. Я извлеку данные и задам уточняющие вопросы о том, чего не хватает.
+>
+> **Путь C: Интервью** — я проведу тебя по структурированным вопросам раздел за разделом.
+>
+> Какой вариант выбираешь?
+
+**Если `documents/` пуст или отсутствует**, предложи Путь A как вариант «если у тебя есть материалы»:
+
+> **Добро пожаловать в настройку AI Job Search!**
+>
+> Я помогу собрать твой профессиональный профиль, чтобы Claude мог оценивать вакансии, адаптировать резюме, писать сопроводительные письма и готовить тебя к собеседованиям.
+>
+> Начать можно тремя способами:
+>
+> **Путь A: Папка documents** (лучший вариант, если материалов несколько) — положи резюме / экспорт профиля LinkedIn (необязательно) / дипломы / рекомендательные письма / описания проектов в папку `documents/` и скажи «поехали». Я прочитаю всё и соберу из этого профиль. Структура папки описана в `documents/README.md`.
+>
+> **Путь B: Импорт одного резюме** — вставь сюда резюме или упомяни файл через @. Я извлеку данные и задам уточняющие вопросы о том, чего не хватает.
+>
+> **Путь C: Интервью** — я проведу тебя по структурированным вопросам раздел за разделом. Подходит, если начинаешь с нуля.
+>
+> Какой вариант выбираешь?
+
+Дождись выбора пользователя. Если он выбрал A, но папка всё ещё пуста, скажи, что туда положить (сошлись на `documents/README.md`), и остановись.
+
+---
+
+## Путь A: Папка documents
+
+Читает структурированные документы в `documents/`, сверяет их между собой и вливает извлечённые данные в семь файлов навыка с профилем. Сначала чтение, потом запись; повторный запуск идемпотентен: уже внесённые изменения не будут предложены снова.
+
+Выполняй шаги **строго по порядку**.
+
+### Шаг A1: Инвентаризация
+
+Используй Glob с `documents/**/*`, чтобы просмотреть всё дерево. Выведи:
 
 ```
-## Documents Found
+## Найденные документы
 
-**cv/**: [list files, or "(empty)"]
-**linkedin/**: [list files, or "(empty)"]
-**diplomas/**: [list files, or "(empty)"]
-**references/**: [list files, or "(empty)"]
-**projects/**: [list files, or "(empty)"]
-**applications/**: [list subfolders with their files, or "(empty)"]
+**cv/**: [список файлов или «(пусто)»]
+**linkedin/**: [список файлов или «(пусто)»]
+**diplomas/**: [список файлов или «(пусто)»]
+**references/**: [список файлов или «(пусто)»]
+**projects/**: [список файлов или «(пусто)»]
+**applications/**: [список подпапок с их файлами или «(пусто)»]
 
-I will read these and cross-reference before proposing any changes.
+Я прочитаю их и сверю между собой, прежде чем предлагать изменения.
 ```
 
-If every subfolder is empty, stop and tell the user to populate the folder. Point at `documents/README.md` for the layout.
+Если все подпапки пусты, остановись и попроси пользователя заполнить папку. Сошлись на `documents/README.md` за структурой.
 
-### Step A2: Read Existing Skill Files
+### Шаг A2: Прочитать текущие файлы навыка
 
-Read these in parallel before extracting anything. You must know what is already there to make the merge intelligent.
+Прочитай их параллельно, прежде чем что-либо извлекать. Ты должен знать, что там уже есть, чтобы слияние было осмысленным.
 
 - `.claude/skills/job-application-assistant/01-candidate-profile.md`
 - `.claude/skills/job-application-assistant/02-behavioral-profile.md`
@@ -106,336 +106,336 @@ Read these in parallel before extracting anything. You must know what is already
 - `.claude/skills/job-application-assistant/06-cover-letter-templates.md`
 - `.claude/skills/job-application-assistant/07-interview-prep.md`
 
-Hold this content in context throughout Path A. Do not re-read.
+Держи это содержимое в контексте на протяжении всего Пути A. Не перечитывай.
 
-### Step A3: Parse Documents
+### Шаг A3: Разобрать документы
 
-Read each document found in Step A1. Process subfolders in this order: `cv/`, `linkedin/`, `diplomas/`, `references/`, `projects/`, `applications/`.
+Прочитай каждый документ, найденный на Шаге A1. Обрабатывай подпапки в таком порядке: `cv/`, `linkedin/`, `diplomas/`, `references/`, `projects/`, `applications/`.
 
-**`cv/` documents:** name, contact (email, phone, LinkedIn, GitHub), education (degree, institution, dates, thesis), work experience (title, company, dates, location, bullets), skills, languages (with any stated proficiency), publications, awards, profile/summary.
+**Документы из `cv/`:** имя, контакты (email, телефон, Telegram, профиль hh.ru / Хабр Карьеры, LinkedIn, GitHub), образование (степень, вуз, годы, тема диплома/диссертации), опыт работы (должность, компания, даты, город, пункты), навыки, языки (с указанным уровнем, если он есть), публикации, награды, профиль/о себе.
 
-**`linkedin/` documents:** About/summary section (full text, used for behavioral inference), work experience, education, skills and endorsements, **Languages section** (language name + self-rated proficiency level, e.g. "Spanish - Native or bilingual proficiency" - a high-confidence structured source, feeds the Language Gate in `04-job-evaluation.md`), certifications, volunteer work, publications, recommendations received (full text). If multiple LinkedIn exports are present, use the most recently modified file.
+**Документы из `linkedin/`** (необязательный источник — LinkedIn в РФ заблокирован, но экспорт профиля по-прежнему полезен): раздел About/«О себе» (полный текст, используется для поведенческих выводов), опыт работы, образование, навыки и подтверждения, **раздел Languages** (название языка + самооценка уровня, например «Spanish - Native or bilingual proficiency» — структурированный источник с высокой достоверностью, питает Языковой фильтр (Language Gate) в `04-job-evaluation.md`), сертификаты, волонтёрство, публикации, полученные рекомендации (полный текст). Если экспортов LinkedIn несколько, бери самый свежий по дате изменения.
 
-**`diplomas/` documents:** official degree title and level, institution name (official spelling), graduation date, grade or distinction or GPA if visible.
+**Документы из `diplomas/`:** официальное название и уровень степени (бакалавр, специалист, магистр, кандидат наук и т. п.), название вуза (официальное написание), дата окончания, оценка, отличие («красный диплом») или средний балл, если видны.
 
-**`references/` documents:** referee name, title, organization; full text of the letter (extract specific quotes); competency language used.
+**Документы из `references/`:** имя рекомендателя, должность, организация; полный текст письма (вытащи конкретные цитаты); формулировки о компетенциях.
 
-**`projects/` documents:** project name, summary/description, problem domain, tech stack (languages, frameworks, tools), key technical challenges and architectural decisions, measurable outcomes/metrics (e.g. users, performance, stars, impact).
+**Документы из `projects/`:** название проекта, краткое описание, предметная область, стек (языки, фреймворки, инструменты), ключевые технические сложности и архитектурные решения, измеримые результаты/метрики (например, пользователи, производительность, звёзды, эффект).
 
-**`applications/<company>_<role>/` subfolders:**
-- `job_posting.md`: role title, company, required skills, experience level, sector, role type
-- `cover_letter.tex`: opening structure, body structure, bullet style, closing, recurring phrases
-- `cv_draft.tex`: profile statement, section ordering, framing for this role type
-- `outcome.md`: status (in_progress/hired/offer_declined/rejected/no_response/interview_only), interview stages, notes. Skip `in_progress` applications for calibration — they have no final signal yet.
+**Подпапки `applications/<company>_<role>/`:**
+- `job_posting.md`: название должности, компания, требуемые навыки, уровень опыта, отрасль, тип роли
+- `cover_letter.tex`: структура вступления, структура основной части, стиль пунктов, концовка, повторяющиеся фразы
+- `cv_draft.tex`: профиль-резюме (о себе), порядок разделов, подача под этот тип роли
+- `outcome.md`: статус (in_progress/hired/offer_declined/rejected/no_response/interview_only), этапы собеседований, заметки. Отклики со статусом `in_progress` для калибровки пропускай — у них ещё нет итогового сигнала.
 
-After reading, proceed to Step A4 without intermediate output. The user sees a complete picture in Step A6.
+После чтения переходи к Шагу A4 без промежуточного вывода. Полную картину пользователь увидит на Шаге A6.
 
-### Step A4: Cross-Reference Check
+### Шаг A4: Перекрёстная сверка
 
-Before mapping anything to skill files, check for inconsistencies:
+Прежде чем раскладывать что-либо по файлам навыка, проверь несоответствия:
 
-- Date mismatches between CV / LinkedIn / diploma
-- Title mismatches across documents for the same role
-- Education mismatches (degree name, graduation date)
-- Employer name variations
+- Расхождения в датах между резюме / LinkedIn / дипломом
+- Расхождения в названии должности в разных документах для одной и той же роли
+- Расхождения в образовании (название степени, дата окончания)
+- Разные варианты названия работодателя
 
-If inconsistencies are found, present them as a numbered list and wait for the user to resolve each one before continuing:
+Если несоответствия найдены, покажи их нумерованным списком и дождись, пока пользователь разрешит каждое, прежде чем продолжать:
 
 ```
-## Cross-Reference Issues Found
+## Найдены расхождения между документами
 
-These need to be resolved before I continue. For each one, tell me which version is correct.
+Их нужно разрешить, прежде чем я продолжу. По каждому скажи, какая версия верна.
 
-1. **Role title mismatch - [COMPANY]:**
-   CV says: "[TITLE_A]"
-   LinkedIn says: "[TITLE_B]"
-   Which is correct?
+1. **Расхождение в должности — [COMPANY]:**
+   В резюме: «[TITLE_A]»
+   В LinkedIn: «[TITLE_B]»
+   Какая верна?
 
 2. ...
 ```
 
-If no inconsistencies, state "No cross-reference issues found." and continue.
+Если несоответствий нет, напиши «Расхождений между документами не найдено.» и продолжай.
 
-### Step A5: Build Change Sets
+### Шаг A5: Собрать наборы изменений
 
-For each skill file, compare extracted document content against the current file content from Step A2. Build two buckets.
+Для каждого файла навыка сравни извлечённое из документов с текущим содержимым файла из Шага A2. Разложи всё по двум корзинам.
 
-**Additive changes:** entirely new content not in the skill file in any form. Examples: a certification not in `01-candidate-profile.md`, a new independent project not in `01-candidate-profile.md`, a new endorsement skill, a referee not yet listed, a new behavioral quote from a reference letter, a new award.
+**Добавляющие изменения:** полностью новое содержимое, которого в файле навыка нет ни в каком виде. Примеры: сертификат, которого нет в `01-candidate-profile.md`, новый самостоятельный проект, которого нет в `01-candidate-profile.md`, новый подтверждённый навык, ещё не указанный рекомендатель, новая поведенческая цитата из рекомендательного письма, новая награда.
 
-**Conflicting changes:** content that touches something already in a skill file but disagrees. Examples: a different date range for an existing job, a different job title for the same role, a different graduation date than what is recorded.
+**Конфликтующие изменения:** содержимое, которое касается уже имеющегося в файле навыка, но расходится с ним. Примеры: другой период для существующего места работы, другое название должности для той же роли, другая дата окончания, чем записано.
 
-**Inference rules** (apply when populating from inferred sources):
+**Правила выводов** (применяй, когда заполняешь из косвенных источников):
 
-- **`01-candidate-profile.md` (`## Independent Projects`):** Source is `projects/` documents. Extract structured project entries formatted as `- **[PROJECT_NAME]**: [DESCRIPTION with tech stack and measurable outcome]`. Ground all claims in the document text.
-- **`02-behavioral-profile.md`:** Source is LinkedIn About + recommendation letters. Extract recurring themes, adjectives, phrases about how the candidate works. Add only to the "Strongest Behaviors", "How You Work Best", or "Management Style Preferences" sections (the shipped file's `##` headings). Do not overwrite existing scored assessments. Always label inferred additions: *[Inferred from LinkedIn About / Reference letter - review before relying on this]*
-- **`03-writing-style.md`:** Source is `cover_letter.tex` files. Extract recurring patterns. Add as observations under "## Patterns Observed in Past Applications". Do not modify existing rules. Only add if 2+ cover letters show a genuine pattern.
-- **`04-job-evaluation.md`:** Source is `job_posting.md` + `outcome.md` pairs. If an application reached interview or offer: note role type and sector as a confirmed strong-fit signal. If 2+ applications repeat a no-response or rejection pattern: note it. Add findings under "## Calibration from Past Applications". Do not modify the existing scoring framework.
-- **`05-cv-templates.md`:** Source is `cv_draft.tex` files. Extract any profile statement that does not already appear in templates. Label with: *[Used for: <company>_<role>]*. **Ground before extracting:** archived drafts are tailored outputs, not source documents - verify every factual claim in an extracted statement (titles, employers, metrics, technologies) against `01-candidate-profile.md` and drop or correct any claim the profile does not support, keeping only the framing. A tailored draft that drifted must never become a template future applications start from.
-- **`06-cover-letter-templates.md`:** Source is `cover_letter.tex` files. Extract opening patterns, bullet structures, closing formulations. Add only what is structurally distinct from existing templates.
-- **`07-interview-prep.md`:** Source is CV bullets, LinkedIn descriptions, reference letter quotes. Identify achievements not yet covered by an existing STAR example. Do NOT draft full STAR examples. Add stubs under "## STAR Candidates (Complete Manually)":
+- **`01-candidate-profile.md` (`## Собственные проекты`):** источник — документы из `projects/`. Извлекай структурированные записи о проектах в формате `- **[PROJECT_NAME]**: [DESCRIPTION with tech stack and measurable outcome]` (описание — со стеком и измеримым результатом). Каждое утверждение должно опираться на текст документа.
+- **`02-behavioral-profile.md`:** источник — раздел About в LinkedIn + рекомендательные письма. Извлекай повторяющиеся темы, прилагательные, фразы о том, как кандидат работает. Добавляй только в разделы «Самые сильные стороны поведения», «В каких условиях вы работаете лучше всего» или «Предпочтения по стилю управления» (заголовки `##` поставляемого файла). Не перезаписывай существующие оценки. Всегда помечай выведенные добавления: *[Выведено из раздела About в LinkedIn / рекомендательного письма — проверь, прежде чем на это опираться]*
+- **`03-writing-style.md`:** источник — файлы `cover_letter.tex`. Извлекай повторяющиеся приёмы. Добавляй как наблюдения в раздел «## Patterns Observed in Past Applications». Не меняй существующие правила. Добавляй, только если приём действительно повторяется в 2+ сопроводительных письмах.
+- **`04-job-evaluation.md`:** источник — пары `job_posting.md` + `outcome.md`. Если отклик дошёл до собеседования или оффера, отметь тип роли и отрасль как подтверждённый сигнал хорошего соответствия. Если в 2+ откликах повторяется картина «нет ответа» или отказ — отметь это. Записывай выводы в раздел «## Калибровка по прошлым откликам». Не меняй существующую систему оценки.
+- **`05-cv-templates.md`:** источник — файлы `cv_draft.tex`. Извлекай профиль-резюме (о себе), которого ещё нет в шаблонах. Помечай: *[Used for: <company>_<role>]*. **Сверь с фактами перед извлечением:** архивные черновики — это адаптированные результаты, а не исходные документы. Проверь каждое фактическое утверждение в извлекаемом тексте (должности, работодатели, метрики, технологии) по `01-candidate-profile.md` и убери или исправь всё, что профиль не подтверждает, оставив только подачу. Черновик, который уплыл от фактов, никогда не должен стать шаблоном, с которого начинаются будущие отклики.
+- **`06-cover-letter-templates.md`:** источник — файлы `cover_letter.tex`. Извлекай варианты вступлений, структуры пунктов, формулировки концовок. Добавляй только то, что структурно отличается от существующих шаблонов.
+- **`07-interview-prep.md`:** источник — пункты резюме, описания из LinkedIn, цитаты из рекомендательных писем. Найди достижения, которые ещё не покрыты готовым примером STAR (Ситуация–Задача–Действие–Результат). НЕ пиши полные примеры STAR. Добавь заготовки в раздел «## Кандидаты в STAR (дописать вручную)»:
 
 ```markdown
-### [Achievement title]
-**Source:** [CV / LinkedIn / Reference letter - role/company]
-**What happened:** [one sentence]
-**Why it matters:** [interview question types this could answer]
-**S/T/A/R stub:**
-- Situation:
-- Task:
-- Action:
-- Result:
+### [Название достижения]
+**Источник:** [Резюме / LinkedIn / Рекомендательное письмо — роль/компания]
+**Что произошло:** [одно предложение]
+**Почему это важно:** [на какие типы вопросов интервью это может ответить]
+**Заготовка S/T/A/R:**
+- Ситуация:
+- Задача:
+- Действие:
+- Результат:
 ```
 
-### Step A6: Present and Confirm Changes
+### Шаг A6: Показать и подтвердить изменения
 
-Present the full change set before writing anything.
+Покажи полный набор изменений до того, как что-либо записывать.
 
-**Additive changes** (single grouped list, organized by target file):
+**Добавляющие изменения** (единый сгруппированный список, по целевым файлам):
 
 ```
-## Proposed Additive Changes
+## Предлагаемые добавления
 
 ### 01-candidate-profile.md
-- [ ] New certification: [title], [issuer], [date] - extracted from LinkedIn
-- [ ] New independent project: [PROJECT_NAME] - [description, tech stack, key outcome]
-- [ ] New reference: [name, title, company]
-  Quote: "[relevant quote]"
+- [ ] Новый сертификат: [название], [кем выдан], [дата] — из экспорта LinkedIn
+- [ ] Новый собственный проект: [PROJECT_NAME] — [описание, стек, ключевой результат]
+- [ ] Новый рекомендатель: [имя, должность, компания]
+  Цитата: «[подходящая цитата]»
 
 ### 02-behavioral-profile.md
-- [ ] New behavioral observation [labeled as inference]: "[phrase]"
+- [ ] Новое поведенческое наблюдение [помечено как вывод]: «[фраза]»
 
-[and so on per file]
+[и так далее по каждому файлу]
 ```
 
-Then ask:
+Затем спроси:
 
-> **Apply all additive changes?** These add new content without touching anything already in the files.
-> Reply **yes** to apply all, or list the numbers you want to skip.
+> **Применить все добавления?** Они добавляют новое и не трогают ничего из того, что уже есть в файлах.
+> Ответь **да**, чтобы применить всё, или перечисли номера, которые пропустить.
 
-Wait for the response. Apply only the confirmed items.
+Дождись ответа. Применяй только подтверждённые пункты.
 
-**Conflicting changes** (one at a time):
+**Конфликтующие изменения** (по одному):
 
 ```
-## Conflict 1 of [N]: Job title - [COMPANY]
+## Конфликт 1 из [N]: Должность — [COMPANY]
 
-**Current in 01-candidate-profile.md:**
-[TITLE_A] - [COMPANY] ([START]-[END])
+**Сейчас в 01-candidate-profile.md:**
+[TITLE_A] — [COMPANY] ([START]–[END])
 
-**Proposed (from LinkedIn export):**
-[TITLE_B] - [COMPANY] ([START]-[END])
+**Предлагается (из экспорта LinkedIn):**
+[TITLE_B] — [COMPANY] ([START]–[END])
 
-Options:
-  [keep] Keep the existing text
-  [replace] Replace with the version from the document
-  [manual] I'll edit this myself - skip for now
+Варианты:
+  [keep] Оставить существующий текст
+  [replace] Заменить версией из документа
+  [manual] Поправлю сам — пока пропустить
 ```
 
-Wait for the user's choice on each conflict. If no conflicts, state "No conflicting changes found." and skip this section.
+Дождись выбора пользователя по каждому конфликту. Если конфликтов нет, напиши «Конфликтующих изменений не найдено.» и пропусти этот раздел.
 
-### Step A7: Write Confirmed Changes and Fill Gaps
+### Шаг A7: Записать подтверждённое и закрыть пробелы
 
-Apply the confirmed changes with the Edit tool. Make targeted edits only. Do not rewrite entire files. State which changes were applied per file. If a file has no confirmed changes, state "No changes made to [filename]."
+Внеси подтверждённые изменения инструментом Edit. Делай только точечные правки. Не переписывай файлы целиком. Сообщи, какие изменения внесены в каждый файл. Если в файле нет подтверждённых изменений, напиши «В [filename] изменений нет.»
 
-Documents cover skills, experience, education, references, and behavioral signal. They do not cover everything `/apply` and `/scrape` need. After the writes, ask follow-up questions for gaps:
+Документы покрывают навыки, опыт, образование, рекомендации и поведенческие сигналы. Они покрывают не всё, что нужно `/apply` и `/scrape`. После записи задай уточняющие вопросы о пробелах:
 
-- Career goals and target role types
-- What excites the user in their next role
-- Deal-breakers and must-haves
-- Languages you work in professionally, with proficiency levels (only if not already extracted from `cv/` or `linkedin/` above) - this feeds the Language Gate in `04-job-evaluation.md`, so ask directly rather than skipping it
-- Salary expectations / baseline (optional)
-- Commute or location constraints (if not visible from CV)
-- Job search configuration (use the questions from Path C Section 9 below)
+- Карьерные цели и целевые типы ролей
+- Что вдохновляет пользователя в следующей роли
+- Стоп-факторы и обязательные условия
+- Языки, на которых пользователь работает профессионально, с уровнями (только если они ещё не извлечены из `cv/` или `linkedin/` выше) — это питает Языковой фильтр (Language Gate) в `04-job-evaluation.md`, поэтому спрашивай прямо, а не пропускай
+- Зарплатные ожидания / нижняя планка (необязательно; уточни, в месяц и «на руки» или до вычета НДФЛ)
+- Ограничения по дороге или местоположению (если не видны из резюме)
+- Настройка поиска вакансий (используй вопросы из Раздела 9 Пути C ниже)
 
-Then proceed to Step 3 to populate the non-skill files (`CLAUDE.md`, `cv/main_example.tex`, `.claude/skills/job-scraper/search-queries.md`). Step 3 will detect that the seven skill files are already populated and skip those substeps.
-
----
-
-## Path B: Single CV Import
-
-If the user provides a single CV/resume:
-
-1. Read the document thoroughly.
-2. Extract all structured information: name, contact, education, experience, skills, languages, publications, awards.
-3. Present a summary of what was extracted.
-4. Ask follow-up questions for gaps (behavioral profile, career goals, deal-breakers, languages and proficiency levels if not already extracted, salary expectations, references).
-5. Proceed to Step 3 (file generation).
+Затем переходи к Шагу 3, чтобы заполнить файлы вне навыка (`CLAUDE.md`, `cv/main_example.tex`, `.claude/skills/job-scraper/search-queries.md`). Шаг 3 увидит, что семь файлов навыка уже заполнены, и пропустит эти подшаги.
 
 ---
 
-## Path C: Interview Mode
+## Путь B: Импорт одного резюме
 
-Walk through each section conversationally. Ask questions naturally, not as a form. Let the user answer in their own words and you'll structure the data.
+Если пользователь дал одно резюме:
 
-### Section 1: Identity & Contact
-Ask about:
-- Full name
-- Location (city, country)
-- Phone, email, LinkedIn, GitHub
-- What languages they work in professionally, and roughly what level in each (native, fluent, conversational, a CEFR letter like B2 - whatever's natural for them to describe, doesn't need to be precise). Worth explaining why: a posting requiring a language they don't list at all gets auto-excluded later by the Language Gate, while one asking for a higher level in a language they do list gets flagged for their own judgment instead of silently passed or rejected - so it's worth being honest here rather than optimistic.
-- Current employment status
-- Family/commute constraints (if any)
-
-### Section 2: Education
-For each degree:
-- Level (PhD, MSc, BSc, etc.), field, institution, years
-- Thesis topic (if applicable)
-- Key coursework or topics
-
-Also ask about certifications (online courses, professional certs).
-
-### Section 3: Professional Experience
-For each role (most recent first):
-- Job title, company, dates, location
-- Key responsibilities (3-5 bullets)
-- Key achievements or projects
-- Technologies/tools used
-
-Also ask about independent projects, freelance work, or side projects.
-
-### Section 4: Technical Skills
-- Programming languages + proficiency level
-- ML/AI frameworks and tools
-- Domain expertise
-- Software tools and platforms
-- Any other technical skills
-
-### Section 5: Publications & Awards (optional)
-- Peer-reviewed papers, conference presentations
-- Hackathons, competitions, awards
-- Skip if not applicable
-
-### Section 6: Behavioral Profile (optional)
-If they have a formal assessment (PI, DISC, Myers-Briggs, StrengthsFinder):
-- Ask them to describe or share the results
-
-If not, ask behavioral questions:
-- "What work environments do you thrive in?"
-- "What drains your energy at work?"
-- "How do you prefer to work in teams?"
-- "How do you make decisions, quickly or deliberately?"
-- "What's your communication style?"
-- Synthesize answers into a behavioral profile
-
-### Section 7: Career Goals & Preferences
-- Target roles and industries
-- What excites you in work
-- Deal-breakers and must-haves
-- Salary expectations/baseline (optional)
-- What environments to avoid
-- Commute/location constraints
-
-### Section 8: References (optional)
-For each reference:
-- Name, title, company, email, phone
-- Relationship to the user
-
-### Section 9: Job Search Configuration
-This section generates the search queries that power `/scrape`. Use the information from Sections 1, 4, and 7 to build targeted queries.
-
-Ask about:
-- **Role titles to search for:** Job titles for the same underlying work vary a lot across companies and markets - a "Data Scientist" role at one employer may be called "Insights Analyst" or "Data Consultant" at another. Ask about the function first: "What kind of work do you actually want to be doing day-to-day?" Then translate that into concrete search terms: "Given that, what job titles should I search for? For example: Data Scientist, ML Engineer, Geophysicist." Collect 3-8 specific titles, but keep the underlying function in mind - it feeds the category naming in `search-queries.md` and the Experience Match dimension in `04-job-evaluation.md`.
-- **Key skills as search terms:** "Which of your skills are most likely to appear in job postings?" Pick 3-5 that are distinctive and searchable.
-- **Target companies (optional):** "Are there specific companies you'd like to monitor for openings?"
-- **Geographic scope:** "Which cities or regions should I search in? How far are you willing to commute?" Use this to define the location filter tiers (ideal, acceptable, borderline, too far).
-- **Job portals:** "The framework ships country-agnostic search CLIs (`linkedin-search`, `freehire-search`, enabled by default) plus Danish portal demos (Jobindex, Jobbank, Jobdanmark, Jobnet) that ship **disabled**. `/scrape` auto-discovers whatever portal skills are installed under `.agents/skills/` and skips any with `enabled: false`. Which portals fit your market?" **Then act on the answer:** if the user's market is Denmark (or they ask for the Danish boards), edit each of the four Danish `SKILL.md` files and set `enabled: true` in the frontmatter; otherwise leave them disabled and say so - they cost nothing while disabled and can be enabled later by flipping the flag. If the user needs a local board that is not shipped, guide them to `/add-portal` (market-specific skills live in their fork). WebSearch/`site:` queries remain the fallback for portals without a CLI skill.
-- **CV language:** "Should your CVs be written in English (the default, accepted in most markets), or in your market's language?" Record the answer as a `CV language: <language>` line in CLAUDE.md's Identity section. Cover letters always match each posting's language automatically; this setting governs the CV only. If the user is unsure, keep English and note they can re-run `/setup --section search` to change it.
-
-**Important:** Also suggest role types the user may not have considered, based on their skill profile. For example:
-- If they have strong Python + domain expertise: "Have you considered roles like 'Technical Consultant' or 'Solutions Engineer' in your domain?"
-- If they have ML + a specific industry: "Companies in adjacent industries also hire for these skills. Should I include searches for [adjacent sector]?"
-- If they have project management experience alongside technical skills: "Would you also want to search for 'Technical Project Manager' or 'Team Lead' roles?"
-
-This proactive suggestion step helps users discover career paths they might not have considered.
+1. Внимательно прочитай документ.
+2. Извлеки всю структурированную информацию: имя, контакты, образование, опыт, навыки, языки, публикации, награды.
+3. Покажи сводку того, что извлечено.
+4. Задай уточняющие вопросы о пробелах (поведенческий профиль, карьерные цели, стоп-факторы, языки и уровни, если ещё не извлечены, зарплатные ожидания, рекомендатели).
+5. Переходи к Шагу 3 (генерация файлов).
 
 ---
 
-## Step 3: Generate Profile Files
+## Путь C: Интервью
 
-Once data collection is complete, generate or finish populating the following files. **For Path A**, the seven skill files are already populated by Step A7; check each before writing and skip if its content is no longer placeholder text.
+Пройди каждый раздел в формате разговора. Задавай вопросы по-русски и естественно, не как анкету. Пусть пользователь отвечает своими словами, а структурировать данные будешь ты.
 
-### 1. Update `CLAUDE.md`
-Replace all `[PLACEHOLDER]` tokens with the user's actual information. Keep the structure, workflow, and verification checklist intact.
+### Раздел 1: Личные данные и контакты
+Спроси:
+- Полное имя
+- Местоположение (город, страна)
+- Телефон, email, Telegram, профиль hh.ru / Хабр Карьеры, LinkedIn, GitHub
+- На каких языках пользователь работает профессионально и примерно на каком уровне в каждом (родной, свободный, разговорный, уровень CEFR вроде B2 — как ему удобнее описать, точность не нужна). По умолчанию русский — родной/свободный, английский — по уровню CEFR (A1–C2). Стоит объяснить зачем: вакансия, требующая языка, которого пользователь вообще не указал, позже автоматически отсеивается Языковым фильтром (Language Gate), а вакансия, требующая более высокого уровня в указанном языке, помечается для его собственного решения, а не молча пропускается или отклоняется, — поэтому здесь лучше быть честным, а не оптимистичным.
+- Текущий статус занятости
+- Семейные ограничения / ограничения по дороге (если есть)
 
-### 2. Populate `01-candidate-profile.md` *(Path B and C; skip if Path A populated it)*
-Write the full candidate profile with structured sections: Identity (including Languages, with levels), Education, Professional Experience, Independent Projects, Technical Skills, Publications, Awards, References.
+### Раздел 2: Образование
+По каждой степени:
+- Уровень (кандидат наук, магистр, специалист, бакалавр, PhD, MSc, BSc и т. п.), направление, вуз, годы
+- Тема диплома/диссертации (если есть)
+- Ключевые дисциплины или темы
 
-### 3. Populate `02-behavioral-profile.md` *(Path B and C; skip if Path A populated it)*
-Write the behavioral profile based on assessment results or synthesized answers.
+Также спроси о сертификатах (онлайн-курсы, профессиональные сертификаты).
 
-### 4. Update `04-job-evaluation.md` *(Path B and C; skip if Path A populated it)*
-Replace skill match areas with the user's actual skills:
-- Strong match areas: [their primary skills]
-- Moderate match areas: [their secondary skills]
-- Weak match areas: [skills they lack]
+### Раздел 3: Опыт работы
+По каждой роли (начиная с последней):
+- Должность, компания, даты, город
+- Ключевые обязанности (3–5 пунктов)
+- Ключевые достижения или проекты
+- Используемые технологии/инструменты
 
-Update career goals and motivation filters with their actual preferences.
+Также спроси о самостоятельных проектах, фрилансе или пет-проектах.
 
-### 5. Update `05-cv-templates.md` *(Path B and C; skip if Path A populated it)*
-Add role-specific profile statement templates based on their background, and personalise the contact block inside the file's LaTeX template: replace `[FIRST_NAME]`, `[LAST_NAME]`, `[YOUR_ADDRESS]`, `[YOUR_PHONE]`, `[YOUR_EMAIL]`, `[YOUR_LINKEDIN_URL]` and `[YOUR_GITHUB_URL]` (and `[YOUR_NAME]` in the PDF title) with their actual details. Check this block whichever path ran - Path A extracts profile statements from documents, not the contact block. `/apply` builds every tailored CV from this template, so a placeholder left here reaches a compiled document.
+### Раздел 4: Технические навыки
+- Языки программирования + уровень владения
+- Фреймворки и инструменты ML/AI
+- Предметная экспертиза
+- Программные инструменты и платформы
+- Любые другие технические навыки
 
-### 6. Update `06-cover-letter-templates.md` *(all paths - Path A does not fill this block)*
-Personalise the contact line and the signature inside the file's LaTeX template: replace `[YOUR_NAME]`, `[YOUR_EMAIL]`, `[YOUR_PHONE]` and `[YOUR_LINKEDIN_URL]` in the `\namesection{}` line, and `[YOUR_NAME]` in `\signature{}`. Path A merges only structural patterns (openings, bullets, closings) into this file, never the contact block. `/apply` compiles every cover letter from this template.
+### Раздел 5: Публикации и награды (необязательно)
+- Рецензируемые статьи, доклады на конференциях
+- Хакатоны, соревнования, награды
+- Пропусти, если неприменимо
 
-### 7. Update `07-interview-prep.md` *(Path B and C; skip if Path A populated it)*
-Create STAR examples from their actual experience (at least 3-4 examples). Path A leaves STAR stubs under "## STAR Candidates (Complete Manually)" rather than full examples; if any stubs are present, mention them in Step 4 so the user knows to flesh them out.
+### Раздел 6: Поведенческий профиль (необязательно)
+Если у пользователя есть формальная оценка (PI, DISC, MBTI, StrengthsFinder):
+- Попроси описать результаты или поделиться ими
 
-### 8. Update `cv/main_example.tex`
-Replace placeholder personal data with their actual name, contact info, and add their education and most recent experience entries.
+Если нет, задай поведенческие вопросы:
+- «В какой рабочей среде ты раскрываешься лучше всего?»
+- «Что на работе отнимает у тебя больше всего сил?»
+- «Как тебе удобнее работать в команде?»
+- «Как ты принимаешь решения — быстро или обдуманно?»
+- «Какой у тебя стиль общения?»
+- Сведи ответы в поведенческий профиль
 
-### 9. Generate `.claude/skills/job-scraper/search-queries.md`
-Replace all placeholder tokens in the search queries file with the user's actual information from Section 9 (or the equivalent follow-up questions in Path A's Step A7):
-- Replace `[YOUR_PRIMARY_ROLE_TYPE]`, `[YOUR_PRIMARY_JOB_TITLE]`, etc. with actual role titles
-- Replace `[YOUR_KEY_SKILL]`, `[YOUR_DOMAIN_KEYWORD_1]`, etc. with actual skills and domain terms
-- Replace `[YOUR_CITY]`, `[YOUR_COUNTRY]`, `[YOUR_REGION]` with actual location
-- Fill in the location filter tiers (ideal, acceptable, borderline, too far) based on commute constraints
-- Organize queries into priority categories matching the user's career direction:
-  - Priority 1: Their strongest/most desired role direction
-  - Priority 2: Their domain expertise
-  - Priority 3: Adjacent roles they could pivot into
-  - Priority 4: Broader roles (wider net)
+### Раздел 7: Карьерные цели и предпочтения
+- Целевые роли и отрасли
+- Что тебя вдохновляет в работе
+- Стоп-факторы и обязательные условия
+- Зарплатные ожидания / нижняя планка (необязательно; в рублях в месяц, уточни — «на руки» или до вычета НДФЛ)
+- Каких сред избегать
+- Ограничения по дороге/местоположению (офис, гибрид, удалёнка)
+
+### Раздел 8: Рекомендатели (необязательно)
+По каждому рекомендателю:
+- Имя, должность, компания, email, телефон
+- Кем приходится пользователю
+
+### Раздел 9: Настройка поиска вакансий
+Этот раздел генерирует поисковые запросы, на которых работает `/scrape`. Используй информацию из Разделов 1, 4 и 7, чтобы построить точные запросы.
+
+Спроси:
+- **Должности для поиска:** названия должностей для одной и той же работы сильно различаются между компаниями и рынками — роль «Data Scientist» у одного работодателя у другого может называться «Аналитик данных» или «ML-инженер». Сначала спроси о функции: «Чем ты на самом деле хочешь заниматься изо дня в день?» Затем переведи это в конкретные поисковые запросы: «Исходя из этого, по каким должностям мне искать? Например: Data Scientist, ML-инженер, аналитик данных, геофизик.» Собери 3–8 конкретных названий (на русском и, если на рынке это принято, на английском), но держи в голове саму функцию — она определяет названия категорий в `search-queries.md` и критерий «Experience Match» в `04-job-evaluation.md`.
+- **Ключевые навыки как поисковые слова:** «Какие из твоих навыков чаще всего встречаются в вакансиях?» Выбери 3–5 характерных и хорошо ищущихся.
+- **Целевые компании (необязательно):** «Есть ли конкретные компании, за вакансиями которых стоит следить?» (например, Яндекс, Сбер, Т-Банк, VK, Ozon, Авито, Касперский)
+- **География:** «В каких городах или регионах искать? Сколько ты готов тратить на дорогу? Рассматриваешь ли удалёнку?» Используй это, чтобы задать уровни фильтра по местоположению (идеально, приемлемо, на грани, слишком далеко).
+- **Порталы вакансий:** «Во фреймворке есть два CLI для поиска, оба включены по умолчанию: `habr-search` (Хабр Карьера, career.habr.com — IT-вакансии в России и СНГ, публичный JSON без ключа) и `freehire-search` (агрегатор freehire.me, есть регион `cis`). `/scrape` сам находит все навыки-порталы в `.agents/skills/` и пропускает те, у которых `enabled: false`. Какие порталы подходят под твой рынок?» **Затем действуй по ответу:** если пользователю какой-то из двух порталов не нужен, поставь `enabled: false` во frontmatter его `SKILL.md` и скажи об этом — флаг можно вернуть в любой момент. Объясни про hh.ru: модуля поиска по hh.ru нет — с апреля 2026 публичный API поиска вакансий закрыт (403 без ключа работодателя), а robots.txt запрещает поиск с параметрами; но `/apply` по ссылке на вакансию hh.ru (`hh.ru/vacancy/<id>`, региональные поддомены `*.hh.ru`) работает — страница вакансии открывается, либо пользователь вставляет текст вакансии сам. SuperJob и Getmatch — в планах как следующие модули. Если пользователю нужен сайт вакансий, для которого CLI нет, направь его в `/add-portal` (навыки под конкретный рынок живут в его форке). Для порталов без CLI-навыка запасным вариантом остаются запросы через WebSearch/`site:`.
+- **Язык резюме:** «Резюме писать на русском (по умолчанию) или на английском?» Запиши ответ строкой `CV language: <language>` в разделе Identity в CLAUDE.md. Сопроводительные письма всегда автоматически пишутся на языке вакансии; эта настройка управляет только резюме. Если вакансия на английском, резюме и письмо для неё всё равно готовятся на английском. Если пользователь не уверен, оставь русский и скажи, что поменять можно позже через `/setup --section search`.
+
+**Важно:** также предложи типы ролей, о которых пользователь мог не подумать, исходя из его профиля навыков. Например:
+- Если у него сильный Python + предметная экспертиза: «Рассматривал роли вроде „Технический консультант“ или „Solutions Engineer“ в своей области?»
+- Если у него ML + конкретная отрасль: «Компании в смежных отраслях тоже нанимают под эти навыки. Добавить поиск по [смежная отрасль]?»
+- Если у него есть опыт управления проектами наряду с техническими навыками: «Искать ещё роли „Технический руководитель проектов“ или „Тимлид“?»
+
+Этот шаг с проактивными предложениями помогает пользователю открыть карьерные пути, о которых он мог не задумываться.
 
 ---
 
-## Step 4: Confirm & Next Steps
+## Шаг 3: Сгенерировать файлы профиля
 
-Present a summary:
+Когда сбор данных завершён, сгенерируй или дозаполни следующие файлы. **Для Пути A** семь файлов навыка уже заполнены на Шаге A7; перед записью проверь каждый и пропусти, если в нём уже не текст-заглушка.
 
-> **Setup complete!** Here's what was generated:
+### 1. Обновить `CLAUDE.md`
+Замени все токены `[PLACEHOLDER]` реальными данными пользователя. Сохрани структуру, процесс работы и Чек-лист проверки.
+
+### 2. Заполнить `01-candidate-profile.md` *(Пути B и C; пропусти, если заполнил Путь A)*
+Напиши полный профиль кандидата со структурированными разделами: «Личные данные» (включая «Языки» с уровнями), «Образование», «Опыт работы», «Собственные проекты», «Технические навыки», «Публикации», «Награды», «Рекомендации».
+
+### 3. Заполнить `02-behavioral-profile.md` *(Пути B и C; пропусти, если заполнил Путь A)*
+Напиши поведенческий профиль на основе результатов оценки или сведённых ответов.
+
+### 4. Обновить `04-job-evaluation.md` *(Пути B и C; пропусти, если заполнил Путь A)*
+Замени области соответствия навыков реальными навыками пользователя:
+- Сильное соответствие: [его основные навыки]
+- Умеренное соответствие: [его второстепенные навыки]
+- Слабое соответствие: [навыки, которых у него нет]
+
+Обнови карьерные цели и мотивационные фильтры по его реальным предпочтениям.
+
+### 5. Обновить `05-cv-templates.md` *(Пути B и C; пропусти, если заполнил Путь A)*
+Добавь шаблоны профиля-резюме (о себе) под конкретные роли на основе его опыта и персонализируй блок контактов внутри LaTeX-шаблона файла: замени `[FIRST_NAME]`, `[LAST_NAME]`, `[YOUR_ADDRESS]`, `[YOUR_PHONE]`, `[YOUR_EMAIL]`, `[YOUR_LINKEDIN_URL]` и `[YOUR_GITHUB_URL]` (и `[YOUR_NAME]` в заголовке PDF) его реальными данными. Проверяй этот блок при любом пути — Путь A извлекает из документов тексты профиля, а не блок контактов. `/apply` собирает каждое адаптированное резюме из этого шаблона, так что оставленный здесь плейсхолдер попадёт в скомпилированный документ.
+
+### 6. Обновить `06-cover-letter-templates.md` *(все пути — Путь A этот блок не заполняет)*
+Персонализируй строку контактов и подпись внутри LaTeX-шаблона файла: замени `[YOUR_NAME]`, `[YOUR_EMAIL]`, `[YOUR_PHONE]` и `[YOUR_LINKEDIN_URL]` в строке `\namesection{}` и `[YOUR_NAME]` в `\signature{}`. Путь A вливает в этот файл только структурные приёмы (вступления, пункты, концовки) и никогда не трогает блок контактов. `/apply` компилирует каждое сопроводительное письмо из этого шаблона.
+
+### 7. Обновить `07-interview-prep.md` *(Пути B и C; пропусти, если заполнил Путь A)*
+Составь примеры STAR из его реального опыта (минимум 3–4 примера). Путь A оставляет заготовки STAR в разделе «## Кандидаты в STAR (дописать вручную)», а не полные примеры; если заготовки есть, упомяни их на Шаге 4, чтобы пользователь знал, что их надо дописать.
+
+### 8. Обновить `cv/main_example.tex`
+Замени заглушки личных данных его реальным именем и контактами, добавь записи об образовании и последнем месте работы.
+
+### 9. Сгенерировать `.claude/skills/job-scraper/search-queries.md`
+Замени все токены-заглушки в файле поисковых запросов реальными данными пользователя из Раздела 9 (или из аналогичных уточняющих вопросов на Шаге A7 Пути A):
+- Замени `[YOUR_PRIMARY_ROLE_TYPE]`, `[YOUR_PRIMARY_JOB_TITLE]` и т. п. реальными названиями должностей
+- Замени `[YOUR_KEY_SKILL]`, `[YOUR_DOMAIN_KEYWORD_1]` и т. п. реальными навыками и терминами предметной области
+- Замени `[YOUR_CITY]`, `[YOUR_COUNTRY]`, `[YOUR_REGION]` реальным местоположением
+- Заполни уровни фильтра по местоположению (идеально, приемлемо, на грани, слишком далеко) на основе ограничений по дороге
+- Разложи запросы по категориям приоритета в соответствии с карьерным направлением пользователя:
+  - Приоритет 1: самое сильное / самое желанное направление
+  - Приоритет 2: его предметная экспертиза
+  - Приоритет 3: смежные роли, в которые он может перейти
+  - Приоритет 4: более широкие роли (сеть пошире)
+
+---
+
+## Шаг 4: Подтверждение и следующие шаги
+
+Покажи сводку:
+
+> **Настройка завершена!** Вот что сгенерировано:
 >
-> - `CLAUDE.md` - Your full candidate profile
-> - `.claude/skills/job-application-assistant/01-candidate-profile.md` - Structured profile
-> - `.claude/skills/job-application-assistant/02-behavioral-profile.md` - Behavioral assessment
-> - `.claude/skills/job-application-assistant/04-job-evaluation.md` - Personalized evaluation framework
-> - `.claude/skills/job-application-assistant/05-cv-templates.md` - CV templates with your profile statements and contact block
-> - `.claude/skills/job-application-assistant/06-cover-letter-templates.md` - Cover letter templates with your contact line and signature
-> - `.claude/skills/job-application-assistant/07-interview-prep.md` - STAR examples from your experience
-> - `cv/main_example.tex` - Your LaTeX CV template
-> - `.claude/skills/job-scraper/search-queries.md` - Job search queries for `/scrape`
+> - `CLAUDE.md` — твой полный профиль кандидата
+> - `.claude/skills/job-application-assistant/01-candidate-profile.md` — структурированный профиль
+> - `.claude/skills/job-application-assistant/02-behavioral-profile.md` — поведенческая оценка
+> - `.claude/skills/job-application-assistant/04-job-evaluation.md` — персональная система оценки вакансий
+> - `.claude/skills/job-application-assistant/05-cv-templates.md` — шаблоны резюме с твоими текстами профиля и блоком контактов
+> - `.claude/skills/job-application-assistant/06-cover-letter-templates.md` — шаблоны сопроводительных писем с твоей строкой контактов и подписью
+> - `.claude/skills/job-application-assistant/07-interview-prep.md` — примеры STAR из твоего опыта
+> - `cv/main_example.tex` — твой LaTeX-шаблон резюме
+> - `.claude/skills/job-scraper/search-queries.md` — поисковые запросы для `/scrape`
 >
-> **Privacy note:** the files above now contain your personal data and are *tracked by git*.
-> A GitHub fork of the template is always public (forks of public repos cannot be made
-> private), so do not push these commits to a fork. Keep them local, or push to a private
-> repository instead - see SETUP.md section 8 for the private-remote setup.
+> **О приватности:** файлы выше теперь содержат твои личные данные и *отслеживаются git*.
+> Форк шаблона на GitHub всегда публичный (форки публичных репозиториев нельзя сделать
+> приватными), поэтому не пушь эти коммиты в форк. Держи их локально или пушь в приватный
+> репозиторий — настройка приватного remote описана в разделе 8 SETUP.md.
 >
-> **Try it out:**
-> - Run `/scrape` to search for matching jobs right now
-> - Run `/apply` with a job posting URL to see the full application workflow
-> - Run `/setup --section search` later to update your search queries as your priorities evolve
+> **Попробуй:**
+> - Запусти `/scrape`, чтобы прямо сейчас найти подходящие вакансии (Хабр Карьера и freehire)
+> - Запусти `/apply` со ссылкой на вакансию (в том числе с hh.ru), чтобы увидеть весь процесс отклика
+> - Позже запусти `/setup --section search`, чтобы обновить поисковые запросы, когда приоритеты поменяются
 
-If Path A left any STAR stubs in `07-interview-prep.md`, also note:
+Если Путь A оставил заготовки STAR в `07-interview-prep.md`, добавь также:
 
-> Path A flagged [N] STAR candidate stubs in `07-interview-prep.md` that need your situation/task/action/result details before you use them in interviews.
+> Путь A отметил [N] заготовок STAR в `07-interview-prep.md` — прежде чем использовать их на собеседованиях, допиши в них ситуацию, задачу, действие и результат.
 
 ---
 
-## Design Principles
+## Принципы
 
-- Three onboarding paths converge on the same skill files. Step 0 picks the right path based on what's in `documents/`. Steps 3 and 4 are shared.
-- Path A is read-before-write and idempotent. Re-running it as documents are added does not duplicate or overwrite existing content; conflicts are surfaced for explicit resolution.
-- Path A labels inferred behavioral or style additions so the user can review them critically before relying on them.
-- Each section in Path C is a natural conversation, not a form. The user can skip optional sections.
-- Synthesize answers into structured formats (the user does not need to know markdown or LaTeX).
-- Can be re-run with `--section <name>` to update specific sections (e.g., `/setup --section search` to reconfigure job search queries without re-doing the full profile).
-- Section 9 (search) in Path C, and the equivalent follow-up questions in Path A, proactively suggest role types the user may not have considered.
-- At the end, suggest running `/scrape` and `/apply` with a test job posting.
+- Три пути онбординга сходятся на одних и тех же файлах навыка. Шаг 0 выбирает путь по содержимому `documents/`. Шаги 3 и 4 общие.
+- Путь A сначала читает, потом пишет, и идемпотентен. Повторный запуск по мере добавления документов не дублирует и не перезаписывает существующее; конфликты выносятся на явное решение.
+- Путь A помечает выведенные поведенческие и стилевые добавления, чтобы пользователь критически проверил их, прежде чем на них опираться.
+- Каждый раздел Пути C — живой разговор на русском, а не анкета. Необязательные разделы пользователь может пропустить.
+- Сводишь ответы в структурированный вид ты (пользователю не нужно знать markdown или LaTeX).
+- Можно перезапустить с `--section <name>`, чтобы обновить отдельные разделы (например, `/setup --section search`, чтобы перенастроить поисковые запросы, не проходя весь профиль заново).
+- Раздел 9 (поиск) в Пути C и аналогичные уточняющие вопросы в Пути A проактивно предлагают типы ролей, о которых пользователь мог не подумать.
+- В конце предложи запустить `/scrape` и `/apply` с тестовой вакансией.
