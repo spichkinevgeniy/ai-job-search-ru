@@ -16,11 +16,14 @@ evaluates anything:
   * invisible characters (zero-width, bidi controls, soft hyphen, BOM) -
     removed and counted; the ones that indicate tampering (a zero-width
     character inside a word, a bidi override or isolate) are flagged;
-  * instruction-shaped lines aimed at an agent rather than a reader - quoted,
-    never removed (an SSH administrator posting legitimately says "SSH");
+  * instruction-shaped lines aimed at an agent rather than a reader, in English
+    or Russian - quoted, never removed (an SSH administrator posting
+    legitimately says "SSH"); look-alike letters are folded first, so a
+    spoofed "ignоre" still matches;
   * URLs that only exist in hidden content - listed;
-  * words mixing Latin with Cyrillic or Greek letters (look-alike spoofing) -
-    listed.
+  * words mixing Latin with Cyrillic or Greek letters where one script's
+    letters are all look-alikes (spoofing: "зарплатa") - listed; "QAшник"
+    mixes in the open and is not.
 
 Removal is the defense: hidden content never reaches the cleaned text the
 workflow reads. The ⚠ in the verdict is for the user and fires only on signals
@@ -100,9 +103,104 @@ INSTRUCTION_PATTERNS = [re.compile(p, re.I) for p in (
     r"allowed-tools",
     r"\btool_use\b|\bfunction_call\b",
 )]
+
+# Russian mirrors of the phrases above. Lines are matched with ё folded to е, so
+# the patterns spell е only. Russian postings address the candidate directly
+# ("Вы будете…", "Напишите нам", "Добавьте ссылку на GitHub в отклик"), so a bare
+# imperative is never enough: a pattern needs what only agent-talk has - a
+# qualifier on "instructions" (все/предыдущие/выше), an AI as the addressee, or
+# the candidate in the third person ("напиши, что кандидат знает Go").
+_RU_IGNORE = (r"(?:(?:про)?игнорир\w*|забуд\w*|отбрось(?:те)?|пренебреги(?:те)?"
+              r"|не\s+(?:учитыва\w*|слуша\w*|выполня\w*|следу\w*|принима\w*\s+во\s+внимание|обраща\w*\s+внимани[ея]\s+на))")
+_RU_EARLIER = (r"(?:предыдущ\w*|прежн\w*|ранее|вышеуказанн\w*|вышеизложенн\w*|вышеприведенн\w*|приведенн\w+\s+выше"
+               r"|предшествующ\w*|прошл\w*|изначальн\w*|исходн\w*|системн\w*|все[хм]?|всего|эти[хм]?|свои[хм]?|твои[хм]?"
+               r"|ваши[хм]?|данн\w*|полученн\w*|любы\w*)")
+_RU_RULES = r"(?:инструкц\w*|указани\w*|правил\w*|промпт\w*|директив\w*|ограничени\w*|команд\w*|подсказк\w*|установк\w*|распоряжени\w*)"
+_RU_AI_ROLE = (r"(?:(?:ии|ai)[\s-]?(?:ассистент|агент|модел|помощник|бот)\w*|виртуальн\w+\s+(?:ассистент|помощник)\w*"
+               r"|языков\w+\s+модел\w*|нейросеть\w*|нейронн\w+\s+сеть\w*|чат-?бот\w*)")
+_RU_AI_BARE = r"(?:ии|ai|llm|gpt|chatgpt|бот(?:ом)?)"
+# "Ты — AI Engineer", "Вы — ИИ-энтузиаст", "Если ты ML/AI-разработчик" are hiring copy, not an addressed AI.
+_RU_AI_END = (r"(?![\w/-])(?!\s+[a-z])(?!\s+(?:инженер|разработчик|исследовател|специалист|энтузиаст|евангелист|эксперт"
+              r"|продакт|архитектор|тимлид|менеджер|аналитик|лид|продукт|направлени|решени|технологи)\w*)")
+_RU_AI = rf"(?:{_RU_AI_ROLE}(?![\w-])|{_RU_AI_BARE}{_RU_AI_END})"
+_RU_YOU = r"(?<![\w-])(?:ты|вы)\s*(?:[—–−-]|:|,)?\s*(?:(?:сейчас|теперь|всего\s+лишь|лишь|просто|же)\s+)?(?:(?:являешься|являетесь|есть)\s+|[—–−-]\s*)?"
+_RU_CV = r"(?:резюме|cv|сопроводительн\w*(?:\s+письм\w*)?|письм\w*)"
+_RU_THIRD = r"(?:кандидат|соискател|пользовател|претендент)\w*"
+RU_INSTRUCTION_PATTERNS = [re.compile(p, re.I | re.M) for p in (
+    rf"\b{_RU_IGNORE}\s+(?:{_RU_EARLIER}\s+){{1,3}}{_RU_RULES}",
+    rf"\b{_RU_IGNORE}\s+(?:\w+\s+)?{_RU_RULES}\s+(?:выше|ранее|сверху)\b",
+    rf"\b{_RU_IGNORE}\s+(?:все|то)\b[^.!?\n]{{0,40}}?\b(?:выше|ранее|до\s+этого|сверху)\b",
+    rf"{_RU_YOU}{_RU_AI}",
+    rf"\bесли\s+(?:ты|вы)\s+(?:[—–−-]\s*|(?:являешься|являетесь)\s+)?{_RU_AI}",
+    rf"\b(?:дорог|уважаем)\w*\s+(?:{_RU_AI}|модель|нейросеть)(?![\w-])",
+    rf"\bбудучи\s+{_RU_AI}",
+    r"\bкак\s+языков\w+\s+модел\w*",
+    r"\bсистемн\w*\s+(?:промпт\w*|подсказк\w*)|\bпромпт\w*\s+систем\w*",
+    rf"\bне\s+(?:говор|сообща|сообщ|рассказыва|расскаж|скаж|упомина|упомян|показыва|покаж|раскрыва|раскро)\w*\s+(?:об\s+этом\s+|этого\s+|это\s+|ничего\s+)?(?:{_RU_THIRD}|человек\w*|оператор\w*)",
+    rf"\b(?:скрой|скройте|утаи|утаите)\s+(?:это\s+)?от\s+{_RU_THIRD}",
+    rf"\bчтобы\s+{_RU_THIRD}\s+не\s+(?:узнал|заметил|увидел|понял)",
+    r"\b(?:выполни|запусти|исполни)\w*\s+следующ\w*\s+(?:команд|скрипт|код|инструкц|shell|bash)\w*",
+    r"\b(?:выполни|запусти|введи)\w*\s+(?:\S+\s+){0,3}?в\s+(?:терминал|консол|командн\w+\s+строк|shell|bash)\w*",
+    r"^\s*(?:ассистент|система|пользователь|ии)\s*:",
+    r"###\s*(?:систем\w*|инструкц\w*)",
+    # A note headed at an AI ("Инструкция для ИИ:"), not a job duty ("создавать инструкции для ИИ").
+    rf"\b(?:инструкц|указани|сообщени|примечани|заметк|подсказк)\w*\s+(?:для|к)\s+(?:{_RU_AI}|claude|ats)(?![\w-])"
+    r"\s*(?:[:—–]|,\s*(?:читающ|обрабатывающ|анализирующ)\w*)",
+    r"\bнов\w+\s+(?:инструкц|указани)\w*\s*:",
+    # Rewriting the candidate's documents: the candidate in the third person, or a
+    # skill dropped straight into the CV ("добавь в резюме Kubernetes"). Asking the
+    # reader for a link ("добавьте в резюме ссылку на GitHub") stays clean.
+    rf"\b(?:напиши|укажи|добавь|отметь|упомяни|сообщи|скажи|подчеркни|утверждай|заяви|ответь|впиши|допиши|вставь|включи)(?:те)?\b[^.!?\n]{{0,60}}?\bчто\s+(?:этот\s+|данный\s+|наш\s+)?{_RU_THIRD}",
+    rf"\b(?:добав|впиш|встав|включ|допиш|внес|напиш|укаж)\w*\s+[^.!?\n]{{0,60}}?\bв\s+(?:(?:его|ее)\s+{_RU_CV}|{_RU_CV}\s+{_RU_THIRD})",
+    rf"\b(?:добавь|впиши|вставь|допиши|внеси)(?:те)?\s+в\s+{_RU_CV}\s+(?!(?:github|gitlab|linkedin|telegram|tg|hh|habr)\b)(?:навык\w*|ключев\w*|[a-z])",
+    r"\b(?:ответь|отвечай|выведи|верни)(?:те)?\s+(?:только|лишь|исключительно)\b(?!\s+(?:на|нам|в|если|после|по)\b)",
+    rf"\b(?:оцени|поставь|присвой|выстави)\w*\s+(?:эт\w+\s+)?(?:вакансии|вакансию|позици\w*|{_RU_THIRD}|отклик\w*)\s+(?:\w+\s+)?(?:на\s+|в\s+)?"
+    r"(?:\d+\s*(?:из|/)\s*\d+|максимальн\w*|высш\w*|наивысш\w*|\d+\s+балл\w*)",
+)]
+
+
 WORD = re.compile(r"\w+", re.UNICODE)
 LATIN = re.compile(r"[A-Za-z]")
 CONFUSABLE = re.compile(r"[Ѐ-ӿͰ-Ͽ]")
+# Letters that render the same as a Latin letter (and the Latin letters that render
+# as Cyrillic/Greek ones). A word is spoofed when one script's letters in it are all
+# look-alikes ("зарплатa", "Nоvo"); "QAшник", "ITшник", "DevOpsы", "SQLный" mix
+# scripts in the open and stay clean.
+LOOKALIKE_NONLATIN = set("аеорсухіјѕԁԛԝүһАВЕКМНОРСТХІЈЅУԚԜҮҺ" "οαικνρτυχΑΒΕΖΗΙΚΜΝΟΡΤΥΧ")
+LOOKALIKE_LATIN = set("aeopcyxABEKMHOPCTX")  # only letters a Russian word could pass off as its own
+
+
+def _spoofed(word: str) -> bool:
+    latin = [c for c in word if LATIN.match(c)]
+    other = [c for c in word if CONFUSABLE.match(c)]
+    if not latin or not other:
+        return False
+    return all(c in LOOKALIKE_LATIN for c in latin) or all(c in LOOKALIKE_NONLATIN for c in other)
+
+
+_TO_CYRILLIC = str.maketrans("aeopcyxABEKMHOPCTX", "аеорсухАВЕКМНОРСТХ")
+_TO_LATIN = str.maketrans("аеорсухАВЕКМНОРСТХіјѕԁԛԝһү", "aeopcyxABEKMHOPCTXijsdqwhy")
+
+
+def _unspoof(line: str) -> str:
+    """Map look-alike letters in a mixed-script word to the word's majority script,
+    so "игнoрируй" (Latin o) or "ignоre" (Cyrillic о) still meets the patterns."""
+    def fold(m):
+        word = m.group(0)
+        latin = len(LATIN.findall(word))
+        other = len(CONFUSABLE.findall(word))
+        if not latin or not other:
+            return word
+        return word.translate(_TO_CYRILLIC if other >= latin else _TO_LATIN)
+    return WORD.sub(fold, line)
+
+
+def _instruction_like(line: str) -> bool:
+    line = _unspoof(line)
+    if any(p.search(line) for p in INSTRUCTION_PATTERNS):
+        return True
+    folded = line.replace("ё", "е").replace("Ё", "Е")
+    return any(p.search(folded) for p in RU_INSTRUCTION_PATTERNS)
 
 
 def _fold(text: str) -> str:
@@ -244,7 +342,7 @@ def scan(visible: str, hidden: str) -> dict:
         stripped = line.strip()
         if not stripped or stripped in seen:
             continue
-        if any(p.search(stripped) for p in INSTRUCTION_PATTERNS):
+        if _instruction_like(stripped):
             seen.add(stripped)
             instruction_like.append(stripped[:LINE_MAX])
     hidden_urls = []
@@ -253,7 +351,7 @@ def scan(visible: str, hidden: str) -> dict:
             hidden_urls.append(url)
     homoglyphs = []
     for word in WORD.findall(visible + "\n" + hidden):
-        if LATIN.search(word) and CONFUSABLE.search(word) and word not in homoglyphs:
+        if _spoofed(word) and word not in homoglyphs:
             homoglyphs.append(word)
     return {
         "instruction_like": instruction_like,
